@@ -1,0 +1,6 @@
+check_name,metric,value,threshold,status
+opi_diversity,operational_priority_index_nunique,6.0,3.0,PASS
+risk_driver_diversity,main_risk_driver_nunique,2.0,2.0,PASS
+tier_diversity,area_priority_tier_nunique,3.0,2.0,PASS
+opi_dispersion,operational_priority_index_std,10.12292461601899,1.0,PASS
+rank_stability_top1_share,max_top1_share_montecarlo,0.5333333333333333,0.45,PASS

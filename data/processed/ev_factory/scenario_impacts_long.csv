@@ -1,0 +1,73 @@
+escenario,descripcion,metrica,valor
+1_ramp_up_ev_base,Ramp-up EV base con adaptación mínima,throughput,159.1
+2_ramp_up_ev_acelerado,Aceleración de mix EV sin refuerzo completo,throughput,156.07
+3_aumento_slots_carga,Incremento de disponibilidad de carga,throughput,160.58
+4_mejor_secuenciacion_ev,Secuenciación EV más estable y balanceada,throughput,161.37
+5_expansion_o_mejor_uso_patio,Expansión física o rediseño de uso de patio,throughput,160.03
+6_mas_presion_logistica_salida,Mayor presión de expedición y ventanas tensas,throughput,153.4
+7_turno_tensionado_menor_disponibilidad,Tensión en turno por menor disponibilidad operativa,throughput,150.62
+8_combinacion_medidas_correctivas,Secuenciación + carga + patio con disciplina de salida,throughput,163.18
+1_ramp_up_ev_base,Ramp-up EV base con adaptación mínima,tiempo_total_interno,1692.28
+2_ramp_up_ev_acelerado,Aceleración de mix EV sin refuerzo completo,tiempo_total_interno,1727.55
+3_aumento_slots_carga,Incremento de disponibilidad de carga,tiempo_total_interno,1648.54
+4_mejor_secuenciacion_ev,Secuenciación EV más estable y balanceada,tiempo_total_interno,1653.03
+5_expansion_o_mejor_uso_patio,Expansión física o rediseño de uso de patio,tiempo_total_interno,1666.48
+6_mas_presion_logistica_salida,Mayor presión de expedición y ventanas tensas,tiempo_total_interno,1744.21
+7_turno_tensionado_menor_disponibilidad,Tensión en turno por menor disponibilidad operativa,tiempo_total_interno,1767.76
+8_combinacion_medidas_correctivas,Secuenciación + carga + patio con disciplina de salida,tiempo_total_interno,1601.0
+1_ramp_up_ev_base,Ramp-up EV base con adaptación mínima,ocupacion_media_patio,0.0899
+2_ramp_up_ev_acelerado,Aceleración de mix EV sin refuerzo completo,ocupacion_media_patio,0.0923
+3_aumento_slots_carga,Incremento de disponibilidad de carga,ocupacion_media_patio,0.0909
+4_mejor_secuenciacion_ev,Secuenciación EV más estable y balanceada,ocupacion_media_patio,0.0878
+5_expansion_o_mejor_uso_patio,Expansión física o rediseño de uso de patio,ocupacion_media_patio,0.0845
+6_mas_presion_logistica_salida,Mayor presión de expedición y ventanas tensas,ocupacion_media_patio,0.0947
+7_turno_tensionado_menor_disponibilidad,Tensión en turno por menor disponibilidad operativa,ocupacion_media_patio,0.0923
+8_combinacion_medidas_correctivas,Secuenciación + carga + patio con disciplina de salida,ocupacion_media_patio,0.0847
+1_ramp_up_ev_base,Ramp-up EV base con adaptación mínima,ocupacion_pico_patio,0.5904
+2_ramp_up_ev_acelerado,Aceleración de mix EV sin refuerzo completo,ocupacion_pico_patio,0.6097
+3_aumento_slots_carga,Incremento de disponibilidad de carga,ocupacion_pico_patio,0.5988
+4_mejor_secuenciacion_ev,Secuenciación EV más estable y balanceada,ocupacion_pico_patio,0.5922
+5_expansion_o_mejor_uso_patio,Expansión física o rediseño de uso de patio,ocupacion_pico_patio,0.5527
+6_mas_presion_logistica_salida,Mayor presión de expedición y ventanas tensas,ocupacion_pico_patio,0.6239
+7_turno_tensionado_menor_disponibilidad,Tensión en turno por menor disponibilidad operativa,ocupacion_pico_patio,0.606
+8_combinacion_medidas_correctivas,Secuenciación + carga + patio con disciplina de salida,ocupacion_pico_patio,0.5695
+1_ramp_up_ev_base,Ramp-up EV base con adaptación mínima,espera_carga,67.46
+2_ramp_up_ev_acelerado,Aceleración de mix EV sin refuerzo completo,espera_carga,78.3
+3_aumento_slots_carga,Incremento de disponibilidad de carga,espera_carga,65.55
+4_mejor_secuenciacion_ev,Secuenciación EV más estable y balanceada,espera_carga,71.06
+5_expansion_o_mejor_uso_patio,Expansión física o rediseño de uso de patio,espera_carga,73.24
+6_mas_presion_logistica_salida,Mayor presión de expedición y ventanas tensas,espera_carga,73.24
+7_turno_tensionado_menor_disponibilidad,Tensión en turno por menor disponibilidad operativa,espera_carga,74.71
+8_combinacion_medidas_correctivas,Secuenciación + carga + patio con disciplina de salida,espera_carga,70.19
+1_ramp_up_ev_base,Ramp-up EV base con adaptación mínima,riesgo_salida_baja_readiness,0.00641592897979637
+2_ramp_up_ev_acelerado,Aceleración de mix EV sin refuerzo completo,riesgo_salida_baja_readiness,0.006689327910393368
+3_aumento_slots_carga,Incremento de disponibilidad de carga,riesgo_salida_baja_readiness,0.00611525418987313
+4_mejor_secuenciacion_ev,Secuenciación EV más estable y balanceada,riesgo_salida_baja_readiness,0.0062726753410473094
+5_expansion_o_mejor_uso_patio,Expansión física o rediseño de uso de patio,riesgo_salida_baja_readiness,0.0065264185590961895
+6_mas_presion_logistica_salida,Mayor presión de expedición y ventanas tensas,riesgo_salida_baja_readiness,0.0069832678582329236
+7_turno_tensionado_menor_disponibilidad,Tensión en turno por menor disponibilidad operativa,riesgo_salida_baja_readiness,0.006690398924902626
+8_combinacion_medidas_correctivas,Secuenciación + carga + patio con disciplina de salida,riesgo_salida_baja_readiness,0.006137307091576884
+1_ramp_up_ev_base,Ramp-up EV base con adaptación mínima,riesgo_congestion,0.10512322388408504
+2_ramp_up_ev_acelerado,Aceleración de mix EV sin refuerzo completo,riesgo_congestion,0.10973197985802756
+3_aumento_slots_carga,Incremento de disponibilidad de carga,riesgo_congestion,0.10717440874035988
+4_mejor_secuenciacion_ev,Secuenciación EV más estable y balanceada,riesgo_congestion,0.10215661937017993
+5_expansion_o_mejor_uso_patio,Expansión física o rediseño de uso de patio,riesgo_congestion,0.09892197926735219
+6_mas_presion_logistica_salida,Mayor presión de expedición y ventanas tensas,riesgo_congestion,0.11242595476863752
+7_turno_tensionado_menor_disponibilidad,Tensión en turno por menor disponibilidad operativa,riesgo_congestion,0.11315741471722364
+8_combinacion_medidas_correctivas,Secuenciación + carga + patio con disciplina de salida,riesgo_congestion,0.09877776969972539
+1_ramp_up_ev_base,Ramp-up EV base con adaptación mínima,vehiculos_retrasados,0.9766049660387673
+2_ramp_up_ev_acelerado,Aceleración de mix EV sin refuerzo completo,vehiculos_retrasados,1.0
+3_aumento_slots_carga,Incremento de disponibilidad de carga,vehiculos_retrasados,0.9349559300489898
+4_mejor_secuenciacion_ev,Secuenciación EV más estable y balanceada,vehiculos_retrasados,0.9421781401814932
+5_expansion_o_mejor_uso_patio,Expansión física o rediseño de uso de patio,vehiculos_retrasados,0.9557547378149102
+6_mas_presion_logistica_salida,Mayor presión de expedición y ventanas tensas,vehiculos_retrasados,1.0
+7_turno_tensionado_menor_disponibilidad,Tensión en turno por menor disponibilidad operativa,vehiculos_retrasados,1.0
+8_combinacion_medidas_correctivas,Secuenciación + carga + patio con disciplina de salida,vehiculos_retrasados,0.902933488389416
+1_ramp_up_ev_base,Ramp-up EV base con adaptación mínima,estabilidad_operativa,76.15
+2_ramp_up_ev_acelerado,Aceleración de mix EV sin refuerzo completo,estabilidad_operativa,74.97
+3_aumento_slots_carga,Incremento de disponibilidad de carga,estabilidad_operativa,77.02
+4_mejor_secuenciacion_ev,Secuenciación EV más estable y balanceada,estabilidad_operativa,76.77
+5_expansion_o_mejor_uso_patio,Expansión física o rediseño de uso de patio,estabilidad_operativa,76.49
+6_mas_presion_logistica_salida,Mayor presión de expedición y ventanas tensas,estabilidad_operativa,75.11
+7_turno_tensionado_menor_disponibilidad,Tensión en turno por menor disponibilidad operativa,estabilidad_operativa,75.03
+8_combinacion_medidas_correctivas,Secuenciación + carga + patio con disciplina de salida,estabilidad_operativa,77.72

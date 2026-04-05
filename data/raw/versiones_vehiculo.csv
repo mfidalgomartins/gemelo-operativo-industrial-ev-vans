@@ -1,0 +1,7 @@
+vehicle_version_id,familia_van,tipo_propulsion,tiempo_base_ensamblaje_min,tiempo_base_test_min,consumo_test_kwh
+VV001,MidVan,ICE,190,38,8
+VV002,LargeVan,ICE,220,44,10
+VV003,CrewVan,ICE,205,40,9
+VV004,MidVan,EV,220,46,14
+VV005,LargeVan,EV,250,54,16
+VV006,CrewVan,EV,235,50,15

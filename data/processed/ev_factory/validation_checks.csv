@@ -1,0 +1,11 @@
+check_name,failed_rows,status
+duplicados_ordenes,0,PASS
+secuencia_incoherente,383,WARN
+timestamps_fuera_orden,0,PASS
+soc_fuera_rango,0,PASS
+sesion_carga_imposible,0,PASS
+ev_requiere_carga_sin_sesion,0,PASS
+salida_sin_readiness,0,PASS
+retraso_sin_causa,1225,WARN
+restriccion_capacidad_inconsistente,0,PASS
+denominadores_invalidos,0,PASS

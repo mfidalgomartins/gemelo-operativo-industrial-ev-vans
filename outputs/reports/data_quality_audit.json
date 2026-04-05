@@ -1,0 +1,41 @@
+{
+  "status": "PASS",
+  "row_counts": {
+    "ordenes_produccion": 490,
+    "versiones_vehiculo": 6,
+    "eventos_produccion": 1960,
+    "eventos_patio": 1470,
+    "sesiones_carga": 211,
+    "disponibilidad_energia": 365,
+    "eventos_expedicion": 490
+  },
+  "max_null_rate_pct": {
+    "ordenes_produccion": 0.0,
+    "versiones_vehiculo": 0.0,
+    "eventos_produccion": 0.0,
+    "eventos_patio": 0.0,
+    "sesiones_carga": 0.0,
+    "disponibilidad_energia": 0.0,
+    "eventos_expedicion": 0.0
+  },
+  "duplicates_by_table": {
+    "ordenes_produccion": 0,
+    "versiones_vehiculo": 0,
+    "eventos_produccion": 0,
+    "eventos_patio": 0,
+    "sesiones_carga": 0,
+    "eventos_expedicion": 0
+  },
+  "critical_checks": {
+    "prod_negative_duration": 0,
+    "prod_temporal_errors": 0,
+    "charge_negative_kwh": 0,
+    "charge_temporal_errors": 0,
+    "soc_out_of_range": 0,
+    "orphan_prod": 0,
+    "orphan_patio": 0,
+    "orphan_exped": 0,
+    "flow_temporal_issues": 0
+  },
+  "critical_issues_total": 0
+}

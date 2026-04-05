@@ -1,0 +1,7 @@
+area,area_criticality_score,throughput_gap,avg_wait_time,main_bottleneck_driver,recommended_action_initial
+PATIO,45.89726042778141,-12.163614163614163,387.57938498833454,CONGESTION_PATIO,Reducir dwell y rediseñar buffer por zona de patio
+LOGISTICA,32.05776995461424,-12.163614163614163,132.87937949865128,RIESGO_EXPEDICION,Priorizar expedición selectiva y ventana de readiness
+PRODUCCION,30.48825628618187,-12.163614163614163,132.87937949865128,RIESGO_EXPEDICION,Priorizar expedición selectiva y ventana de readiness
+EXPEDICION,28.503032604130585,-12.163614163614163,132.87937949865128,RIESGO_EXPEDICION,Priorizar expedición selectiva y ventana de readiness
+CARGA,25.34951035516844,-12.163614163614163,53.12053857891211,PRESION_CARGA,Reservar slots EV y reforzar capacidad en horas punta
+ENERGIA,22.206463402317546,-12.163614163614163,37.184377005238474,PRESION_CARGA,Reservar slots EV y reforzar capacidad en horas punta

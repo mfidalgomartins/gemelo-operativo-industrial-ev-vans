@@ -1,0 +1,9 @@
+version_id,familia_modelo,tipo_propulsion,capacidad_bateria_kwh,tiempo_medio_produccion,complejidad_montaje,requiere_carga_salida_flag,nivel_criticidad_logistica
+VAN_ICE_MID_01,MidVan,ICE,0,390,2.4,0,2
+VAN_ICE_MID_02,MidVan,ICE,0,410,2.7,0,3
+VAN_ICE_LARGE_01,LargeVan,ICE,0,445,3.0,0,3
+VAN_EV_MID_01,MidVan,EV,74,460,3.4,1,4
+VAN_EV_MID_02,MidVan,EV,84,485,3.8,1,4
+VAN_EV_LARGE_01,LargeVan,EV,96,515,4.1,1,5
+VAN_EV_CREW_01,CrewVan,EV,90,505,4.0,1,5
+VAN_ICE_CREW_01,CrewVan,ICE,0,430,2.9,0,3

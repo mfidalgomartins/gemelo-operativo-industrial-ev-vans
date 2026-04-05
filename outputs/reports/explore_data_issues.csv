@@ -1,0 +1,4 @@
+issue,severity,affected_rows,rule,recommended_fix
+vehiculos_salen_sin_ready,critical,31643,No debe haber salida real con readiness_salida_flag=0,Introducir bloqueo hard en lógica de expedición o marca explícita de override operativo.
+ocupaciones_patio_incompatibles,high,1,vehículo no puede estar en dos posiciones al mismo timestamp,Deduplicar snapshots por timestamp+vehiculo y conservar estado de mayor prioridad.
+retrasos_sin_causa,medium,1167,Retraso positivo requiere causa de retraso válida,Imponer catálogo de causas y fallback AUTOMATIC_CLASSIFICATION.
