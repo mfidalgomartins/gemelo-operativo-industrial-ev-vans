@@ -1,0 +1,33 @@
+{
+  "dashboard_version": "ev-official-20260405-215018-72d04fbac8",
+  "generated_at": "2026-04-05 21:50:18",
+  "official_dashboard": "outputs/dashboard/dashboard_gemelo_operativo_ev.html",
+  "html_size_bytes": 1808340,
+  "datasets_rows": {
+    "throughput": 820,
+    "ev_share_week": 40,
+    "seq_gap": 1632,
+    "lead_version": 8,
+    "flow_prop_daily": 1632,
+    "yard_daily": 1651,
+    "charge_daily": 2989,
+    "dispatch_base": 1632,
+    "dispatch_cause": 30,
+    "b_detail": 1028,
+    "priorities": 6,
+    "scenarios": 8,
+    "kpi_readiness": 24
+  },
+  "archived_dashboards": [],
+  "checks": {
+    "placeholder_free": true,
+    "single_official_dashboard": true,
+    "chart_js_external": true,
+    "kpi_payload_bound": true,
+    "html_size_under_6mb": true,
+    "canvas_count_expected": true,
+    "severity_filter_wired": true,
+    "executive_snapshot_consistent": true,
+    "density_guard": true
+  }
+}

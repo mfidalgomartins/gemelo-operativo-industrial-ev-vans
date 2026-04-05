@@ -1,0 +1,19 @@
+archivo,descripcion
+ev_01_throughput_plan_vs_real.png,Throughput plan vs real
+ev_02_share_ev_semanal.png,Share EV por semana
+ev_03_tiempo_total_interno_por_version.png,Tiempo total interno por versión
+ev_04_secuencia_plan_vs_real.png,Secuencia planificada vs real
+ev_05_ocupacion_patio_tiempo.png,Ocupación del patio en el tiempo
+ev_06_dwell_time_por_zona.png,Dwell time por zona
+ev_07_blocking_rate_por_zona.png,Blocking rate por zona
+ev_08_movimientos_no_productivos.png,Movimientos no productivos
+ev_09_utilizacion_slots_carga.png,Utilización de slots de carga
+ev_10_cola_media_carga.png,Cola media antes de carga
+ev_11_soc_objetivo_vs_real.png,SOC objetivo vs SOC real
+ev_12_retrasos_expedicion_por_causa.png,Retrasos por causa
+ev_13_cuellos_por_area.png,Cuellos de botella por área
+ev_14_presion_operativa_por_turno.png,Presión operativa por turno
+ev_15_matriz_riesgo_area.png,Matriz riesgo de área
+ev_16_comparacion_ev_vs_noev.png,Comparación EV vs no EV
+ev_17_impacto_escenarios.png,Impacto de escenarios
+ev_18_ranking_acciones.png,Ranking de acciones recomendadas

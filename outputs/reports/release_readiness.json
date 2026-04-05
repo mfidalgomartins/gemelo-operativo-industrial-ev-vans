@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "confidence": "ALTA",
+  "release_grade": "decision-support only",
+  "technically_valid": true,
+  "analytically_acceptable": true,
+  "decision_support_only": true,
+  "screening_grade_only": false,
+  "committee_grade_candidate": false,
+  "publish_blocked": false,
+  "issues_total": 2,
+  "critical_issues": 0,
+  "high_issues": 0,
+  "medium_issues": 2,
+  "sql_warn_ratio": 0.2
+}
