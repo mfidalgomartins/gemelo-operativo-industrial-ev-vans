@@ -5,10 +5,10 @@ from typing import Dict, List
 
 import duckdb
 
-from .config import DATA_PROCESSED_DIR, DATA_RAW_DIR, SQL_DIR, ensure_directories
+from .config import DATA_PROCESSED_DIR, DATA_RAW_DIR, PROJECT_ROOT, ensure_directories
 
 
-LEGACY_SQL_DIR = SQL_DIR / "legacy"
+LEGACY_SQL_DIR = PROJECT_ROOT / "archive" / "legacy" / "sql"
 
 
 RAW_TABLES = [

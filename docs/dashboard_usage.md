@@ -6,5 +6,5 @@
 4. Revisar KPI oficiales (snapshot gobernado) y decisión ejecutiva.
 
 ## Versionado
-- Versión de dashboard: `ev-official-20260405-231937-c47314a0dc`
+- Versión de dashboard: `ev-official-20260406-000901-f46869af16`
 - Timestamp y manifest en `outputs/reports/dashboard_build_manifest.json`.
