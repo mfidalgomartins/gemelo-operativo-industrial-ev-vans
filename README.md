@@ -50,7 +50,7 @@ Ruta: `sql/ev_factory/`
 - `11_validation_queries.sql`
 
 Pipeline legacy aislado:
-- `sql/legacy/` (solo para `src/run_pipeline.py` histórico)
+- `archive/legacy/sql/` (solo para `src/run_pipeline.py` histórico)
 
 Vistas clave:
 - `vw_vehicle_flow_timeline`
@@ -132,12 +132,14 @@ Documento: [`docs/scoring_framework.md`](docs/scoring_framework.md)
 - `data/processed/`
 - `sql/ev_factory/`
 - `src/`
+- `scripts/`
 - `notebooks/`
 - `outputs/charts/`
 - `outputs/dashboard/`
 - `outputs/reports/`
 - `docs/`
 - `tests/`
+- `archive/legacy/`
 
 Convenciones de estructura y contratos:
 - [`docs/repository_structure.md`](docs/repository_structure.md)
