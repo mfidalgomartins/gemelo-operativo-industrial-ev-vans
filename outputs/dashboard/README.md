@@ -6,6 +6,6 @@ Este folder contiene el dashboard ejecutivo oficial del proyecto.
 **Dashboard interactivo (URL pública):**  
 https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/dashboard/industrial-ev-operating-command-center.html
 
-Acceso alternativo: https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/
+Acceso alternativo: https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans/tree/main/outputs/dashboard
 
 > En GitHub, abrir el archivo `.html` muestra código fuente. Para la experiencia interactiva completa, usa el enlace público.
