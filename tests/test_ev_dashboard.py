@@ -32,7 +32,7 @@ def test_ev_dashboard_official_build_manifest_and_single_html() -> None:
     assert qa_report_path.exists()
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["official_dashboard"] == "outputs/dashboard/dashboard_gemelo_operativo_ev.html"
+    assert manifest["official_dashboard"] == "outputs/dashboard/industrial-ev-operating-command-center.html"
     assert manifest["html_size_bytes"] < 6_000_000
     assert all(manifest["checks"].values())
 

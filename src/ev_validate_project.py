@@ -79,7 +79,7 @@ def run_ev_validation() -> ValidationResult:
     scoring_rank_stability = _read_csv(EV_DIR / "scoring_rank_stability.csv")
     kpi = _read_csv(EV_DIR / "kpi_operativos.csv")
 
-    dashboard_path = OUTPUT_DASHBOARD_DIR / "dashboard_gemelo_operativo_ev.html"
+    dashboard_path = OUTPUT_DASHBOARD_DIR / "industrial-ev-operating-command-center.html"
     dashboard_ok = dashboard_path.exists() and dashboard_path.stat().st_size > 100_000
     dashboard_manifest_path = OUTPUT_REPORTS_DIR / "dashboard_build_manifest.json"
     dashboard_manifest = (

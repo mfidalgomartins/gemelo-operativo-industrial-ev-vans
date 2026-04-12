@@ -5,7 +5,7 @@
 - `data/raw/ev_factory/`: fuente raw oficial.
 - `data/processed/ev_factory/`: tablas gobernadas de trabajo.
 - `sql/ev_factory/`: capa SQL oficial.
-- `outputs/dashboard/dashboard_gemelo_operativo_ev.html`: dashboard final único.
+- `outputs/dashboard/industrial-ev-operating-command-center.html`: dashboard final único.
 - `outputs/reports/`: validación, release gate y reportes ejecutivos.
 - `tests/`: contratos de calidad y regresión.
 

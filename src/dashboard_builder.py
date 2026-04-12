@@ -169,7 +169,7 @@ def build_dashboard() -> str:
       <div class="head">
         <div>
           <h1>Gemelo Operativo de Lanzamiento Industrial EV</h1>
-          <p class="sub">Versión legacy mejorada con foco en continuidad histórica. Para la pieza principal de portfolio usar <code>dashboard_gemelo_operativo_ev.html</code>.</p>
+          <p class="sub">Versión legacy mejorada con foco en continuidad histórica. Para la pieza principal de portfolio usar <code>industrial-ev-operating-command-center.html</code>.</p>
         </div>
       </div>
       <div class="banner">
@@ -225,7 +225,7 @@ def build_dashboard() -> str:
 
 O dashboard legacy foi descontinuado para evitar duplicidade de fonte visual e risco de inconsistência.
 
-- Dashboard oficial único: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
+- Dashboard oficial único: `outputs/dashboard/industrial-ev-operating-command-center.html`
 - Build oficial: `python -m src.ev_build_dashboard`
 """,
         encoding="utf-8",

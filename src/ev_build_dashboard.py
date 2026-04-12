@@ -14,7 +14,7 @@ from .config import DATA_PROCESSED_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
 
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
-OFFICIAL_DASHBOARD_NAME = "dashboard_gemelo_operativo_ev.html"
+OFFICIAL_DASHBOARD_NAME = "industrial-ev-operating-command-center.html"
 
 
 @dataclass
@@ -1306,7 +1306,7 @@ def _write_dashboard_docs(official_path: Path, version: str) -> None:
 ## Build Path oficial
 - `python -m src.ev_build_dashboard`
 - `python -m src.run_pipeline`
-- Output oficial único: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
+- Output oficial único: `outputs/dashboard/industrial-ev-operating-command-center.html`
 
 ## Principios técnicos
 - KPI críticos consumidos desde dataset gobernado (`kpi_operativos.csv`).
@@ -1322,7 +1322,7 @@ def _write_dashboard_docs(official_path: Path, version: str) -> None:
         """# Uso del Dashboard Ejecutivo
 
 1. Ejecutar pipeline oficial EV: `python -m src.run_pipeline`
-2. Abrir `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
+2. Abrir `outputs/dashboard/industrial-ev-operating-command-center.html`
 3. Aplicar filtros por fecha, turno, propulsión, versión y áreas
 4. Revisar tabla de priorización y bloque de decisión ejecutiva
 

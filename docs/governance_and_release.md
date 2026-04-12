@@ -4,7 +4,7 @@
 - KPI oficiales: `data/processed/ev_factory/kpi_operativos.csv`
 - Validación integral: `outputs/reports/validation_report.md`
 - Estado de release: `outputs/reports/release_readiness.json`
-- Dashboard oficial: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
+- Dashboard oficial: `outputs/dashboard/industrial-ev-operating-command-center.html`
 
 ## Niveles de uso
 - `technically valid`

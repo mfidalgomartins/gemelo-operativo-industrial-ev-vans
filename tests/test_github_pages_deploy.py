@@ -1,18 +1,21 @@
 from pathlib import Path
 
-OFFICIAL_DASHBOARD = Path("outputs/dashboard/dashboard_gemelo_operativo_ev.html")
+OFFICIAL_DASHBOARD = Path("outputs/dashboard/industrial-ev-operating-command-center.html")
 PAGES_INDEX = Path("docs/index.html")
+PAGES_DASHBOARD = Path("docs/industrial-ev-operating-command-center.html")
 
 
-def test_github_pages_entry_exists_and_is_html() -> None:
+def test_github_pages_entrypoint_redirect_exists() -> None:
     assert PAGES_INDEX.exists(), "docs/index.html no existe"
     html = PAGES_INDEX.read_text(encoding="utf-8")
     assert "<!doctype html>" in html.lower()
-    assert "<canvas id=\"ch_throughput\"" in html
+    assert "industrial-ev-operating-command-center.html" in html
+    assert "http-equiv=\"refresh\"" in html
 
 
 def test_github_pages_dashboard_contracts() -> None:
-    html = PAGES_INDEX.read_text(encoding="utf-8")
+    assert PAGES_DASHBOARD.exists(), "docs/industrial-ev-operating-command-center.html no existe"
+    html = PAGES_DASHBOARD.read_text(encoding="utf-8")
 
     # Contratos críticos de interacción
     for fid in [
@@ -35,7 +38,7 @@ def test_github_pages_dashboard_contracts() -> None:
 def test_github_pages_entry_is_in_sync_with_official_dashboard_size() -> None:
     assert OFFICIAL_DASHBOARD.exists(), "No existe dashboard oficial en outputs/dashboard"
     official_size = OFFICIAL_DASHBOARD.stat().st_size
-    pages_size = PAGES_INDEX.stat().st_size
+    pages_size = PAGES_DASHBOARD.stat().st_size
 
     # Permite pequeñas diferencias futuras, pero evita drift fuerte accidental.
     assert abs(official_size - pages_size) < 200_000

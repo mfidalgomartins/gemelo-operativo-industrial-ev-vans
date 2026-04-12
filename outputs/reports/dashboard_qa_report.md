@@ -1,7 +1,7 @@
 # Dashboard QA Report
 
-- Versión: **ev-official-20260412-140512-ff4aee3659**
-- Dashboard oficial: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
+- Versión: **ev-official-20260412-141855-6b9282cf27**
+- Dashboard oficial: `outputs/dashboard/industrial-ev-operating-command-center.html`
 - Tamaño HTML: **1812618 bytes**
 
 ## Checks

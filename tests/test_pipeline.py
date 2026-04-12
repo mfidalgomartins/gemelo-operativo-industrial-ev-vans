@@ -9,7 +9,7 @@ from src.run_pipeline import run_pipeline
 def test_ev_pipeline_official_path_end_to_end_without_regeneration() -> None:
     result = run_pipeline(generate_data=False)
 
-    assert result.dashboard_path.endswith("outputs/dashboard/dashboard_gemelo_operativo_ev.html")
+    assert result.dashboard_path.endswith("outputs/dashboard/industrial-ev-operating-command-center.html")
     assert result.validation_status in {"PASS", "WARN"}
     assert result.release_grade in {
         "publish-blocked",

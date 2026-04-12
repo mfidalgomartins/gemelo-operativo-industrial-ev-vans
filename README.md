@@ -36,13 +36,13 @@ outputs/reports/
 ```
 
 ## Entregables clave
-- Dashboard final: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
+- Dashboard final: `outputs/dashboard/industrial-ev-operating-command-center.html`
 - Reporte de validación: `outputs/reports/validation_report.md`
 - Estado de release: `outputs/reports/release_readiness.json`
 - Hallazgos y drivers: `outputs/reports/diagnostic_findings.md`
 
 ## Live dashboard
-GitHub Pages: https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/
+Industrial EV Operating Command Center: https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/industrial-ev-operating-command-center.html
 
 ## Por qué esta pieza destaca
 Combina modelado operativo, gobierno de métricas, diagnóstico interpretable y simulación de decisiones en una sola ruta reproducible. Es un proyecto pensado para conversación de operaciones y capacidad, no solo para visualización.
