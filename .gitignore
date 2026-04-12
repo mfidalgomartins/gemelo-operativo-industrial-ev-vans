@@ -1,0 +1,33 @@
+# Ambientes locais
+.venv/
+venv/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Ficheiros de sistema
+.DS_Store
+Thumbs.db
+
+# Logs e temporários
+*.log
+*.tmp
+*.swp
+
+# Cobertura e build local
+.coverage
+htmlcov/
+
+# Segredos locais (se existirem)
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/

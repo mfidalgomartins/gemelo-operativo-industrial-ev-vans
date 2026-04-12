@@ -1,9 +1,0 @@
-[
-  "tests/test_ev_dashboard.py::test_ev_dashboard_html_structure_filters_and_visual_safety_contracts",
-  "tests/test_ev_dashboard.py::test_ev_dashboard_official_build_manifest_and_single_html",
-  "tests/test_ev_governance.py::test_ev_release_governance_contract",
-  "tests/test_ev_release_gate.py::test_ev_release_gate_uses_generated_governance_outputs",
-  "tests/test_pipeline.py::test_end_to_end_small_scale",
-  "tests/test_pipeline.py::test_ev_pipeline_official_path_end_to_end_without_regeneration",
-  "tests/test_synthetic_generator.py::test_synthetic_generator_end_to_end"
-]
