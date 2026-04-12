@@ -8,4 +8,4 @@ https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/industrial
 
 Acceso alternativo: https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/
 
-> En GitHub, abrir el archivo `.html` muestra código fuente. Para la experiencia interactiva completa, usa el enlace live.
+> En GitHub, abrir el archivo `.html` muestra código fuente. Para la experiencia interactiva completa, usa el enlace público.
