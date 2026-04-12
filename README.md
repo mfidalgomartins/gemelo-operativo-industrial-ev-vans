@@ -1,32 +1,28 @@
-# Gemelo Operativo Industrial para Transición a Vans Eléctricas
+# Gemelo Operativo Industrial para la Transición a Vans Eléctricas
 
-Plataforma analítica para gestionar secuenciación, patio, carga y expedición durante un ramp-up EV en una planta de furgonetas.
+Este proyecto construye un sistema de apoyo a decisiones para una planta de furgonetas en transición EV. El foco no está en “mostrar gráficos”, sino en entender dónde se rompe el flujo (secuenciación, patio, carga y expedición), cuantificar el impacto operativo y priorizar acciones con criterio de capacidad.
 
-## Problema de negocio
-Cuando sube el mix EV, el flujo interno se vuelve más frágil: aumentan esperas en patio y carga, crece el riesgo de salida no lista y cae el throughput real frente al plan.
+## Contexto operativo
+En un ramp-up EV, el throughput deja de depender solo de la línea. La presión migra al patio, a los cargadores y a la salida: aumentan esperas internas, crecen bloqueos y sube el riesgo de expedición fuera de readiness. Si no se orquesta el flujo completo, el plan de producción pierde estabilidad.
 
-## Qué hace el sistema
-- Genera un dataset industrial sintético con pre-serie, ramp-up y operación estable.
-- Modela el flujo end-to-end (orden, fin de línea, patio, carga, readiness y salida).
-- Construye capa SQL en DuckDB, features operativas y scoring de priorización.
-- Simula escenarios de transición EV y compara impacto operativo por palanca.
-- Publica dashboard ejecutivo único y reporte formal de validación.
+## Qué hace realmente el sistema
+- Genera datos sintéticos industriales con fases de pre-serie, ramp-up y estabilización.
+- Modela el timeline completo del vehículo: orden, fin de línea, patio, carga, readiness y salida.
+- Consolida una capa SQL en DuckDB con marts y KPIs operativos trazables.
+- Construye features y scores interpretables para diagnóstico, priorización y riesgo.
+- Ejecuta escenarios de transición EV para comparar palancas y trade-offs.
+- Publica un dashboard ejecutivo único y un reporte formal de validación.
 
-## Decisiones que soporta
-- Cuándo cambiar reglas de secuenciación por mix/versiones.
-- Dónde ampliar o reservar capacidad de carga.
-- Qué zonas de patio intervenir primero para reducir dwell/blocking.
-- Qué áreas requieren acción inmediata vs monitorización.
+## Decisiones que habilita
+- Cuándo ajustar reglas de secuenciación por mezcla EV/ICE y complejidad de versión.
+- Dónde ampliar o reservar capacidad de carga antes de que aparezca congestión estructural.
+- Qué zonas de patio intervenir primero para reducir dwell time, blocking y movimientos no productivos.
+- Qué áreas requieren intervención inmediata y cuáles deben pasar a monitorización reforzada.
 
-## Arquitectura del proyecto
-- `generate_synthetic_data.py`: generación de datos base.
-- `src/run_pipeline.py`: ruta oficial end-to-end.
-- `src/ev_sql_layer.py`: staging, integración, marts y KPIs.
-- `src/ev_feature_engineering.py`, `src/ev_diagnostic_analysis.py`: señales y diagnóstico.
-- `src/ev_scenario_twin.py`, `src/ev_scoring_framework.py`: escenarios y priorización.
-- `src/ev_build_dashboard.py`, `src/ev_validate_project.py`: dashboard y release gate.
+## Arquitectura, en una vista
+`generate_synthetic_data.py` crea la base operativa. `src/run_pipeline.py` orquesta la ruta oficial: SQL (`src/ev_sql_layer.py`), feature engineering (`src/ev_feature_engineering.py`), diagnóstico (`src/ev_diagnostic_analysis.py`), gemelo de escenarios (`src/ev_scenario_twin.py`), scoring (`src/ev_scoring_framework.py`), dashboard (`src/ev_build_dashboard.py`) y validación/release gate (`src/ev_validate_project.py`).
 
-## Estructura del repositorio
+## Estructura principal
 ```text
 src/
 data/raw/ev_factory/
@@ -39,16 +35,16 @@ outputs/dashboard/
 outputs/reports/
 ```
 
-## Outputs principales
+## Entregables clave
 - Dashboard final: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
-- Validación: `outputs/reports/validation_report.md`
-- Estado de publicación: `outputs/reports/release_readiness.json`
-- Hallazgos operativos: `outputs/reports/diagnostic_findings.md`
+- Reporte de validación: `outputs/reports/validation_report.md`
+- Estado de release: `outputs/reports/release_readiness.json`
+- Hallazgos y drivers: `outputs/reports/diagnostic_findings.md`
 
-## Por qué este proyecto es fuerte
-No es un dashboard aislado: conecta modelo operativo, gobierno de métricas, simulación de escenarios y priorización accionable en un flujo reproducible.
+## Por qué esta pieza destaca
+Combina modelado operativo, gobierno de métricas, diagnóstico interpretable y simulación de decisiones en una sola ruta reproducible. Es un proyecto pensado para conversación de operaciones y capacidad, no solo para visualización.
 
-## Cómo ejecutar
+## Ejecución local
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -57,10 +53,9 @@ python generate_synthetic_data.py --seed 20260328 --start-date 2025-01-01 --mont
 python -m src.run_pipeline
 ```
 
-## Limitaciones
-- Datos sintéticos; no sustituye calibración con datos reales de planta.
-- Escenarios basados en elasticidades paramétricas interpretables.
-- Umbrales y pesos de scoring requieren ajuste de negocio para producción.
+## Alcance y límites
+- El dato es sintético; la implantación real exige calibración con telemetría de planta.
+- Los escenarios son paramétricos e interpretables; no sustituyen inferencia causal.
+- Los umbrales/pesos de scoring deben ajustarse con criterio operativo local.
 
-## Herramientas
-Python, SQL, DuckDB, pandas, NumPy, Matplotlib, Seaborn, Chart.js, pytest.
+Herramientas: Python, SQL, DuckDB, pandas, NumPy, Matplotlib, Seaborn, Chart.js, pytest.
