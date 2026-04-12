@@ -20,9 +20,11 @@ venv/
 # Jupyter
 .ipynb_checkpoints/
 
-# Local runtime logs/tmp
+# Runtime
 *.log
 tmp/
-
-# Build artifacts
 *.tmp
+
+# Local archives / accidental copies
+*cópia.py
+*cópia.py

@@ -1,31 +1,18 @@
-# Repository Structure (Current Contract)
+# Estructura Oficial del Repositorio
 
-## Principios
-- Separación explícita entre pipeline EV y legacy.
-- Una única salida oficial de dashboard en raíz de `outputs/dashboard/`.
-- Artefactos legacy aislados en `archive/legacy/`.
+## Ruta oficial (EV)
+- `src/`: código ejecutable oficial.
+- `data/raw/ev_factory/`: fuente raw oficial.
+- `data/processed/ev_factory/`: tablas gobernadas de trabajo.
+- `sql/ev_factory/`: capa SQL oficial.
+- `outputs/dashboard/dashboard_gemelo_operativo_ev.html`: dashboard final único.
+- `outputs/reports/`: validación, release gate y reportes ejecutivos.
+- `tests/`: contratos de calidad y regresión.
 
-## Estructura operativa
-- `data/raw/ev_factory/`: fuente raw oficial para pipeline EV.
-- `data/raw/`: espacio legacy/histórico (no usar como fuente EV principal).
-- `data/processed/ev_factory/`: tablas EV gobernadas.
-- `sql/ev_factory/`: capa SQL oficial EV.
-- `scripts/`: entrypoints CLI del proyecto.
-- `archive/legacy/sql/`: capa SQL legacy (pipeline histórico).
-- `archive/legacy/docs/`: documentación legacy/histórica aislada.
-- `src/`: código fuente.
-- `outputs/dashboard/dashboard_gemelo_operativo_ev.html`: dashboard oficial.
-- `outputs/dashboard/legacy/`: dashboards legacy archivados.
-- `outputs/reports/`: reportes de validación, governance y ejecución.
+## Convenciones
+- No se publica más de un dashboard oficial en `outputs/dashboard/`.
+- Métricas de decisión se consumen desde datasets gobernados, no desde cálculos frontend.
+- El pipeline oficial se ejecuta con `python -m src.run_pipeline`.
 
-## Contratos de navegación
-- Dashboard oficial: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
-- Build dashboard oficial: `python -m src.ev_build_dashboard`
-- Validación oficial: `python -m src.ev_validate_project`
-- Release gate machine-readable: `outputs/reports/release_readiness.json`
-- Release gate ejecutable: `python -m src.ev_release_gate`
-
-## Anti-patterns bloqueados
-- mezclar datasets EV con legacy en la misma ruta raw sin partición.
-- publicar múltiples dashboards “oficiales” en la raíz de `outputs/dashboard/`.
-- usar métricas de decisión calculadas en frontend.
+## Legacy
+Material histórico queda en `archive/legacy/` y no forma parte de la ruta de ejecución oficial.

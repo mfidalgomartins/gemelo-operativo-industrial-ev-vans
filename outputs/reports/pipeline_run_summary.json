@@ -1,0 +1,10 @@
+{
+  "generation_enabled": false,
+  "dashboard_path": "/Users/miguelfidalgo/Documents/gemelo-operativo-transicion-vans-electricas/outputs/dashboard/dashboard_gemelo_operativo_ev.html",
+  "release_grade": "decision-support only",
+  "release_approved": true,
+  "release_reason": "Release apto para publicación de portfolio",
+  "explore_report": "outputs/reports/explore_data_audit.md",
+  "validation_status": "PASS",
+  "curated_removed_files": 8
+}

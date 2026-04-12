@@ -1,50 +1,33 @@
+from __future__ import annotations
+
+import json
 from pathlib import Path
 
-import pandas as pd
-
-from src.analysis import run_analysis
-from src.create_notebooks import create_notebooks
-from src.dashboard_builder import build_dashboard
-from src.data_generation import GenerationConfig, generate_raw_data
-from src.data_quality import run_data_quality_audit
-from src.reports import build_reports
-from src.scenario_engine import run_scenario_engine
-from src.sql_modeling import run_sql_modeling
+from src.run_pipeline import run_pipeline
 
 
-ROOT = Path(__file__).resolve().parents[1]
+def test_ev_pipeline_official_path_end_to_end_without_regeneration() -> None:
+    result = run_pipeline(generate_data=False)
 
+    assert result.dashboard_path.endswith("outputs/dashboard/dashboard_gemelo_operativo_ev.html")
+    assert result.validation_status in {"PASS", "WARN"}
+    assert result.release_grade in {
+        "publish-blocked",
+        "screening-grade only",
+        "decision-support only",
+        "not committee-grade",
+        "committee-grade candidate",
+    }
 
-def test_end_to_end_small_scale() -> None:
-    cfg = GenerationConfig(seed=7, days=14, avg_orders_per_day=18, start_date="2025-01-01")
-    tables = generate_raw_data(cfg)
+    manifest = Path("outputs/reports/dashboard_build_manifest.json")
+    release = Path("outputs/reports/release_readiness.json")
+    validation = Path("outputs/reports/validation_report.md")
+    pipeline_summary = Path("outputs/reports/pipeline_run_summary.json")
 
-    assert len(tables["ordenes_produccion"]) > 150
-    ev_share = (tables["ordenes_produccion"]["tipo_propulsion"] == "EV").mean()
-    assert 0.20 <= ev_share <= 0.70
+    assert manifest.exists()
+    assert release.exists()
+    assert validation.exists()
+    assert pipeline_summary.exists()
 
-    audit = run_data_quality_audit()
-    assert audit.status in {"PASS", "WARN"}
-
-    counts = run_sql_modeling()
-    assert counts["scores_operativos"] > 0
-
-    kpis = run_analysis()
-    assert 0 <= kpis["cumplimiento_sla_expedicion_pct"] <= 100
-
-    escenarios = run_scenario_engine()
-    assert len(escenarios) == 5
-
-    dashboard_path = build_dashboard()
-    assert Path(dashboard_path).exists()
-
-    build_reports()
-    create_notebooks()
-
-    scores = pd.read_csv(ROOT / "data" / "processed" / "scores_operativos.csv")
-    assert scores["score_readiness_operativa"].between(0, 100).all()
-    assert scores["score_riesgo_cuello_botella"].between(0, 100).all()
-    assert scores["score_prioridad_despacho"].between(0, 100).all()
-
-    assert (ROOT / "outputs" / "reports" / "validation_report.md").exists()
-    assert (ROOT / "notebooks" / "01_notebook_principal.ipynb").exists()
+    payload = json.loads(pipeline_summary.read_text(encoding="utf-8"))
+    assert payload["dashboard_path"] == result.dashboard_path

@@ -1,3 +1,0 @@
-check,severity,failed_rows,detail,fix_applied
-salida_sin_readiness,medium,2208,Salidas reales sin readiness (rate=6.48%),Bloqueo en lógica de expedición o excepción trazable por causa
-ocupacion_patio_vs_capacidad,medium,99,Ocupaciones por encima de capacidad estimada,Ajustar buffers y zonas dinámicas

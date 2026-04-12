@@ -388,6 +388,26 @@ h1 {{ margin:0; font-size:28px; line-height:1.2; }}
   font-weight:700;
   cursor:pointer;
 }}
+.print-btn {{
+  border:1px solid var(--line);
+  background:var(--control);
+  color:var(--ink);
+  border-radius:10px;
+  padding:7px 11px;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+}}
+.hero-message {{
+  margin-top:10px;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-left:4px solid var(--accent);
+  border-radius:10px;
+  background:var(--control);
+  font-size:13px;
+  line-height:1.45;
+}}
 .meta {{ margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; }}
 .pill {{ border:1px solid var(--line); border-radius:10px; padding:8px; font-size:12px; background:var(--control-soft); }}
 .pill strong {{ display:block; color:var(--ink); margin-bottom:3px; }}
@@ -397,6 +417,9 @@ h1 {{ margin:0; font-size:28px; line-height:1.2; }}
 .filters button {{ background:var(--control-soft); font-weight:700; cursor:pointer; }}
 .kpis {{ margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:8px; }}
 .kpi {{ border:1px solid var(--line); border-radius:10px; padding:8px; background:var(--control-soft); min-height:78px; }}
+.kpi.kpi-critical {{ border-color:rgba(180,55,74,.35); background:linear-gradient(180deg,var(--control-soft),rgba(180,55,74,.08)); }}
+.kpi.kpi-warning {{ border-color:rgba(196,122,29,.35); background:linear-gradient(180deg,var(--control-soft),rgba(196,122,29,.08)); }}
+.kpi.kpi-good {{ border-color:rgba(47,125,77,.35); background:linear-gradient(180deg,var(--control-soft),rgba(47,125,77,.08)); }}
 .kpi .k {{ font-size:11px; color:var(--muted); line-height:1.3; }}
 .kpi .v {{ margin-top:4px; font-size:20px; font-weight:700; line-height:1.2; }}
 .kpi .s {{ margin-top:2px; font-size:11px; color:var(--muted); }}
@@ -406,13 +429,26 @@ h1 {{ margin:0; font-size:28px; line-height:1.2; }}
 .box ul {{ margin:0; padding-left:16px; font-size:12px; color:var(--ink); line-height:1.4; }}
 .box li {{ margin-bottom:5px; }}
 .section {{ margin-top:12px; padding:12px; }}
+.section[data-section='core'] {{ border-top:4px solid var(--accent); }}
+.section[data-section='yard'] {{ border-top:4px solid var(--series-yard); }}
+.section[data-section='risk'] {{ border-top:4px solid var(--series-gap); }}
 .section-head {{ display:flex; justify-content:space-between; gap:8px; align-items:flex-start; flex-wrap:wrap; }}
 .section h2 {{ margin:0; font-size:20px; line-height:1.2; }}
 .desc {{ margin:4px 0 0 0; color:var(--muted); font-size:12px; line-height:1.4; max-width:920px; }}
+.section-tag {{
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:11px;
+  color:var(--muted);
+  background:var(--control-soft);
+  font-weight:700;
+}}
 .grid-2 {{ margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:10px; align-items:stretch; }}
 .grid-3 {{ margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:10px; align-items:stretch; }}
+.grid-2 > *,.grid-3 > * {{ min-width:0; }}
 .chart-card {{ border:1px solid var(--line); border-radius:10px; padding:8px; background:var(--control); min-height:340px; display:flex; flex-direction:column; overflow:hidden; }}
-.chart-title {{ font-size:12px; color:var(--ink); margin-bottom:6px; font-weight:600; line-height:1.4; }}
+.chart-title {{ font-size:12px; color:var(--ink); margin-bottom:6px; font-weight:600; line-height:1.4; min-height:34px; }}
 .canvas-wrap {{ flex:1; min-height:260px; height:300px; overflow:hidden; }}
 canvas {{ width:100% !important; height:100% !important; }}
 .table-wrap {{ margin-top:10px; border:1px solid var(--line); border-radius:10px; overflow:auto; max-height:420px; }}
@@ -422,10 +458,21 @@ canvas {{ width:100% !important; height:100% !important; }}
 table {{ width:100%; border-collapse:collapse; font-size:12px; min-width:920px; }}
 th,td {{ padding:8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; line-height:1.35; word-break:break-word; }}
 th {{ position:sticky; top:0; background:var(--table-head); z-index:2; }}
+.tier-badge {{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  border:1px solid var(--line);
+  background:var(--control-soft);
+}}
+.tier-badge.t0 {{ border-color:rgba(180,55,74,.4); color:var(--danger); }}
+.tier-badge.t1 {{ border-color:rgba(196,122,29,.45); color:var(--warn); }}
+.tier-badge.t2 {{ border-color:rgba(47,125,77,.45); color:var(--ok); }}
 .decision {{ margin-top:12px; padding:12px; border-left:5px solid var(--accent); }}
 .decision h3 {{ margin:0 0 6px 0; font-size:15px; }}
 .decision p {{ margin:0; font-size:13px; line-height:1.45; }}
-.tech-meta {{ display:none; }}
 @media (max-width:1300px) {{
   .canvas-wrap {{ height:280px; min-height:240px; }}
 }}
@@ -438,9 +485,17 @@ th {{ position:sticky; top:0; background:var(--table-head); z-index:2; }}
   table {{ min-width:760px; }}
 }}
 @media print {{
-  .filters,.table-tools {{ display:none !important; }}
-  body {{ background:white; }}
-  .section,header,.decision {{ box-shadow:none; }}
+  @page {{ size: A4 landscape; margin: 10mm; }}
+  .filters,.table-tools,.actions {{ display:none !important; }}
+  body {{ background:white; color:#10243a; }}
+  .wrapper {{ max-width:none; padding:0; }}
+  .section,header,.decision {{ box-shadow:none; break-inside: avoid-page; }}
+  .section {{ page-break-inside: avoid; margin-top:8px; }}
+  .grid-3 {{ grid-template-columns:1fr 1fr 1fr; }}
+  .chart-card {{ min-height:260px; }}
+  .canvas-wrap {{ min-height:220px; height:220px; }}
+  .table-wrap {{ max-height:none; overflow:visible; }}
+  table {{ min-width:0; font-size:10px; }}
 }}
 </style>
 </head>
@@ -455,14 +510,16 @@ th {{ position:sticky; top:0; background:var(--table-head); z-index:2; }}
     </div>
     <div class=\"actions\">
       <button id=\"theme_toggle\" class=\"theme-toggle\" type=\"button\" aria-label=\"Cambiar tema\">Modo oscuro</button>
+      <button id=\"btn_print\" class=\"print-btn\" type=\"button\" aria-label=\"Imprimir dashboard\">Imprimir</button>
     </div>
   </div>
+  <div class=\"hero-message\" id=\"hero_message\"></div>
   <div class=\"meta\">
     <div class=\"pill\"><strong>Top Área</strong><span id=\"meta_top_area\"></span></div>
     <div class=\"pill\"><strong>Top Acción</strong><span id=\"meta_top_action\"></span></div>
   </div>
 
-  <div class=\"filters\">
+  <div class=\"filters no-print\">
     <div><label>Fecha desde</label><input id=\"f_date_from\" type=\"date\" /></div>
     <div><label>Fecha hasta</label><input id=\"f_date_to\" type=\"date\" /></div>
     <div><label>Turno</label><select id=\"f_turno\"></select></div>
@@ -472,6 +529,7 @@ th {{ position:sticky; top:0; background:var(--table-head); z-index:2; }}
     <div><label>Zona Patio</label><select id=\"f_yard\"></select></div>
     <div><label>Zona Carga</label><select id=\"f_charge\"></select></div>
     <div><label>Severidad Cuello</label><select id=\"f_severity\"></select></div>
+    <div><label>&nbsp;</label><button id=\"btn_apply\" type=\"button\">Aplicar filtros</button></div>
     <div><label>&nbsp;</label><button id=\"btn_reset\" type=\"button\">Reset filtros</button></div>
   </div>
 
@@ -489,12 +547,13 @@ th {{ position:sticky; top:0; background:var(--table-head); z-index:2; }}
   </div>
 </header>
 
-<section class=\"section\">
+<section class=\"section\" data-section=\"core\">
   <div class=\"section-head\">
     <div>
       <h2>Flujo Global y Secuenciación</h2>
       <p class=\"desc\">Comparación plan-real y evolución del mix EV con densidad controlada para lectura ejecutiva.</p>
     </div>
+    <span class=\"section-tag\">Prioridad de flujo</span>
   </div>
   <div class=\"grid-2\">
     <div class=\"chart-card\"><div class=\"chart-title\">Throughput planificado vs real</div><div class=\"canvas-wrap\"><canvas id=\"ch_throughput\"></canvas></div></div>
@@ -506,8 +565,8 @@ th {{ position:sticky; top:0; background:var(--table-head); z-index:2; }}
   </div>
 </section>
 
-<section class=\"section\">
-  <div class=\"section-head\"><div><h2>Patio y Carga</h2><p class=\"desc\">Lectura de ocupación, dwell, utilización y colas sin sobrecargar ejes ni etiquetas.</p></div></div>
+<section class=\"section\" data-section=\"yard\">
+  <div class=\"section-head\"><div><h2>Patio y Carga</h2><p class=\"desc\">Lectura de ocupación, dwell, utilización y colas sin sobrecargar ejes ni etiquetas.</p></div><span class=\"section-tag\">Capacidad crítica</span></div>
   <div class=\"grid-2\">
     <div class=\"chart-card\"><div class=\"chart-title\">Ocupación de patio y dwell p95</div><div class=\"canvas-wrap\"><canvas id=\"ch_yard_occ\"></canvas></div></div>
     <div class=\"chart-card\"><div class=\"chart-title\">Dwell por zona de patio</div><div class=\"canvas-wrap\"><canvas id=\"ch_yard_zone\"></canvas></div></div>
@@ -522,8 +581,8 @@ th {{ position:sticky; top:0; background:var(--table-head); z-index:2; }}
   </div>
 </section>
 
-<section class=\"section\">
-  <div class=\"section-head\"><div><h2>Expedición, Cuellos y Priorización</h2><p class=\"desc\">Señales de riesgo de salida y ranking de acciones para intervención.</p></div></div>
+<section class=\"section\" data-section=\"risk\">
+  <div class=\"section-head\"><div><h2>Expedición, Cuellos y Priorización</h2><p class=\"desc\">Señales de riesgo de salida y ranking de acciones para intervención.</p></div><span class=\"section-tag\">Decisión ejecutiva</span></div>
   <div class=\"grid-2\">
     <div class=\"chart-card\"><div class=\"chart-title\">Retraso medio por causa</div><div class=\"canvas-wrap\"><canvas id=\"ch_delay_cause\"></canvas></div></div>
     <div class=\"chart-card\"><div class=\"chart-title\">Delay rate y readiness por turno</div><div class=\"canvas-wrap\"><canvas id=\"ch_shift_readiness\"></canvas></div></div>
@@ -544,7 +603,7 @@ th {{ position:sticky; top:0; background:var(--table-head); z-index:2; }}
     </div>
   </div>
 
-  <div class=\"table-tools\">
+  <div class=\"table-tools no-print\">
     <div style=\"display:flex;gap:8px;align-items:center;flex-wrap:wrap;\">
       <input id=\"table_search\" type=\"text\" placeholder=\"Buscar área, driver, acción...\" />
       <button id=\"btn_export\" type=\"button\">Export CSV filtrado</button>
@@ -572,7 +631,6 @@ th {{ position:sticky; top:0; background:var(--table-head); z-index:2; }}
   <h3>Decisión Ejecutiva Recomendada</h3>
   <p id=\"decision_text\"></p>
 </div>
-<div class=\"tech-meta\" aria-hidden=\"true\">Build path: python -m src.ev_build_dashboard · Dashboard version: {version}</div>
 </div>
 
 <script>
@@ -587,7 +645,11 @@ const THEME_KEY = 'ev_dashboard_theme';
 
 function n(v) {{ const x = Number(v); return Number.isFinite(x) ? x : 0; }}
 function pct(v) {{ return (n(v)*100).toFixed(1) + '%'; }}
-function dstr(v) {{ return new Date(v).toISOString().slice(0,10); }}
+function dstr(v) {{
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0,10);
+}}
 function cssVar(name) {{ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }}
 
 function themeColors() {{
@@ -641,6 +703,11 @@ function setMeta() {{
     'Evitar acumulación en patio en turnos de alta presión logística.'
   ];
   document.getElementById('operational_list').innerHTML = opList.map(x => '<li>' + x + '</li>').join('');
+
+  document.getElementById('hero_message').textContent =
+    'Foco inmediato: ' + (META.executive_snapshot.top_area || 'N/A')
+    + ' · Acción líder: ' + (META.executive_snapshot.top_action || 'N/A')
+    + ' · Escenario recomendado: ' + (META.executive_snapshot.top_scenario || 'N/A') + '.';
 }}
 
 function fillSelect(id, values, label) {{
@@ -690,9 +757,18 @@ function setupFilters() {{
 }}
 
 function getFilterState() {{
+  let from = document.getElementById('f_date_from').value;
+  let to = document.getElementById('f_date_to').value;
+  if (from && to && from > to) {{
+    const tmp = from;
+    from = to;
+    to = tmp;
+    document.getElementById('f_date_from').value = from;
+    document.getElementById('f_date_to').value = to;
+  }}
   return {{
-    from: document.getElementById('f_date_from').value,
-    to: document.getElementById('f_date_to').value,
+    from: from,
+    to: to,
     turno: document.getElementById('f_turno').value,
     prop: document.getElementById('f_prop').value,
     version: document.getElementById('f_version').value,
@@ -780,34 +856,35 @@ function truncLabels(arr, n=20) {{
 function renderOfficialKpis() {{
   const k = META.kpi_official || {{}};
   const cards = [
-    ['Throughput real', Math.round(n(k.throughput_real || 0)), 'Ejecución actual'],
-    ['Gap vs plan', Math.round(n(k.throughput_gap || 0)), 'Desviación neta'],
-    ['Share EV', pct(k.share_ev || 0), 'Mix de fabricación'],
-    ['Ocupación pico patio', pct(k.ocupacion_pico_patio || 0), 'Riesgo de saturación'],
-    ['Utilización carga', pct(k.utilizacion_media_cargadores || 0), 'Capacidad usada'],
-    ['Delay rate salida', pct(k.ratio_salida_retrasada || 0), 'Impacto expedición'],
-    ['Vehículos no ready', Math.round(n(k.vehiculos_no_ready || 0)), 'Backlog de salida'],
-    ['Tiempo medio patio', n(k.tiempo_medio_patio_min || 0).toFixed(1) + ' min', 'Espera interna'],
-    ['Dwell p95', n(k.dwell_p95_min || 0).toFixed(1) + ' min', 'Cola extrema'],
-    ['Áreas críticas', Math.round(n(k.areas_criticas || 0)), 'Foco operativo'],
-    ['Readiness global', n(k.score_readiness_global || 0).toFixed(1), 'Preparación salida'],
-    ['Causa cuello', (k.causa_principal_cuello || 'N/A'), 'Driver principal'],
+    ['Throughput real', Math.round(n(k.throughput_real || 0)), 'Ejecución actual', 'kpi-good'],
+    ['Gap vs plan', Math.round(n(k.throughput_gap || 0)), 'Desviación neta', n(k.throughput_gap || 0) < 0 ? 'kpi-critical' : 'kpi-warning'],
+    ['Share EV', pct(k.share_ev || 0), 'Mix de fabricación', 'kpi-warning'],
+    ['Ocupación pico patio', pct(k.ocupacion_pico_patio || 0), 'Riesgo de saturación', n(k.ocupacion_pico_patio || 0) > 0.85 ? 'kpi-critical' : 'kpi-warning'],
+    ['Utilización carga', pct(k.utilizacion_media_cargadores || 0), 'Capacidad usada', n(k.utilizacion_media_cargadores || 0) > 0.82 ? 'kpi-critical' : 'kpi-warning'],
+    ['Delay rate salida', pct(k.ratio_salida_retrasada || 0), 'Impacto expedición', n(k.ratio_salida_retrasada || 0) > 0.12 ? 'kpi-critical' : 'kpi-warning'],
+    ['Vehículos no ready', Math.round(n(k.vehiculos_no_ready || 0)), 'Backlog de salida', n(k.vehiculos_no_ready || 0) > 0 ? 'kpi-critical' : 'kpi-good'],
+    ['Tiempo medio patio', n(k.tiempo_medio_patio_min || 0).toFixed(1) + ' min', 'Espera interna', 'kpi-warning'],
+    ['Dwell p95', n(k.dwell_p95_min || 0).toFixed(1) + ' min', 'Cola extrema', 'kpi-warning'],
+    ['Áreas críticas', Math.round(n(k.areas_criticas || 0)), 'Foco operativo', n(k.areas_criticas || 0) > 0 ? 'kpi-critical' : 'kpi-good'],
+    ['Readiness global', n(k.score_readiness_global || 0).toFixed(1), 'Preparación salida', n(k.score_readiness_global || 0) >= 70 ? 'kpi-good' : 'kpi-warning'],
+    ['Causa cuello', (k.causa_principal_cuello || 'N/A'), 'Driver principal', 'kpi-warning'],
   ];
   document.getElementById('kpi_cards').innerHTML = cards.map(c =>
-    '<div class="kpi"><div class="k">' + c[0] + '</div><div class="v">' + c[1] + '</div><div class="s">' + c[2] + '</div></div>'
+    '<div class="kpi ' + c[3] + '"><div class="k">' + c[0] + '</div><div class="v">' + c[1] + '</div><div class="s">' + c[2] + '</div></div>'
   ).join('');
 }}
 
 function applyTheme(theme) {{
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem(THEME_KEY, theme);
+  try {{ localStorage.setItem(THEME_KEY, theme); }} catch (e) {{}}
   const btn = document.getElementById('theme_toggle');
   if (btn) btn.textContent = theme === 'dark' ? 'Modo claro' : 'Modo oscuro';
   applyChartTheme();
 }}
 
 function initTheme() {{
-  const stored = localStorage.getItem(THEME_KEY);
+  let stored = null;
+  try {{ stored = localStorage.getItem(THEME_KEY); }} catch (e) {{ stored = null; }}
   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const theme = stored || (prefersDark ? 'dark' : 'light');
   applyTheme(theme);
@@ -1114,11 +1191,17 @@ function renderPriorityTable(rows) {{
   tableRows = data;
 
   const body = document.querySelector('#priority_table tbody');
+  const tierClass = (tier) => {{
+    const t = String(tier || '').toLowerCase();
+    if (t.includes('intervenir')) return 't0';
+    if (t.includes('estabilizar') || t.includes('monitorizar')) return 't1';
+    return 't2';
+  }};
   body.innerHTML = data.map(r =>
     '<tr>' +
     '<td>' + (r.area || 'N/A') + '</td>' +
     '<td>' + n(r.operational_priority_index).toFixed(1) + '</td>' +
-    '<td>' + (r.area_priority_tier || 'N/A') + '</td>' +
+    '<td><span class="tier-badge ' + tierClass(r.area_priority_tier) + '">' + (r.area_priority_tier || 'N/A') + '</span></td>' +
     '<td>' + (r.main_risk_driver || 'N/A') + '</td>' +
     '<td>' + (r.recommended_action || 'N/A') + '</td>' +
     '<td>' + (r.main_bottleneck_driver || 'N/A') + '</td>' +
@@ -1156,16 +1239,23 @@ function exportCsv() {{
 }}
 
 function bind() {{
-  ['f_date_from','f_date_to','f_turno','f_prop','f_version','f_area','f_yard','f_charge','f_severity'].forEach(id => {{
-    document.getElementById(id).addEventListener('change', updateCharts);
+  const filterIds = ['f_date_from','f_date_to','f_turno','f_prop','f_version','f_area','f_yard','f_charge','f_severity'];
+  filterIds.forEach(id => {{
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', updateCharts);
+    el.addEventListener('input', updateCharts);
   }});
+  document.getElementById('btn_apply').addEventListener('click', updateCharts);
   document.getElementById('btn_reset').addEventListener('click', () => {{
     setupFilters();
+    document.getElementById('table_search').value = '';
     updateCharts();
   }});
   document.getElementById('table_search').addEventListener('input', () => renderPriorityTable(filterRows(DATA.priorities, {{ area:'area' }})));
   document.getElementById('btn_export').addEventListener('click', exportCsv);
   document.getElementById('scenario_select').addEventListener('change', (e) => {{ state.scenario = e.target.value; updateCharts(); }});
+  document.getElementById('btn_print').addEventListener('click', () => window.print());
 }}
 
 function initCharts() {{
@@ -1215,8 +1305,8 @@ def _write_dashboard_docs(official_path: Path, version: str) -> None:
 
 ## Build Path oficial
 - `python -m src.ev_build_dashboard`
+- `python -m src.run_pipeline`
 - Output oficial único: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
-- Dashboards no oficiales se archivan en `outputs/dashboard/legacy/`.
 
 ## Principios técnicos
 - KPI críticos consumidos desde dataset gobernado (`kpi_operativos.csv`).
@@ -1229,16 +1319,16 @@ def _write_dashboard_docs(official_path: Path, version: str) -> None:
     )
 
     (PROJECT_ROOT / "docs" / "dashboard_usage.md").write_text(
-        f"""# Uso del Dashboard EV (Official)
+        """# Uso del Dashboard Ejecutivo
 
-1. Ejecutar build oficial: `python -m src.ev_build_dashboard`
+1. Ejecutar pipeline oficial EV: `python -m src.run_pipeline`
 2. Abrir `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
-3. Aplicar filtros por fecha/turno/propulsión/área/zonas.
-4. Revisar KPI oficiales (snapshot gobernado) y decisión ejecutiva.
+3. Aplicar filtros por fecha, turno, propulsión, versión y áreas
+4. Revisar tabla de priorización y bloque de decisión ejecutiva
 
-## Versionado
-- Versión de dashboard: `{version}`
-- Timestamp y manifest en `outputs/reports/dashboard_build_manifest.json`.
+## Trazabilidad
+- Manifest técnico: `outputs/reports/dashboard_build_manifest.json`
+- Estado de release: `outputs/reports/release_readiness.json`
 """,
         encoding="utf-8",
     )
