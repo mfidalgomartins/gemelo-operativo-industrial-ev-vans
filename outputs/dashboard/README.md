@@ -1,13 +1,10 @@
-# Dashboard Ejecutivo · Acceso Rápido
+# Industrial EV Operating Command Center
 
-Este folder contiene el dashboard oficial del proyecto en versión artefacto de release.
+Este folder contiene el dashboard ejecutivo oficial del proyecto.
 
-## Abrir dashboard en navegador (recomendado)
-- Live (GitHub Pages): https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/industrial-ev-operating-command-center.html
-- URL raíz (redirige al dashboard): https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/
+## Abrir ahora (recomendado)
+**[Live dashboard interactivo](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/industrial-ev-operating-command-center.html)**
 
-## Archivo oficial versionado
-- `industrial-ev-operating-command-center.html`
+Acceso secundario: [URL raíz de GitHub Pages](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/)
 
-## Nota de uso
-En GitHub, clicar directamente no HTML abre vista de código. Para experiencia interactiva completa, usar el enlace de GitHub Pages.
+> En GitHub, abrir el archivo `.html` muestra código fuente. Para la experiencia interactiva completa, usa el enlace live.

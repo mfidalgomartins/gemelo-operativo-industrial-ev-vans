@@ -42,7 +42,7 @@ outputs/reports/
 - Hallazgos y drivers: `outputs/reports/diagnostic_findings.md`
 
 ## Live dashboard
-Industrial EV Operating Command Center: https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/industrial-ev-operating-command-center.html
+[Industrial EV Operating Command Center · Live](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/industrial-ev-operating-command-center.html)
 
 ## Por qué esta pieza destaca
 Combina modelado operativo, gobierno de métricas, diagnóstico interpretable y simulación de decisiones en una sola ruta reproducible. Es un proyecto pensado para conversación de operaciones y capacidad, no solo para visualización.
