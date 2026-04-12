@@ -1,7 +1,7 @@
 {
-  "dashboard_version": "ev-official-20260412-140512-ff4aee3659",
-  "generated_at": "2026-04-12 14:05:12",
-  "official_dashboard": "outputs/dashboard/dashboard_gemelo_operativo_ev.html",
+  "dashboard_version": "ev-official-20260412-141855-6b9282cf27",
+  "generated_at": "2026-04-12 14:18:55",
+  "official_dashboard": "outputs/dashboard/industrial-ev-operating-command-center.html",
   "html_size_bytes": 1812618,
   "datasets_rows": {
     "throughput": 820,
@@ -18,9 +18,7 @@
     "scenarios": 8,
     "kpi_readiness": 24
   },
-  "archived_dashboards": [
-    "outputs/dashboard/legacy/legacy_dashboard_tmp.html"
-  ],
+  "archived_dashboards": [],
   "checks": {
     "placeholder_free": true,
     "single_official_dashboard": true,

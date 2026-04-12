@@ -3,7 +3,7 @@
 ## Build Path oficial
 - `python -m src.ev_build_dashboard`
 - `python -m src.run_pipeline`
-- Output oficial único: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
+- Output oficial único: `outputs/dashboard/industrial-ev-operating-command-center.html`
 
 ## Principios técnicos
 - KPI críticos consumidos desde dataset gobernado (`kpi_operativos.csv`).
