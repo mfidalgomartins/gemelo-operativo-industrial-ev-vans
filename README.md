@@ -41,6 +41,9 @@ outputs/reports/
 - Estado de release: `outputs/reports/release_readiness.json`
 - Hallazgos y drivers: `outputs/reports/diagnostic_findings.md`
 
+## Live dashboard
+GitHub Pages: https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/
+
 ## Por qué esta pieza destaca
 Combina modelado operativo, gobierno de métricas, diagnóstico interpretable y simulación de decisiones en una sola ruta reproducible. Es un proyecto pensado para conversación de operaciones y capacidad, no solo para visualización.
 

@@ -1,6 +1,6 @@
 {
-  "dashboard_version": "ev-official-20260411-231058-96a84fb976",
-  "generated_at": "2026-04-11 23:10:58",
+  "dashboard_version": "ev-official-20260412-140512-ff4aee3659",
+  "generated_at": "2026-04-12 14:05:12",
   "official_dashboard": "outputs/dashboard/dashboard_gemelo_operativo_ev.html",
   "html_size_bytes": 1812618,
   "datasets_rows": {
@@ -18,7 +18,9 @@
     "scenarios": 8,
     "kpi_readiness": 24
   },
-  "archived_dashboards": [],
+  "archived_dashboards": [
+    "outputs/dashboard/legacy/legacy_dashboard_tmp.html"
+  ],
   "checks": {
     "placeholder_free": true,
     "single_official_dashboard": true,

@@ -1,6 +1,6 @@
 # Dashboard QA Report
 
-- Versión: **ev-official-20260411-231058-96a84fb976**
+- Versión: **ev-official-20260412-140512-ff4aee3659**
 - Dashboard oficial: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
 - Tamaño HTML: **1812618 bytes**
 
