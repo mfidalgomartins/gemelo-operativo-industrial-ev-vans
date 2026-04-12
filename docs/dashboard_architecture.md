@@ -2,8 +2,8 @@
 
 ## Build Path oficial
 - `python -m src.ev_build_dashboard`
+- `python -m src.run_pipeline`
 - Output oficial único: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
-- Dashboards no oficiales se archivan en `outputs/dashboard/legacy/`.
 
 ## Principios técnicos
 - KPI críticos consumidos desde dataset gobernado (`kpi_operativos.csv`).

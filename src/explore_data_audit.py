@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 
-RAW_DIR = Path("data/raw")
+RAW_DIR = Path("data/raw/ev_factory")
 REPORT_DIR = Path("outputs/reports")
 
 
@@ -382,14 +382,9 @@ def run_explore_data_audit() -> Dict[str, object]:
     summary_df, columns_df = _profile_tables(tables)
     issues_df = _detect_issues(tables)
 
-    summary_path = REPORT_DIR / "explore_data_table_summary.csv"
-    columns_path = REPORT_DIR / "explore_data_column_classification.csv"
     issues_path = REPORT_DIR / "explore_data_issues.csv"
     md_path = REPORT_DIR / "explore_data_audit.md"
-    html_path = REPORT_DIR / "explore_data_audit.html"
 
-    summary_df.to_csv(summary_path, index=False)
-    columns_df.to_csv(columns_path, index=False)
     issues_df.to_csv(issues_path, index=False)
 
     lines = [
@@ -415,22 +410,11 @@ def run_explore_data_audit() -> Dict[str, object]:
     md_text = "\n".join(lines)
     md_path.write_text(md_text, encoding="utf-8")
 
-    html_text = (
-        "<html><head><meta charset='utf-8'><title>Explore Data Audit</title>"
-        "<style>body{font-family:Arial,sans-serif;max-width:1200px;margin:20px auto;line-height:1.4;}"
-        "pre{white-space:pre-wrap;background:#f7f7f7;padding:12px;border-radius:8px;}"
-        "</style></head><body>"
-        "<h1>/explore-data Audit - Operational Data Readiness</h1>"
-        "<pre>" + md_text.replace("<", "&lt;").replace(">", "&gt;") + "</pre></body></html>"
-    )
-    html_path.write_text(html_text, encoding="utf-8")
-
     return {
-        "summary_path": str(summary_path),
-        "columns_path": str(columns_path),
         "issues_path": str(issues_path),
         "md_path": str(md_path),
-        "html_path": str(html_path),
+        "tables_profiled": int(summary_df.shape[0]),
+        "columns_profiled": int(columns_df.shape[0]),
         "issues_count": int(issues_df.shape[0]),
     }
 

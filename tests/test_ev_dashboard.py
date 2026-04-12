@@ -68,7 +68,10 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
         "f_severity",
     ]:
         assert f'id="{fid}"' in html
-    assert "['f_date_from','f_date_to','f_turno','f_prop','f_version','f_area','f_yard','f_charge','f_severity']" in html
+    assert "const filterIds = ['f_date_from','f_date_to','f_turno','f_prop','f_version','f_area','f_yard','f_charge','f_severity'];" in html
+    assert "el.addEventListener('input', updateCharts);" in html
+    assert 'id="btn_apply"' in html
+    assert "document.getElementById('btn_apply').addEventListener('click', updateCharts);" in html
     for key in ["from:", "to:", "turno:", "prop:", "version:", "area:", "yard:", "charge:", "severity:"]:
         assert key in html
     assert 'id="f_severity"' in html
