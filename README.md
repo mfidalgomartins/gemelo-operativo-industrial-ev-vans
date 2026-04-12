@@ -1,68 +1,66 @@
-# Gemelo Operativo Industrial EV para Vans
+# Gemelo Operativo Industrial para Transición a Vans Eléctricas
 
-Sistema analítico para priorizar decisiones de secuenciación, patio, carga y expedición durante un ramp-up de furgonetas eléctricas en entorno de planta.
+Plataforma analítica para gestionar secuenciación, patio, carga y expedición durante un ramp-up EV en una planta de furgonetas.
 
-## Qué resuelve
-- Detecta dónde se pierde throughput y dónde se acumula espera interna.
-- Separa cuellos coyunturales de cuellos estructurales por área y turno.
-- Prioriza acciones operativas con un índice único (`operational_priority_index`).
-- Compara escenarios de transición EV con trade-offs explícitos.
+## Problema de negocio
+Cuando sube el mix EV, el flujo interno se vuelve más frágil: aumentan esperas en patio y carga, crece el riesgo de salida no lista y cae el throughput real frente al plan.
 
-## Qué incluye (ruta oficial)
-1. Generador sintético industrial EV (`data/raw/ev_factory`).
-2. Auditoría de datos `/explore-data`.
-3. Capa SQL en DuckDB (`sql/ev_factory`).
-4. Feature engineering y diagnóstico interpretable (`data/processed/ev_factory`).
-5. Escenarios y scoring de priorización.
-6. Dashboard ejecutivo HTML único:
-   `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
-7. Validación y release gate:
-   `outputs/reports/validation_report.md`,
-   `outputs/reports/release_readiness.json`.
+## Qué hace el sistema
+- Genera un dataset industrial sintético con pre-serie, ramp-up y operación estable.
+- Modela el flujo end-to-end (orden, fin de línea, patio, carga, readiness y salida).
+- Construye capa SQL en DuckDB, features operativas y scoring de priorización.
+- Simula escenarios de transición EV y compara impacto operativo por palanca.
+- Publica dashboard ejecutivo único y reporte formal de validación.
 
-## Arquitectura (resumen)
-- `src/ev_sql_layer.py`: staging, integración, marts, KPI, validaciones SQL.
-- `src/ev_feature_engineering.py`: features vehículo, área-turno, carga, patio, transición.
-- `src/ev_diagnostic_analysis.py`: scores diagnósticos y drivers principales.
-- `src/ev_scenario_twin.py`: simulador de escenarios EV.
-- `src/ev_scoring_framework.py`: priorización operativa y sensibilidad.
-- `src/ev_build_dashboard.py`: build del dashboard oficial.
-- `src/ev_validate_project.py`: validación integral y clasificación de release.
-- `src/run_pipeline.py`: orquestación oficial EV end-to-end.
+## Decisiones que soporta
+- Cuándo cambiar reglas de secuenciación por mix/versiones.
+- Dónde ampliar o reservar capacidad de carga.
+- Qué zonas de patio intervenir primero para reducir dwell/blocking.
+- Qué áreas requieren acción inmediata vs monitorización.
+
+## Arquitectura del proyecto
+- `generate_synthetic_data.py`: generación de datos base.
+- `src/run_pipeline.py`: ruta oficial end-to-end.
+- `src/ev_sql_layer.py`: staging, integración, marts y KPIs.
+- `src/ev_feature_engineering.py`, `src/ev_diagnostic_analysis.py`: señales y diagnóstico.
+- `src/ev_scenario_twin.py`, `src/ev_scoring_framework.py`: escenarios y priorización.
+- `src/ev_build_dashboard.py`, `src/ev_validate_project.py`: dashboard y release gate.
 
 ## Estructura del repositorio
-- `src/`
-- `data/raw/ev_factory/`
-- `data/processed/ev_factory/`
-- `sql/ev_factory/`
-- `docs/`
-- `tests/`
-- `outputs/dashboard/`
-- `outputs/charts/`
-- `outputs/reports/`
-- `archive/legacy/` (material histórico, fuera de la ruta oficial)
-
-## Ejecución recomendada
-```bash
-# opcional: regenerar datos
-.venv/bin/python generate_synthetic_data.py --seed 20260328 --start-date 2025-01-01 --months 12
-
-# pipeline oficial EV
-.venv/bin/python -m src.run_pipeline
-
-# abrir dashboard final
-open outputs/dashboard/dashboard_gemelo_operativo_ev.html
+```text
+src/
+data/raw/ev_factory/
+data/processed/ev_factory/
+sql/ev_factory/
+docs/
+tests/
+outputs/charts/
+outputs/dashboard/
+outputs/reports/
 ```
 
-## Criterio de uso (gobernanza)
-- Estado de publicación: `outputs/reports/release_readiness.json`.
-- Este proyecto está diseñado para **decision-support**; no sustituye calibración con datos reales de planta.
+## Outputs principales
+- Dashboard final: `outputs/dashboard/dashboard_gemelo_operativo_ev.html`
+- Validación: `outputs/reports/validation_report.md`
+- Estado de publicación: `outputs/reports/release_readiness.json`
+- Hallazgos operativos: `outputs/reports/diagnostic_findings.md`
 
-## Skills demostradas
-- **Business/Operations**: launch readiness, flow orchestration, yard/charging operations, priorización.
-- **Técnicas**: Python, SQL, DuckDB, pandas, Chart.js, pytest.
+## Por qué este proyecto es fuerte
+No es un dashboard aislado: conecta modelo operativo, gobierno de métricas, simulación de escenarios y priorización accionable en un flujo reproducible.
 
-## Limitaciones explícitas
-- Dataset sintético (no telemetría real).
-- Escenarios con elasticidades paramétricas interpretables (no causal inference).
-- Pesos de scoring requieren calibración de negocio para producción.
+## Cómo ejecutar
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python generate_synthetic_data.py --seed 20260328 --start-date 2025-01-01 --months 12
+python -m src.run_pipeline
+```
+
+## Limitaciones
+- Datos sintéticos; no sustituye calibración con datos reales de planta.
+- Escenarios basados en elasticidades paramétricas interpretables.
+- Umbrales y pesos de scoring requieren ajuste de negocio para producción.
+
+## Herramientas
+Python, SQL, DuckDB, pandas, NumPy, Matplotlib, Seaborn, Chart.js, pytest.
