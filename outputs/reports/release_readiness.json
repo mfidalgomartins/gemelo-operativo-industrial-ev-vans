@@ -12,5 +12,6 @@
   "critical_issues": 0,
   "high_issues": 0,
   "medium_issues": 2,
-  "sql_warn_ratio": 0.2
+  "sql_warn_ratio": 0.2,
+  "kpi_single_source_of_truth": true
 }

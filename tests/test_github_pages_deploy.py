@@ -2,6 +2,7 @@ from pathlib import Path
 
 OFFICIAL_DASHBOARD = Path("outputs/dashboard/industrial-ev-operating-command-center.html")
 DUPLICATED_DASHBOARD = Path("docs/industrial-ev-operating-command-center.html")
+ROOT_INDEX = Path("index.html")
 
 
 def test_single_final_dashboard_artifact() -> None:
@@ -34,3 +35,9 @@ def test_github_pages_entry_is_in_sync_with_official_dashboard_size() -> None:
     assert OFFICIAL_DASHBOARD.exists(), "No existe dashboard oficial en outputs/dashboard"
     official_size = OFFICIAL_DASHBOARD.stat().st_size
     assert official_size > 100_000
+
+
+def test_root_index_redirects_to_official_dashboard() -> None:
+    assert ROOT_INDEX.exists(), "Falta index.html en la raíz para entrada GitHub Pages"
+    html = ROOT_INDEX.read_text(encoding="utf-8")
+    assert "/outputs/dashboard/industrial-ev-operating-command-center.html" in html

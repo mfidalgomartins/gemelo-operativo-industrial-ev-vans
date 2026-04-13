@@ -7,7 +7,7 @@ from typing import Dict, List
 import duckdb
 import pandas as pd
 
-from .config import DATA_PROCESSED_DIR, DATA_RAW_DIR, EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
+from .config import DATA_PROCESSED_DIR, EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
 
 
 SQL_LAYER_DIR = PROJECT_ROOT / "sql" / "ev_factory"
@@ -71,20 +71,8 @@ def _resolve_raw_csv(table: str) -> Path:
     if primary.exists():
         return primary
 
-    fallback = DATA_RAW_DIR / f"{table}.csv"
-    if fallback.exists():
-        # Permite compatibilidad, pero evita mezclar esquema legacy para tablas críticas.
-        if table == "versiones_vehiculo":
-            cols = pd.read_csv(fallback, nrows=1).columns.tolist()
-            if "version_id" not in cols:
-                raise FileNotFoundError(
-                    "No existe dataset EV válido de versiones en `data/raw/ev_factory/versiones_vehiculo.csv`. "
-                    "Detectado archivo legacy en `data/raw/versiones_vehiculo.csv`."
-                )
-        return fallback
-
     raise FileNotFoundError(
-        f"Falta tabla raw requerida: {primary} (fallback también ausente: {fallback})"
+        f"Falta tabla raw requerida en la ruta oficial EV: {primary}"
     )
 
 
@@ -152,7 +140,6 @@ def run_ev_sql_layer() -> SQLRunResult:
         "",
         f"- Base de datos: `{DB_PATH.as_posix()}`",
         f"- Raw source EV (preferente): `{EV_DATA_RAW_DIR.as_posix()}`",
-        f"- Fallback raw legacy (solo compatibilidad): `{DATA_RAW_DIR.as_posix()}`",
         f"- Scripts ejecutados: {len(executed)}",
         "",
         "## Orden de ejecución",

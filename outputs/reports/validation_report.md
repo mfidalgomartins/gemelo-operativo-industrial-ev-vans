@@ -33,6 +33,7 @@
 - diversidad de driver de riesgo: OK
 - variabilidad área-turno: OK
 - consistencia KPI share_ev: OK
+- single source of truth KPI: OK
 - spread de escenarios: OK
 - riesgo de sobreinterpretación explicitado: OK
 

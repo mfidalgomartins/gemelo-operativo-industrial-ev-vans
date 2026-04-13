@@ -41,10 +41,10 @@ def _curate_outputs() -> int:
         OUTPUT_REPORTS_DIR / "explore_data_column_classification.csv",
         OUTPUT_REPORTS_DIR / "explore_data_table_summary.csv",
         OUTPUT_REPORTS_DIR / "final_assembly_report.md",
+        OUTPUT_REPORTS_DIR / "kpi_summary.csv",
         OUTPUT_REPORTS_DIR / "synthetic_data_plausibility.md",
         OUTPUT_REPORTS_DIR / "synthetic_data_validation.json",
         OUTPUT_REPORTS_DIR / "synthetic_generation_run.json",
-        OUTPUT_REPORTS_DIR / "validation_issues_found.csv",
         OUTPUT_REPORTS_DIR / "visualizations_index.md",
         OUTPUT_REPORTS_DIR / "bottleneck_matrix.csv",
     ]
