@@ -78,6 +78,8 @@ def run_ev_validation() -> ValidationResult:
     scoring_sensitivity = _read_csv(EV_DIR / "scoring_sensitivity_analysis.csv")
     scoring_rank_stability = _read_csv(EV_DIR / "scoring_rank_stability.csv")
     kpi = _read_csv(EV_DIR / "kpi_operativos.csv")
+    legacy_kpi_summary_path = OUTPUT_REPORTS_DIR / "kpi_summary.csv"
+    legacy_kpi_summary = pd.read_csv(legacy_kpi_summary_path) if legacy_kpi_summary_path.exists() else pd.DataFrame()
 
     dashboard_path = OUTPUT_DASHBOARD_DIR / "industrial-ev-operating-command-center.html"
     dashboard_ok = dashboard_path.exists() and dashboard_path.stat().st_size > 100_000
@@ -270,6 +272,40 @@ def run_ev_validation() -> ValidationResult:
         "Alinear definición de throughput base",
     )
 
+    # Single source of truth de KPI (evitar drift de artefactos legacy)
+    legacy_kpi_present = int(not legacy_kpi_summary.empty)
+    legacy_mismatch = 0
+    if legacy_kpi_present and not kpi.empty:
+        legacy_cols = set(legacy_kpi_summary.columns)
+        required_legacy = {
+            "throughput_diario_unidades",
+            "score_readiness_operativa",
+        }
+        if required_legacy.issubset(legacy_cols):
+            flow_days = max(int(vehicle_flow["fecha_real"].nunique()), 1) if not vehicle_flow.empty else 1
+            expected_daily = float(kpi["throughput_real"].iloc[0]) / flow_days
+            observed_daily = float(legacy_kpi_summary["throughput_diario_unidades"].iloc[0])
+            expected_readiness = float(kpi["score_readiness_global"].iloc[0])
+            observed_readiness = float(legacy_kpi_summary["score_readiness_operativa"].iloc[0])
+            legacy_mismatch = int(abs(observed_daily - expected_daily) > 0.5 or abs(observed_readiness - expected_readiness) > 1.0)
+        else:
+            legacy_mismatch = 1
+
+    add_issue(
+        "kpi_legacy_artifact_present",
+        "high",
+        legacy_kpi_present,
+        "Existe outputs/reports/kpi_summary.csv fuera de la capa KPI oficial",
+        "Eliminar artefacto legacy y usar sólo data/processed/ev_factory/kpi_operativos.csv",
+    )
+    add_issue(
+        "kpi_legacy_inconsistente",
+        "high",
+        legacy_mismatch,
+        "kpi_summary.csv no es consistente con KPI oficial gobernado",
+        "Regenerar desde KPI oficial o eliminar artefacto",
+    )
+
     # Consistencia outputs y dashboard
     placeholders_left = 0
     if dashboard_ok:
@@ -417,6 +453,7 @@ def run_ev_validation() -> ValidationResult:
         f"- diversidad de driver de riesgo: {'OK' if driver_unique >= 2 else 'WARN'}",
         f"- variabilidad área-turno: {'OK' if flat_area_metrics <= 2 else 'WARN'}",
         f"- consistencia KPI share_ev: {'OK' if share_ev_gap <= 0.02 else 'WARN'}",
+        f"- single source of truth KPI: {'OK' if legacy_kpi_present == 0 else 'WARN'}",
         f"- spread de escenarios: {'OK' if scenario_spread >= 2.0 else 'WARN'}",
         f"- riesgo de sobreinterpretación explicitado: OK",
         "",
@@ -473,6 +510,7 @@ def run_ev_validation() -> ValidationResult:
         "high_issues": high_issues,
         "medium_issues": medium_issues,
         "sql_warn_ratio": sql_warn_ratio,
+        "kpi_single_source_of_truth": legacy_kpi_present == 0 and legacy_mismatch == 0,
     }
     (OUTPUT_REPORTS_DIR / "release_readiness.json").write_text(
         json.dumps(release_json, indent=2, ensure_ascii=False),

@@ -29,9 +29,12 @@ def run_release_gate() -> ReleaseGateResult:
     release_grade = str(readiness.get("release_grade", "unknown"))
     publish_blocked = bool(readiness.get("publish_blocked", True))
     dashboard_checks_ok = all(bool(v) for v in manifest.get("checks", {}).values())
+    kpi_ssot_ok = bool(readiness.get("kpi_single_source_of_truth", False))
 
     if publish_blocked:
         return ReleaseGateResult(False, release_grade, "Release bloqueado por validación")
+    if not kpi_ssot_ok:
+        return ReleaseGateResult(False, release_grade, "KPI source of truth inconsistente (artefacto legacy detectado)")
     if not dashboard_checks_ok:
         return ReleaseGateResult(False, release_grade, "Dashboard manifest con checks en WARN")
 

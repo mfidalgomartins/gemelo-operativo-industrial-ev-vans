@@ -2,7 +2,6 @@
 
 - Base de datos: `/Users/miguelfidalgo/Documents/gemelo-operativo-transicion-vans-electricas/data/processed/gemelo_operativo_ev.duckdb`
 - Raw source EV (preferente): `/Users/miguelfidalgo/Documents/gemelo-operativo-transicion-vans-electricas/data/raw/ev_factory`
-- Fallback raw legacy (solo compatibilidad): `/Users/miguelfidalgo/Documents/gemelo-operativo-transicion-vans-electricas/data/raw`
 - Scripts ejecutados: 11
 
 ## Orden de ejecución

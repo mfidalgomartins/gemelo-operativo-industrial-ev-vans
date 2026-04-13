@@ -73,6 +73,7 @@ def test_ev_release_governance_contract() -> None:
         "high_issues",
         "medium_issues",
         "sql_warn_ratio",
+        "kpi_single_source_of_truth",
     }
     assert required.issubset(release.keys())
     assert release["release_grade"] in {

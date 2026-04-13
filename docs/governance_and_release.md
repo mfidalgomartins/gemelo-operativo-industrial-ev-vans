@@ -1,6 +1,6 @@
-# Governance e Disciplina de Release (EV)
+# Gobernanza y Disciplina de Release (EV)
 
-## Fonte de verdade
+## Fuente de verdad
 - KPI oficiales: `data/processed/ev_factory/kpi_operativos.csv`
 - Validación integral: `outputs/reports/validation_report.md`
 - Estado de release: `outputs/reports/release_readiness.json`
@@ -17,8 +17,9 @@
 ## Regla de publicación
 Se publica únicamente si:
 1. `release_grade != publish-blocked`
-2. existe dashboard oficial único
-3. no hay issues críticos abiertos en validación
+2. `kpi_single_source_of_truth = true`
+3. existe dashboard oficial único
+4. no hay issues críticos abiertos en validación
 
 ## Riesgo de sobreinterpretación (obligatorio)
 - Dataset sintético: no usar como benchmark real de planta.
