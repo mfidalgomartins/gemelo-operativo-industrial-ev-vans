@@ -17,6 +17,7 @@ def test_github_pages_dashboard_contracts() -> None:
     for fid in [
         "f_date_from", "f_date_to", "f_turno", "f_prop", "f_version",
         "f_area", "f_yard", "f_charge", "f_severity", "btn_apply", "btn_reset",
+        "btn_toggle_filters", "filters_shell",
         "table_search", "btn_export", "scenario_select", "theme_toggle", "btn_print"
     ]:
         assert f'id="{fid}"' in html

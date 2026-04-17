@@ -49,10 +49,13 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
     # Layout safety contracts
     assert "grid-template-columns:repeat(auto-fit,minmax(170px,1fr));" in html
     assert "grid-template-columns:repeat(auto-fit,minmax(360px,1fr));" in html
-    assert "min-height:340px" in html
+    assert "min-height:320px" in html
     assert "maxTicksLimit: 8" in html
     assert "html[data-theme='dark']" in html
     assert 'id="theme_toggle"' in html
+    assert 'id="btn_toggle_filters"' in html
+    assert 'id="filters_shell"' in html
+    assert "setFilterPanelCollapsed(true);" in html
     assert "const THEME_KEY = 'ev_dashboard_theme';" in html
 
     # Filter wiring contracts
@@ -72,6 +75,9 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
     assert "el.addEventListener('input', updateCharts);" in html
     assert 'id="btn_apply"' in html
     assert "document.getElementById('btn_apply').addEventListener('click', updateCharts);" in html
+    assert "document.getElementById('btn_toggle_filters').addEventListener('click'" in html
+    assert "updateFilterSummary();" in html
+    assert "scen.innerHTML = '';" in html
     for key in ["from:", "to:", "turno:", "prop:", "version:", "area:", "yard:", "charge:", "severity:"]:
         assert key in html
     assert 'id="f_severity"' in html

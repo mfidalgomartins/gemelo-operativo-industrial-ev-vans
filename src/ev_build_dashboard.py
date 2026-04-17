@@ -58,6 +58,8 @@ def _archive_non_official_dashboards(output_dir: Path, official_name: str) -> li
     for html_file in output_dir.glob("*.html"):
         if html_file.name == official_name:
             continue
+        if not html_file.exists():
+            continue
         target = legacy_dir / html_file.name
         html_file.replace(target)
         moved.append(str(target.relative_to(PROJECT_ROOT)))
@@ -397,24 +399,24 @@ body {{
 }}
 body::before {{
   content:'';
-  position:fixed;
+  position:absolute;
   inset:0;
   pointer-events:none;
   background:
-    linear-gradient(180deg, rgba(255,255,255,.26), transparent 18%),
-    radial-gradient(circle at 50% 100%, rgba(13,112,137,.04), transparent 36%);
+    linear-gradient(180deg, rgba(255,255,255,.18), transparent 14%),
+    radial-gradient(circle at 50% 100%, rgba(13,112,137,.03), transparent 34%);
 }}
 body::after {{
   content:'';
-  position:fixed;
+  position:absolute;
   inset:0;
   pointer-events:none;
   background-image:linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
   background-size:34px 34px;
   mask-image:radial-gradient(circle at center, black 36%, transparent 82%);
-  opacity:.32;
+  opacity:.18;
 }}
-.wrapper {{ max-width:1680px; margin:0 auto; padding:22px; position:relative; z-index:1; }}
+.wrapper {{ max-width:1680px; margin:0 auto; padding:18px 22px 26px; position:relative; z-index:1; }}
 .section, header, .decision {{
   background:var(--card);
   border:1px solid var(--line);
@@ -423,7 +425,7 @@ body::after {{
   position:relative;
 }}
 header {{
-  padding:24px;
+  padding:20px 20px 18px;
   background:var(--hero-grad);
   overflow:hidden;
   isolation:isolate;
@@ -439,7 +441,7 @@ header::after {{
   z-index:-1;
 }}
 .head-top {{ display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap; }}
-.title-wrap {{ max-width:1080px; }}
+.title-wrap {{ max-width:1040px; }}
 .eyebrow {{
   display:inline-flex;
   align-items:center;
@@ -465,7 +467,7 @@ html[data-theme='dark'] .eyebrow {{ background:rgba(16,27,43,.72); }}
 h1 {{
   margin:0;
   font-family:var(--font-display);
-  font-size:37px;
+  font-size:34px;
   line-height:1.02;
   letter-spacing:-0.04em;
   max-width:980px;
@@ -509,8 +511,8 @@ h1 {{
   border-color:var(--accent);
 }}
 .hero-message {{
-  margin-top:18px;
-  padding:18px 20px;
+  margin-top:14px;
+  padding:15px 17px;
   border:1px solid var(--line);
   border-left:4px solid var(--accent);
   border-radius:16px;
@@ -523,14 +525,14 @@ h1 {{
 html[data-theme='dark'] .hero-message {{
   background:linear-gradient(135deg, rgba(19,32,49,.82), rgba(24,42,63,.88));
 }}
-.meta {{ margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }}
+.meta {{ margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; }}
 .pill {{
   border:1px solid var(--line);
   border-radius:18px;
   padding:15px;
   font-size:12px;
   background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(247,250,253,.70));
-  min-height:96px;
+  min-height:84px;
   box-shadow:var(--shadow-card);
   position:relative;
   overflow:hidden;
@@ -563,13 +565,64 @@ html[data-theme='dark'] .hero-message {{
   color:var(--muted);
   line-height:1.45;
 }}
+.control-strip {{
+  margin-top:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}}
+.filter-summary {{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  color:var(--muted);
+  font-size:12px;
+}}
+.filter-pill {{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 11px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:var(--bg-panel);
+  box-shadow:var(--shadow-soft);
+}}
+.filter-pill strong {{
+  color:var(--ink);
+  font-weight:700;
+}}
+.control-actions {{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}}
+.panel-toggle {{
+  border:1px solid var(--line-strong);
+  background:var(--control);
+  color:var(--ink);
+  border-radius:999px;
+  padding:10px 15px;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:var(--shadow-soft);
+}}
 .filters-shell {{
-  margin-top:16px;
-  padding:18px;
+  margin-top:10px;
+  padding:16px;
   border:1px solid var(--line);
   border-radius:18px;
   background:linear-gradient(180deg, rgba(255,255,255,.76), rgba(244,249,253,.64));
   box-shadow:var(--shadow-card);
+}}
+.filters-shell[data-collapsed='true'] .filters-head,
+.filters-shell[data-collapsed='true'] .filters {{
+  display:none;
 }}
 .filters-head {{
   display:flex;
@@ -659,7 +712,7 @@ html[data-theme='dark'] .hero-message {{
 .kpi .v {{ margin-top:6px; font-size:22px; font-weight:700; line-height:1.1; letter-spacing:-0.02em; }}
 .kpi.is-primary .v {{ font-size:32px; }}
 .kpi .s {{ margin-top:4px; font-size:12px; color:var(--muted); line-height:1.4; }}
-.summary {{ margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:12px; }}
+.summary {{ margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:10px; }}
 .box {{
   border:1px solid var(--line);
   border-radius:18px;
@@ -675,7 +728,7 @@ html[data-theme='dark'] .hero-message {{
 }}
 .box ul {{ margin:0; padding-left:16px; font-size:12px; color:var(--ink); line-height:1.55; }}
 .box li {{ margin-bottom:5px; }}
-.section {{ margin-top:16px; padding:18px; overflow:hidden; }}
+.section {{ margin-top:14px; padding:16px; overflow:hidden; }}
 .section[data-section='core'] {{ border-top:4px solid var(--accent); }}
 .section[data-section='yard'] {{ border-top:4px solid var(--series-yard); }}
 .section[data-section='risk'] {{ border-top:4px solid var(--series-gap); }}
@@ -706,7 +759,7 @@ html[data-theme='dark'] .hero-message {{
   border-radius:18px;
   padding:16px;
   background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(246,250,254,.92));
-  min-height:340px;
+  min-height:320px;
   display:flex;
   flex-direction:column;
   overflow:hidden;
@@ -724,10 +777,10 @@ html[data-theme='dark'] .chart-card {{
   background:linear-gradient(90deg, rgba(255,255,255,.88), transparent 72%);
 }}
 .chart-head {{
-  margin-bottom:12px;
-  padding-bottom:12px;
+  margin-bottom:10px;
+  padding-bottom:10px;
   border-bottom:1px solid var(--line);
-  min-height:86px;
+  min-height:78px;
 }}
 .chart-kicker {{
   margin-bottom:5px;
@@ -752,7 +805,7 @@ html[data-theme='dark'] .chart-card {{
   line-height:1.5;
   max-width:60ch;
 }}
-.canvas-wrap {{ flex:1; min-height:260px; height:300px; overflow:hidden; margin-top:2px; }}
+.canvas-wrap {{ flex:1; min-height:240px; height:280px; overflow:hidden; margin-top:2px; }}
 canvas {{ width:100% !important; height:100% !important; }}
 .table-wrap {{
   margin-top:12px;
@@ -770,6 +823,19 @@ canvas {{ width:100% !important; height:100% !important; }}
   flex-wrap:wrap;
   gap:10px;
   align-items:center;
+}}
+.table-tools > div:first-child {{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}}
+.table-tools input {{
+  min-width:280px;
+}}
+#table_status {{
+  font-size:12px;
+  color:var(--muted);
 }}
 .table-tools input,.table-tools button {{
   border:1px solid var(--line);
@@ -908,6 +974,26 @@ tbody tr:hover {{ background:rgba(15,112,137,.06); }}
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
   gap:12px;
 }}
+.scenario-toolbar {{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+  margin-bottom:6px;
+}}
+.scenario-toolbar label {{
+  font-size:12px;
+  color:var(--muted);
+  font-weight:700;
+}}
+.scenario-select {{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:7px 10px;
+  font-size:12px;
+  background:var(--control);
+  color:var(--ink);
+}}
 .decision-card {{
   border:1px solid var(--line);
   border-radius:16px;
@@ -938,8 +1024,8 @@ button:focus-visible,select:focus-visible,input:focus-visible {{
   box-shadow:0 0 0 3px var(--accent-glow), 0 1px 0 rgba(255,255,255,.62) inset;
 }}
 @media (max-width:1300px) {{
-  h1 {{ font-size:33px; }}
-  .canvas-wrap {{ height:280px; min-height:240px; }}
+  h1 {{ font-size:31px; }}
+  .canvas-wrap {{ height:260px; min-height:220px; }}
 }}
 @media (max-width:900px) {{
   .wrapper {{ padding:10px; }}
@@ -948,9 +1034,11 @@ button:focus-visible,select:focus-visible,input:focus-visible {{
   .pill strong {{ font-size:18px; }}
   .kpi.is-primary {{ grid-column:span 1; min-height:122px; }}
   .grid-2,.grid-3 {{ grid-template-columns:1fr; }}
-  .chart-card {{ min-height:320px; }}
-  .canvas-wrap {{ height:250px; min-height:220px; }}
+  .chart-card {{ min-height:300px; }}
+  .canvas-wrap {{ height:240px; min-height:210px; }}
   .filters-note {{ max-width:none; }}
+  .table-tools input {{ min-width:0; width:100%; }}
+  .control-strip {{ align-items:stretch; }}
   table {{ min-width:820px; }}
 }}
 @media print {{
@@ -1008,7 +1096,17 @@ button:focus-visible,select:focus-visible,input:focus-visible {{
     </div>
   </div>
 
-  <div class=\"filters-shell no-print\">
+  <div class=\"control-strip no-print\">
+    <div class=\"filter-summary\" id=\"filter_summary\">
+      <span class=\"filter-pill\"><strong>Vista</strong><span id=\"filter_summary_text\">Todos los datos</span></span>
+      <span class=\"filter-pill\"><strong>Escenario</strong><span id=\"scenario_summary_text\">N/A</span></span>
+    </div>
+    <div class=\"control-actions\">
+      <button id=\"btn_toggle_filters\" class=\"panel-toggle\" type=\"button\" aria-expanded=\"false\" aria-controls=\"filters_shell\">Mostrar filtros</button>
+    </div>
+  </div>
+
+  <div class=\"filters-shell no-print\" id=\"filters_shell\" data-collapsed=\"true\">
     <div class=\"filters-head\">
       <div>
         <div class=\"eyebrow eyebrow-soft\">Contexto de lectura</div>
@@ -1093,20 +1191,20 @@ button:focus-visible,select:focus-visible,input:focus-visible {{
   <div class=\"grid-2\">
     <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Comparativa</div><div class=\"chart-title\">Comparación EV vs ICE</div><div class=\"chart-note\">Dónde se concentra la carga operativa adicional del mix EV frente a la operación convencional.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_ev_vs_ice\"></canvas></div></div>
     <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Scenario twin</div><div class=\"chart-title\">Escenarios comparados</div><div class=\"chart-note\">Comparador de palancas para decidir si conviene secuenciar mejor, ampliar carga o reorganizar patio.</div></div>
-      <div style=\"display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;\">
-        <label style=\"font-size:12px;color:var(--muted);\">Escenario</label>
-        <select id=\"scenario_select\" style=\"border:1px solid var(--line);border-radius:8px;padding:6px;font-size:12px;\"></select>
+      <div class=\"scenario-toolbar\">
+        <label for=\"scenario_select\">Escenario</label>
+        <select id=\"scenario_select\" class=\"scenario-select\"></select>
       </div>
       <div class=\"canvas-wrap\"><canvas id=\"ch_scenarios\"></canvas></div>
     </div>
   </div>
 
   <div class=\"table-tools no-print\">
-    <div style=\"display:flex;gap:8px;align-items:center;flex-wrap:wrap;\">
+    <div>
       <input id=\"table_search\" type=\"text\" placeholder=\"Buscar área, driver, acción...\" />
       <button id=\"btn_export\" type=\"button\">Export CSV filtrado</button>
     </div>
-    <div id=\"table_status\" style=\"font-size:12px;color:var(--muted);\"></div>
+    <div id=\"table_status\"></div>
   </div>
   <div class=\"table-wrap\">
     <table id=\"priority_table\">
@@ -1264,6 +1362,7 @@ function setupFilters() {{
   }}
 
   const scen = document.getElementById('scenario_select');
+  scen.innerHTML = '';
   DATA.scenarios.forEach((s, i) => {{
     const op = document.createElement('option');
     op.value = s.escenario;
@@ -1272,6 +1371,10 @@ function setupFilters() {{
     if (!state.scenario && i === 0) state.scenario = s.escenario;
   }});
   scen.value = state.scenario;
+}}
+
+function describeFilter(value, fallbackLabel) {{
+  return value && value !== 'ALL' ? value : fallbackLabel;
 }}
 
 function getFilterState() {{
@@ -1295,6 +1398,26 @@ function getFilterState() {{
     charge: document.getElementById('f_charge').value,
     severity: document.getElementById('f_severity').value,
   }};
+}}
+
+function updateFilterSummary() {{
+  const f = getFilterState();
+  const parts = [
+    f.from && f.to ? (f.from + ' → ' + f.to) : 'Periodo completo',
+    describeFilter(f.turno, 'Todos los turnos'),
+    describeFilter(f.prop, 'Todas las propulsiones'),
+    describeFilter(f.area, 'Todas las áreas'),
+  ];
+  document.getElementById('filter_summary_text').textContent = parts.join(' · ');
+  document.getElementById('scenario_summary_text').textContent = state.scenario || 'N/A';
+}}
+
+function setFilterPanelCollapsed(collapsed) {{
+  const shell = document.getElementById('filters_shell');
+  const btn = document.getElementById('btn_toggle_filters');
+  shell.dataset.collapsed = collapsed ? 'true' : 'false';
+  btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  btn.textContent = collapsed ? 'Mostrar filtros' : 'Ocultar filtros';
 }}
 
 function inDateRange(d, from, to) {{
@@ -1498,6 +1621,7 @@ function applyChartTheme() {{
 
 function updateCharts() {{
   const c = themeColors();
+  updateFilterSummary();
   const fThrough = filterRows(DATA.throughput, {{ date:'fecha', turno:'turno' }});
   const fSeq = filterRows(DATA.seq_gap, {{ date:'fecha', turno:'turno', prop:'tipo_propulsion' }});
   const fLead = filterRows(DATA.lead_version, {{ prop:'tipo_propulsion', version:'version_id' }});
@@ -1782,9 +1906,14 @@ function bind() {{
   }});
   document.getElementById('btn_apply').addEventListener('click', updateCharts);
   document.getElementById('btn_reset').addEventListener('click', () => {{
+    state.scenario = DATA.scenarios[0] ? DATA.scenarios[0].escenario : '';
     setupFilters();
     document.getElementById('table_search').value = '';
     updateCharts();
+  }});
+  document.getElementById('btn_toggle_filters').addEventListener('click', () => {{
+    const collapsed = document.getElementById('filters_shell').dataset.collapsed === 'true';
+    setFilterPanelCollapsed(!collapsed);
   }});
   document.getElementById('table_search').addEventListener('input', () => renderPriorityTable(filterRows(DATA.priorities, {{ area:'area' }})));
   document.getElementById('btn_export').addEventListener('click', exportCsv);
@@ -1820,6 +1949,7 @@ function init() {{
   initTheme();
   setMeta();
   setupFilters();
+  setFilterPanelCollapsed(true);
   renderOfficialKpis();
   initCharts();
   bind();
