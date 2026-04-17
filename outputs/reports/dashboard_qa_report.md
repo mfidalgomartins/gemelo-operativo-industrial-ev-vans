@@ -1,8 +1,8 @@
 # Dashboard QA Report
 
-- Versión: **ev-official-20260413-015703-6971216498**
+- Versión: **ev-official-20260417-011654-ccd0bf14de**
 - Dashboard oficial: `outputs/dashboard/industrial-ev-operating-command-center.html`
-- Tamaño HTML: **1812618 bytes**
+- Tamaño HTML: **1827645 bytes**
 
 ## Checks
 - placeholder_free: PASS
