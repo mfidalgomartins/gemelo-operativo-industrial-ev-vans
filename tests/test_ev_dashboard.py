@@ -27,9 +27,7 @@ def test_ev_dashboard_official_build_manifest_and_single_html() -> None:
     assert not list((OUTPUT_DASHBOARD_DIR / "legacy").glob("*.html"))
 
     manifest_path = OUTPUT_REPORTS_DIR / "dashboard_build_manifest.json"
-    qa_report_path = OUTPUT_REPORTS_DIR / "dashboard_qa_report.md"
     assert manifest_path.exists()
-    assert qa_report_path.exists()
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["official_dashboard"] == "outputs/dashboard/industrial-ev-operating-command-center.html"

@@ -43,4 +43,4 @@ Antes de publicación:
 1. Ejecutar pipeline EV completo.
 2. Ejecutar validación EV.
 3. Confirmar `release_grade != publish-blocked`.
-4. Adjuntar `validation_report.md`, `release_readiness.json`, `dashboard_build_manifest.json`.
+4. Revisar `outputs/reports/validation_report.md` y `outputs/reports/release_readiness.json`.

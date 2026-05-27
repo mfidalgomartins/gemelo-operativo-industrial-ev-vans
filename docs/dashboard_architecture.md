@@ -10,4 +10,4 @@
 - Sin lógica de scoring crítica en frontend.
 - Payload agregado para rendimiento y legibilidad.
 - Filtros aplicados por contrato de dataset.
-- QA de build con manifest y reporte dedicado.
+- QA de build con manifest técnico.

@@ -1,8 +1,8 @@
 {
-  "dashboard_version": "ev-official-20260417-015021-0c6f50a419",
-  "generated_at": "2026-04-17 01:50:21",
+  "dashboard_version": "ev-official-20260527-165722-b57221200d",
+  "generated_at": "2026-05-27 16:57:22",
   "official_dashboard": "outputs/dashboard/industrial-ev-operating-command-center.html",
-  "html_size_bytes": 1835457,
+  "html_size_bytes": 1843639,
   "datasets_rows": {
     "throughput": 820,
     "ev_share_week": 40,
@@ -19,6 +19,14 @@
     "kpi_readiness": 24
   },
   "archived_dashboards": [],
+  "kpi_validation": {
+    "throughput_planificado_matches_flow": true,
+    "throughput_real_matches_flow": true,
+    "throughput_gap_matches_components": true,
+    "share_ev_matches_flow": true,
+    "proportions_in_range": true,
+    "scores_in_range": true
+  },
   "checks": {
     "placeholder_free": true,
     "single_official_dashboard": true,
@@ -28,6 +36,7 @@
     "canvas_count_expected": true,
     "severity_filter_wired": true,
     "executive_snapshot_consistent": true,
-    "density_guard": true
+    "density_guard": true,
+    "kpi_logic_valid": true
   }
 }

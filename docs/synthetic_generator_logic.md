@@ -40,4 +40,4 @@ Se ejecutan comprobaciones de:
 
 ## Salidas
 - CSV por tabla en `data/raw/`.
-- Reportes de plausibilidad y cardinalidades en `outputs/reports/`.
+- Resumen de plausibilidad y cardinalidades en `outputs/reports/`.

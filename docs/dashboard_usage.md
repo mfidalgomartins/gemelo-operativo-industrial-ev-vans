@@ -6,5 +6,5 @@
 4. Revisar tabla de priorización y bloque de decisión ejecutiva
 
 ## Trazabilidad
-- Manifest técnico: `outputs/reports/dashboard_build_manifest.json`
+- Manifest técnico de build: `outputs/reports/dashboard_build_manifest.json`
 - Estado de release: `outputs/reports/release_readiness.json`
