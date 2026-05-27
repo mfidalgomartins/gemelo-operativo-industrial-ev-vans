@@ -3,10 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from src.config import OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
 from src.ev_build_dashboard import OFFICIAL_DASHBOARD_NAME, run_ev_build_dashboard
 
 
+@pytest.mark.integration
 def test_ev_dashboard_official_build_manifest_and_single_html() -> None:
     OUTPUT_DASHBOARD_DIR.mkdir(parents=True, exist_ok=True)
     legacy_candidate = OUTPUT_DASHBOARD_DIR / "legacy_dashboard_tmp.html"

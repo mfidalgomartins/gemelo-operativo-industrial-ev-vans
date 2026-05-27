@@ -2178,7 +2178,8 @@ def _write_dashboard_docs(official_path: Path, version: str) -> None:
 4. Revisar tabla de priorización y bloque de decisión ejecutiva
 
 ## Trazabilidad
-- El pipeline genera trazas técnicas en ejecución para validar el build y el estado de release.
+- Manifest técnico de build: `outputs/reports/dashboard_build_manifest.json`
+- Estado de release: `outputs/reports/release_readiness.json`
 """,
         encoding="utf-8",
     )

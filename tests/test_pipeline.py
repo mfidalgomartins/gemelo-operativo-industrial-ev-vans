@@ -3,9 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from src.run_pipeline import run_pipeline
 
 
+@pytest.mark.integration
 def test_ev_pipeline_official_path_end_to_end_without_regeneration() -> None:
     result = run_pipeline(generate_data=False)
 

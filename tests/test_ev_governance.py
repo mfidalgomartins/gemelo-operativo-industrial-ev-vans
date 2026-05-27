@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from src.config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR
 from src.ev_build_dashboard import run_ev_build_dashboard
@@ -16,6 +17,7 @@ from src.ev_validate_project import run_ev_validation
 from src.synthetic_data_gen import SyntheticGenerationConfig, generate_synthetic_factory_data
 
 
+@pytest.mark.integration
 def test_ev_release_governance_contract() -> None:
     cfg = SyntheticGenerationConfig(
         seed=20260402,

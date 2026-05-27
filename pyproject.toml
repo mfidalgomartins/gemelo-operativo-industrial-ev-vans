@@ -18,6 +18,10 @@ generate-data = "generate_synthetic_data:main"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
+addopts = ["-m", "not integration"]
+markers = [
+    "integration: full-pipeline tests that write to the data directory — run with pytest -m integration",
+]
 
 [tool.ruff]
 line-length = 120
