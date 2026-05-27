@@ -1,30 +1,24 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
-from .config import DATA_PROCESSED_DIR, OUTPUT_CHARTS_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
+from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
+from .utils import read_ev_csv
 
 
-sns.set_theme(style="whitegrid")
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
 
 @dataclass
 class DiagnosticResult:
-    outputs: Dict[str, int]
+    outputs: dict[str, int]
 
 
 def _read(name: str, parse_dates: list[str] | None = None) -> pd.DataFrame:
-    path = EV_DIR / f"{name}.csv"
-    if not path.exists():
-        raise FileNotFoundError(f"No existe tabla: {path}")
-    return pd.read_csv(path, parse_dates=parse_dates)
+    return read_ev_csv(name, EV_DIR, parse_dates=parse_dates)
 
 
 def _score_to_100(series: pd.Series, upper: float) -> pd.Series:
@@ -44,7 +38,6 @@ def _initial_action(row: pd.Series) -> str:
 
 
 def run_ev_diagnostic_analysis() -> DiagnosticResult:
-    OUTPUT_CHARTS_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     vehicle = _read("vehicle_readiness_features", parse_dates=["fecha_real"])
@@ -113,7 +106,7 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
     )
 
     # Persistencia de cuellos: pico ocasional vs estructural
-    pers = (
+    area_persistence = (
         area_diag.assign(critical_flag=(area_diag["area_criticality_score"] >= 70).astype(int))
         .groupby("area", as_index=False)
         .agg(
@@ -122,10 +115,10 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
             p95_criticality=("area_criticality_score", lambda s: float(np.quantile(s, 0.95))),
         )
     )
-    pers["tipo_cuello"] = np.where(
-        pers["critical_share"] >= 0.30,
+    area_persistence["tipo_cuello"] = np.where(
+        area_persistence["critical_share"] >= 0.30,
         "ESTRUCTURAL",
-        np.where(pers["p95_criticality"] >= 80, "PICO_OCASIONAL", "ESTABLE"),
+        np.where(area_persistence["p95_criticality"] >= 80, "PICO_OCASIONAL", "ESTABLE"),
     )
 
     # Comparación EV vs no EV
@@ -174,56 +167,16 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
     outputs = {
         "diagnostic_vehicle_scores": vehicle_diag,
         "diagnostic_area_scores": area_diag,
-        "diagnostic_area_persistence": pers,
+        "diagnostic_area_persistence": area_persistence,
         "diagnostic_ev_vs_non_ev": ev_compare,
         "diagnostic_shift_comparison": shift_compare,
         "diagnostic_area_ranking": area_ranking,
     }
 
-    out_counts: Dict[str, int] = {}
+    out_counts: dict[str, int] = {}
     for name, df in outputs.items():
         df.to_csv(EV_DIR / f"{name}.csv", index=False)
         out_counts[name] = int(df.shape[0])
-
-    # Gráficos explicativos
-    plt.figure(figsize=(11, 5))
-    sns.barplot(data=area_ranking.head(10), x="area", y="area_criticality_score", color="#b2182b")
-    plt.title("Ranking de áreas críticas (score medio)")
-    plt.xlabel("Área")
-    plt.ylabel("Area Criticality Score")
-    plt.xticks(rotation=25)
-    plt.tight_layout()
-    plt.savefig(OUTPUT_CHARTS_DIR / "diagnostic_area_criticality_ranking.png", dpi=160)
-    plt.close()
-
-    plt.figure(figsize=(8, 5))
-    evm = ev_compare.melt(id_vars=["tipo_propulsion"], var_name="score", value_name="value")
-    sns.barplot(data=evm, x="score", y="value", hue="tipo_propulsion")
-    plt.title("Comparación EV vs no EV en scores diagnósticos")
-    plt.xlabel("Score")
-    plt.ylabel("Valor")
-    plt.xticks(rotation=25)
-    plt.tight_layout()
-    plt.savefig(OUTPUT_CHARTS_DIR / "diagnostic_ev_vs_noev_scores.png", dpi=160)
-    plt.close()
-
-    plt.figure(figsize=(10, 5))
-    sns.lineplot(data=shift_compare.melt(id_vars=["turno"], var_name="score", value_name="value"), x="turno", y="value", hue="score", marker="o")
-    plt.title("Comparación por turno de presión operativa")
-    plt.xlabel("Turno")
-    plt.ylabel("Valor del score")
-    plt.tight_layout()
-    plt.savefig(OUTPUT_CHARTS_DIR / "diagnostic_shift_comparison.png", dpi=160)
-    plt.close()
-
-    plt.figure(figsize=(9, 5))
-    sns.scatterplot(data=pers, x="critical_share", y="avg_criticality", hue="tipo_cuello", s=120)
-    plt.title("Persistencia de cuellos: pico vs estructural")
-    plt.xlabel("Share periodos críticos")
-    plt.ylabel("Criticality media")
-    plt.tight_layout()
-    plt.savefig(OUTPUT_CHARTS_DIR / "diagnostic_persistence_map.png", dpi=160)
-    plt.close()
 
     # Documento metodológico
     doc = PROJECT_ROOT / "docs" / "diagnostic_framework.md"
@@ -268,13 +221,13 @@ El framework conecta síntomas con acción inicial recomendada para facilitar pr
     )
 
     # Resumen hallazgos
-    top = area_ranking.head(8)
+    top_areas_ranked = area_ranking.head(8)
     lines = [
         "# Diagnóstico Operativo - Hallazgos Priorizados",
         "",
         "## Top áreas críticas",
     ]
-    for row in top.itertuples(index=False):
+    for row in top_areas_ranked.itertuples(index=False):
         lines.append(
             f"- {row.area}: score={row.area_criticality_score:.1f}, driver={row.main_bottleneck_driver}, acción={row.recommended_action_initial}"
         )
@@ -284,7 +237,7 @@ El framework conecta síntomas con acción inicial recomendada para facilitar pr
             "",
             "## Lecturas clave",
             f"- Diferencia EV vs no EV (stress): {ev_compare.loc[ev_compare['tipo_propulsion']=='EV','launch_transition_stress_score'].mean() - ev_compare.loc[ev_compare['tipo_propulsion']!='EV','launch_transition_stress_score'].mean():.2f} puntos.",
-            f"- Áreas clasificadas como estructurales: {int((pers['tipo_cuello']=='ESTRUCTURAL').sum())}.",
+            f"- Áreas clasificadas como estructurales: {int((area_persistence['tipo_cuello']=='ESTRUCTURAL').sum())}.",
         ]
     )
     (OUTPUT_REPORTS_DIR / "diagnostic_findings.md").write_text("\n".join(lines), encoding="utf-8")

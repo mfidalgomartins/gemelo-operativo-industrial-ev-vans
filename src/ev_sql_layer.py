@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
 
 import duckdb
 import pandas as pd
@@ -62,8 +61,8 @@ EXPORT_OBJECTS = [
 @dataclass
 class SQLRunResult:
     db_path: str
-    executed_files: List[str]
-    exported_rows: Dict[str, int]
+    executed_files: list[str]
+    exported_rows: dict[str, int]
 
 
 def _resolve_raw_csv(table: str) -> Path:
@@ -89,8 +88,8 @@ def _load_raw_tables(con: duckdb.DuckDBPyConnection) -> None:
         )
 
 
-def _run_sql_files(con: duckdb.DuckDBPyConnection) -> List[str]:
-    executed: List[str] = []
+def _run_sql_files(con: duckdb.DuckDBPyConnection) -> list[str]:
+    executed: list[str] = []
     for file_name in SQL_FILES_IN_ORDER:
         sql_path = SQL_LAYER_DIR / file_name
         if not sql_path.exists():
@@ -100,11 +99,11 @@ def _run_sql_files(con: duckdb.DuckDBPyConnection) -> List[str]:
     return executed
 
 
-def _export_objects(con: duckdb.DuckDBPyConnection) -> Dict[str, int]:
+def _export_objects(con: duckdb.DuckDBPyConnection) -> dict[str, int]:
     export_dir = DATA_PROCESSED_DIR / "ev_factory"
     export_dir.mkdir(parents=True, exist_ok=True)
 
-    rows: Dict[str, int] = {}
+    exported_row_counts: dict[str, int] = {}
     for obj in EXPORT_OBJECTS:
         out_csv = export_dir / f"{obj}.csv"
         con.execute(
@@ -118,8 +117,8 @@ def _export_objects(con: duckdb.DuckDBPyConnection) -> Dict[str, int]:
             (HEADER, DELIMITER ',');
             """
         )
-        rows[obj] = int(con.execute(f"SELECT COUNT(*) FROM {obj}").fetchone()[0])
-    return rows
+        exported_row_counts[obj] = int(con.execute(f"SELECT COUNT(*) FROM {obj}").fetchone()[0])
+    return exported_row_counts
 
 
 def run_ev_sql_layer() -> SQLRunResult:

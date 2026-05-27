@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+
 
 import numpy as np
 import pandas as pd
@@ -135,7 +135,7 @@ def generate_recursos_operativos(
     latest_restrictions = restricciones_operativas[
         pd.to_datetime(restricciones_operativas["timestamp_inicio"]).dt.date == latest_date.date()
     ]
-    latest_flags: Dict[str, bool] = {
+    latest_flags: dict[str, bool] = {
         area: not latest_restrictions[latest_restrictions["area"] == area].empty
         for area in ["PRODUCCION", "PATIO", "CARGA", "LOGISTICA", "ENERGIA"]
     }

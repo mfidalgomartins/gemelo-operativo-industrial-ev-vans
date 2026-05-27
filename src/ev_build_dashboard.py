@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
 import hashlib
 import json
 
@@ -30,10 +29,10 @@ def _read_csv(path: Path, parse_dates: list[str] | None = None) -> pd.DataFrame:
     return pd.read_csv(path, parse_dates=parse_dates)
 
 
-def _records(df: pd.DataFrame) -> List[Dict[str, object]]:
-    rows: List[Dict[str, object]] = []
+def _records(df: pd.DataFrame) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
     for row in df.to_dict(orient="records"):
-        out: Dict[str, object] = {}
+        out: dict[str, object] = {}
         for k, v in row.items():
             if isinstance(v, pd.Timestamp):
                 out[k] = v.strftime("%Y-%m-%d")
@@ -73,7 +72,7 @@ def _build_meta(
     priorities: pd.DataFrame,
     scenarios: pd.DataFrame,
     kpi: pd.DataFrame,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     coverage_min = pd.to_datetime(flow["fecha_real"], errors="coerce").min()
     coverage_max = pd.to_datetime(flow["fecha_real"], errors="coerce").max()
 
@@ -81,6 +80,27 @@ def _build_meta(
     top_scenario = scenarios.sort_values("decision_score", ascending=False).head(1)
 
     kpi_row = kpi.iloc[0].to_dict() if not kpi.empty else {}
+    throughput_plan_calc = int(flow["orden_id"].nunique())
+    throughput_real_calc = int(flow["vehiculo_id"].nunique())
+    share_ev_calc = float((flow["tipo_propulsion"] == "EV").mean()) if len(flow) else 0.0
+    kpi_validation = {
+        "throughput_planificado_matches_flow": int(kpi_row.get("throughput_planificado", -1)) == throughput_plan_calc,
+        "throughput_real_matches_flow": int(kpi_row.get("throughput_real", -1)) == throughput_real_calc,
+        "throughput_gap_matches_components": int(kpi_row.get("throughput_gap", 0))
+        == int(kpi_row.get("throughput_real", 0)) - int(kpi_row.get("throughput_planificado", 0)),
+        "share_ev_matches_flow": abs(float(kpi_row.get("share_ev", 0.0)) - share_ev_calc) <= 0.02,
+        "proportions_in_range": all(
+            0 <= float(kpi_row.get(col, 0.0)) <= 1
+            for col in [
+                "share_ev",
+                "ocupacion_media_patio",
+                "ocupacion_pico_patio",
+                "utilizacion_media_cargadores",
+                "ratio_salida_retrasada",
+            ]
+        ),
+        "scores_in_range": 0 <= float(kpi_row.get("score_readiness_global", 0.0)) <= 100,
+    }
 
     return {
         "coverage": f"{coverage_min.date()} a {coverage_max.date()}" if pd.notna(coverage_min) and pd.notna(coverage_max) else "N/A",
@@ -90,6 +110,7 @@ def _build_meta(
         "charge_zones": int(charging["zona_carga"].nunique()),
         "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "kpi_official": kpi_row,
+        "kpi_validation": kpi_validation,
         "executive_snapshot": {
             "top_area": str(top_area["area"].iloc[0]) if not top_area.empty else "N/A",
             "top_action": str(top_area["recommended_action"].iloc[0]) if not top_area.empty else "N/A",
@@ -107,7 +128,7 @@ def _prepare_datasets(
     priorities: pd.DataFrame,
     scenarios: pd.DataFrame,
     kpi_readiness: pd.DataFrame,
-) -> Dict[str, pd.DataFrame]:
+) -> dict[str, pd.DataFrame]:
     f = flow.copy()
     f["fecha_programada"] = pd.to_datetime(f["fecha_programada"], errors="coerce")
     f["fecha_real"] = pd.to_datetime(f["fecha_real"], errors="coerce")
@@ -276,7 +297,7 @@ def _prepare_datasets(
     }
 
 
-def _build_payload(meta: Dict[str, object], datasets: Dict[str, pd.DataFrame]) -> Dict[str, object]:
+def _build_payload(meta: dict[str, object], datasets: dict[str, pd.DataFrame]) -> dict[str, object]:
     filters = {
         "turno": sorted(set(datasets["throughput"]["turno"].dropna().astype(str).tolist())),
         "propulsion": sorted(set(datasets["seq_gap"]["tipo_propulsion"].dropna().astype(str).tolist())),
@@ -297,7 +318,7 @@ def _build_payload(meta: Dict[str, object], datasets: Dict[str, pd.DataFrame]) -
     return payload
 
 
-def _build_html(payload: Dict[str, object], version: str) -> str:
+def _build_html(payload: dict[str, object], version: str) -> str:
     return f"""<!doctype html>
 <html lang=\"es\">
 <head>
@@ -386,41 +407,38 @@ html[data-theme='dark'] {{
   --hero-grad:linear-gradient(135deg, rgba(101,189,217,.14), rgba(20,32,51,.96) 46%, rgba(239,186,99,.08));
 }}
 * {{ box-sizing:border-box; }}
+html {{ overflow-x:hidden; }}
 body {{
   margin:0;
   font-family:var(--font-body);
   color:var(--ink);
-  background:
-    radial-gradient(circle at 0% 0%, rgba(13,112,137,.13), transparent 26%),
-    radial-gradient(circle at 100% 0%, rgba(183,121,31,.11), transparent 24%),
-    radial-gradient(circle at 50% 100%, rgba(13,112,137,.05), transparent 32%),
-    linear-gradient(180deg, var(--bg-soft), var(--bg));
+  background:linear-gradient(180deg, var(--bg-soft), var(--bg));
   position:relative;
+  overflow-x:hidden;
 }}
 body::before {{
   content:'';
   position:absolute;
   inset:0;
   pointer-events:none;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.18), transparent 14%),
-    radial-gradient(circle at 50% 100%, rgba(13,112,137,.03), transparent 34%);
-}}
-body::after {{
-  content:'';
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background-image:linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
-  background-size:34px 34px;
-  mask-image:radial-gradient(circle at center, black 36%, transparent 82%);
-  opacity:.18;
+  background:linear-gradient(180deg, rgba(255,255,255,.16), transparent 18%);
 }}
 .wrapper {{ max-width:1680px; margin:0 auto; padding:18px 22px 26px; position:relative; z-index:1; }}
+.sr-only {{
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}}
 .section, header, .decision {{
   background:var(--card);
   border:1px solid var(--line);
-  border-radius:22px;
+  border-radius:8px;
   box-shadow:var(--shadow);
   position:relative;
 }}
@@ -435,9 +453,7 @@ header::after {{
   position:absolute;
   inset:0;
   pointer-events:none;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.28), transparent 24%),
-    radial-gradient(circle at 100% 0%, rgba(255,255,255,.22), transparent 28%);
+  background:linear-gradient(180deg, rgba(255,255,255,.24), transparent 24%);
   z-index:-1;
 }}
 .head-top {{ display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap; }}
@@ -454,7 +470,7 @@ header::after {{
   color:var(--accent);
   font-size:11px;
   font-weight:700;
-  letter-spacing:.08em;
+  letter-spacing:0;
   text-transform:uppercase;
   box-shadow:0 1px 0 rgba(255,255,255,.72) inset;
 }}
@@ -469,9 +485,10 @@ h1 {{
   font-family:var(--font-display);
   font-size:34px;
   line-height:1.02;
-  letter-spacing:-0.04em;
+  letter-spacing:0;
   max-width:980px;
   text-wrap:balance;
+  overflow-wrap:anywhere;
 }}
 .sub {{ margin:9px 0 0 0; font-size:13px; color:var(--muted); line-height:1.55; }}
 .sub-strong {{
@@ -515,12 +532,57 @@ h1 {{
   padding:15px 17px;
   border:1px solid var(--line);
   border-left:4px solid var(--accent);
-  border-radius:16px;
+  border-radius:8px;
   background:linear-gradient(135deg, rgba(255,255,255,.72), rgba(244,249,253,.82));
   font-size:14px;
   line-height:1.62;
   color:var(--ink);
   box-shadow:var(--shadow-soft), 0 1px 0 rgba(255,255,255,.72) inset;
+  overflow-wrap:anywhere;
+}}
+.command-panel {{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:1.2fr 1fr 1fr 1fr;
+  gap:10px;
+}}
+.command-card {{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:14px;
+  background:linear-gradient(180deg, rgba(255,255,255,.86), rgba(246,250,254,.70));
+  box-shadow:var(--shadow-card);
+  min-height:118px;
+}}
+.command-card.is-critical {{
+  border-color:rgba(181,59,80,.48);
+  background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(181,59,80,.10));
+}}
+.command-label {{
+  display:block;
+  margin-bottom:7px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0;
+  text-transform:uppercase;
+}}
+.command-card strong {{
+  display:block;
+  font-size:18px;
+  line-height:1.22;
+}}
+.command-card p {{
+  margin:7px 0 0 0;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+}}
+html[data-theme='dark'] .command-card {{
+  background:linear-gradient(180deg, rgba(20,32,51,.98), rgba(23,38,58,.94));
+}}
+html[data-theme='dark'] .command-card.is-critical {{
+  background:linear-gradient(180deg, rgba(38,28,42,.98), rgba(47,31,45,.94));
 }}
 html[data-theme='dark'] .hero-message {{
   background:linear-gradient(135deg, rgba(19,32,49,.82), rgba(24,42,63,.88));
@@ -552,13 +614,14 @@ html[data-theme='dark'] .hero-message {{
   margin:6px 0 4px 0;
   font-size:20px;
   line-height:1.12;
-  letter-spacing:-0.02em;
+  letter-spacing:0;
+  overflow-wrap:anywhere;
 }}
 .pill-k {{
   color:var(--muted);
   font-size:11px;
   text-transform:uppercase;
-  letter-spacing:.07em;
+  letter-spacing:0;
   font-weight:700;
 }}
 .pill-s {{
@@ -616,12 +679,15 @@ html[data-theme='dark'] .hero-message {{
   margin-top:10px;
   padding:16px;
   border:1px solid var(--line);
-  border-radius:18px;
+  border-radius:8px;
   background:linear-gradient(180deg, rgba(255,255,255,.76), rgba(244,249,253,.64));
   box-shadow:var(--shadow-card);
 }}
 .filters-shell[data-collapsed='true'] .filters-head,
 .filters-shell[data-collapsed='true'] .filters {{
+  display:none;
+}}
+.filters-shell[data-collapsed='true'] {{
   display:none;
 }}
 .filters-head {{
@@ -671,7 +737,7 @@ html[data-theme='dark'] .hero-message {{
 .kpis {{ margin-top:16px; display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }}
 .kpi {{
   border:1px solid var(--line);
-  border-radius:18px;
+  border-radius:8px;
   padding:14px;
   background:linear-gradient(180deg, rgba(255,255,255,.84), rgba(246,250,254,.68));
   min-height:104px;
@@ -705,17 +771,18 @@ html[data-theme='dark'] .hero-message {{
   font-size:10px;
   color:var(--muted);
   text-transform:uppercase;
-  letter-spacing:.07em;
+  letter-spacing:0;
   font-weight:700;
 }}
 .kpi .k {{ margin-top:4px; font-size:12px; color:var(--muted); line-height:1.35; }}
-.kpi .v {{ margin-top:6px; font-size:22px; font-weight:700; line-height:1.1; letter-spacing:-0.02em; }}
+.kpi .v {{ margin-top:6px; font-size:22px; font-weight:700; line-height:1.1; letter-spacing:0; }}
+.kpi .v {{ overflow-wrap:anywhere; }}
 .kpi.is-primary .v {{ font-size:32px; }}
 .kpi .s {{ margin-top:4px; font-size:12px; color:var(--muted); line-height:1.4; }}
 .summary {{ margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:10px; }}
 .box {{
   border:1px solid var(--line);
-  border-radius:18px;
+  border-radius:8px;
   padding:16px;
   background:linear-gradient(180deg, rgba(255,255,255,.80), rgba(246,250,254,.68));
   box-shadow:var(--shadow-card);
@@ -724,7 +791,7 @@ html[data-theme='dark'] .hero-message {{
   margin:0 0 10px 0;
   font-size:15px;
   line-height:1.3;
-  letter-spacing:-0.01em;
+  letter-spacing:0;
 }}
 .box ul {{ margin:0; padding-left:16px; font-size:12px; color:var(--ink); line-height:1.55; }}
 .box li {{ margin-bottom:5px; }}
@@ -738,7 +805,7 @@ html[data-theme='dark'] .hero-message {{
   font-family:var(--font-display);
   font-size:25px;
   line-height:1.06;
-  letter-spacing:-0.03em;
+  letter-spacing:0;
 }}
 .desc {{ margin:6px 0 0 0; color:var(--muted); font-size:13px; line-height:1.55; max-width:940px; }}
 .section-tag {{
@@ -756,7 +823,7 @@ html[data-theme='dark'] .hero-message {{
 .grid-2 > *,.grid-3 > * {{ min-width:0; }}
 .chart-card {{
   border:1px solid var(--line);
-  border-radius:18px;
+  border-radius:8px;
   padding:16px;
   background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(246,250,254,.92));
   min-height:320px;
@@ -787,7 +854,7 @@ html[data-theme='dark'] .chart-card {{
   font-size:10px;
   color:var(--muted);
   text-transform:uppercase;
-  letter-spacing:.08em;
+  letter-spacing:0;
   font-weight:700;
 }}
 .chart-title {{
@@ -796,7 +863,7 @@ html[data-theme='dark'] .chart-card {{
   margin:0;
   font-weight:700;
   line-height:1.28;
-  letter-spacing:-0.01em;
+  letter-spacing:0;
 }}
 .chart-note {{
   margin-top:5px;
@@ -810,7 +877,7 @@ canvas {{ width:100% !important; height:100% !important; }}
 .table-wrap {{
   margin-top:12px;
   border:1px solid var(--line);
-  border-radius:18px;
+  border-radius:8px;
   overflow:auto;
   max-height:440px;
   background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(245,249,253,.72));
@@ -893,7 +960,7 @@ th {{
   z-index:2;
   font-size:11px;
   text-transform:uppercase;
-  letter-spacing:.06em;
+  letter-spacing:0;
   color:var(--muted);
   box-shadow:inset 0 -1px 0 var(--line);
 }}
@@ -955,7 +1022,7 @@ tbody tr:hover {{ background:rgba(15,112,137,.06); }}
   font-family:var(--font-display);
   font-size:23px;
   line-height:1.04;
-  letter-spacing:-0.03em;
+  letter-spacing:0;
 }}
 .decision-chip {{
   display:inline-flex;
@@ -1006,7 +1073,7 @@ tbody tr:hover {{ background:rgba(15,112,137,.06); }}
   font-size:11px;
   color:var(--muted);
   text-transform:uppercase;
-  letter-spacing:.06em;
+  letter-spacing:0;
   font-weight:700;
   margin-bottom:5px;
 }}
@@ -1029,8 +1096,9 @@ button:focus-visible,select:focus-visible,input:focus-visible {{
 }}
 @media (max-width:900px) {{
   .wrapper {{ padding:10px; }}
-  header,.section,.decision {{ border-radius:18px; }}
+  header,.section,.decision {{ border-radius:8px; }}
   h1 {{ font-size:28px; }}
+  .command-panel {{ grid-template-columns:1fr; }}
   .pill strong {{ font-size:18px; }}
   .kpi.is-primary {{ grid-column:span 1; min-height:122px; }}
   .grid-2,.grid-3 {{ grid-template-columns:1fr; }}
@@ -1040,6 +1108,20 @@ button:focus-visible,select:focus-visible,input:focus-visible {{
   .table-tools input {{ min-width:0; width:100%; }}
   .control-strip {{ align-items:stretch; }}
   table {{ min-width:820px; }}
+}}
+@media (max-width:600px) {{
+  .wrapper {{ padding:10px; }}
+  header {{ padding:16px 12px; }}
+  .head-top {{ display:block; }}
+  .actions {{ margin-top:14px; }}
+  .command-panel,.meta,.kpis,.summary,.decision-grid {{ grid-template-columns:1fr; }}
+  .pill,.kpi,.box,.command-card,.decision-card {{ min-width:0; }}
+  .kpi.is-primary {{ grid-column:auto; }}
+  h1 {{ font-size:26px; line-height:1.08; }}
+  .sub-strong {{ font-size:14px; }}
+  .filter-summary,.control-actions {{ width:100%; }}
+  .filter-pill {{ max-width:100%; }}
+  .filter-pill span {{ overflow-wrap:anywhere; }}
 }}
 @media print {{
   @page {{ size: A4 landscape; margin: 10mm; }}
@@ -1073,6 +1155,28 @@ button:focus-visible,select:focus-visible,input:focus-visible {{
     </div>
   </div>
   <div class=\"hero-message\" id=\"hero_message\"></div>
+  <div class=\"command-panel\" aria-label=\"Resumen ejecutivo de decisión\">
+    <div class=\"command-card is-critical\">
+      <span class=\"command-label\">Qué importa ahora</span>
+      <strong id=\"command_matter\">N/A</strong>
+      <p id=\"command_matter_note\">N/A</p>
+    </div>
+    <div class=\"command-card\">
+      <span class=\"command-label\">Crítico</span>
+      <strong id=\"command_critical\">N/A</strong>
+      <p id=\"command_critical_note\">N/A</p>
+    </div>
+    <div class=\"command-card\">
+      <span class=\"command-label\">Acción requerida</span>
+      <strong id=\"command_action\">N/A</strong>
+      <p id=\"command_action_note\">N/A</p>
+    </div>
+    <div class=\"command-card\">
+      <span class=\"command-label\">Impacto operativo</span>
+      <strong id=\"command_impact\">N/A</strong>
+      <p id=\"command_impact_note\">N/A</p>
+    </div>
+  </div>
   <div class=\"meta\">
     <div class=\"pill\">
       <span class=\"pill-k\">Área prioritaria</span>
@@ -1115,17 +1219,17 @@ button:focus-visible,select:focus-visible,input:focus-visible {{
       <div class=\"filters-note\">Lectura rápida: empieza por fecha + turno y añade después propulsión, área o severidad para ver qué cambia de verdad.</div>
     </div>
     <div class=\"filters\">
-      <div><label>Fecha desde</label><input id=\"f_date_from\" type=\"date\" /></div>
-      <div><label>Fecha hasta</label><input id=\"f_date_to\" type=\"date\" /></div>
-      <div><label>Turno</label><select id=\"f_turno\"></select></div>
-      <div><label>Propulsión</label><select id=\"f_prop\"></select></div>
-      <div><label>Versión</label><select id=\"f_version\"></select></div>
-      <div><label>Área</label><select id=\"f_area\"></select></div>
-      <div><label>Zona Patio</label><select id=\"f_yard\"></select></div>
-      <div><label>Zona Carga</label><select id=\"f_charge\"></select></div>
-      <div><label>Severidad Cuello</label><select id=\"f_severity\"></select></div>
-      <div><label>&nbsp;</label><button id=\"btn_apply\" type=\"button\">Aplicar filtros</button></div>
-      <div><label>&nbsp;</label><button id=\"btn_reset\" type=\"button\">Reset filtros</button></div>
+      <div><label for=\"f_date_from\">Fecha desde</label><input id=\"f_date_from\" type=\"date\" /></div>
+      <div><label for=\"f_date_to\">Fecha hasta</label><input id=\"f_date_to\" type=\"date\" /></div>
+      <div><label for=\"f_turno\">Turno</label><select id=\"f_turno\"></select></div>
+      <div><label for=\"f_prop\">Propulsión</label><select id=\"f_prop\"></select></div>
+      <div><label for=\"f_version\">Versión</label><select id=\"f_version\"></select></div>
+      <div><label for=\"f_area\">Área</label><select id=\"f_area\"></select></div>
+      <div><label for=\"f_yard\">Zona Patio</label><select id=\"f_yard\"></select></div>
+      <div><label for=\"f_charge\">Zona Carga</label><select id=\"f_charge\"></select></div>
+      <div><label for=\"f_severity\">Severidad Cuello</label><select id=\"f_severity\"></select></div>
+      <div><span class=\"sr-only\">Aplicar filtros</span><button id=\"btn_apply\" type=\"button\">Aplicar filtros</button></div>
+      <div><span class=\"sr-only\">Reset filtros</span><button id=\"btn_reset\" type=\"button\">Reset filtros</button></div>
     </div>
   </div>
 
@@ -1201,6 +1305,7 @@ button:focus-visible,select:focus-visible,input:focus-visible {{
 
   <div class=\"table-tools no-print\">
     <div>
+      <label class=\"sr-only\" for=\"table_search\">Buscar en tabla de prioridades</label>
       <input id=\"table_search\" type=\"text\" placeholder=\"Buscar área, driver, acción...\" />
       <button id=\"btn_export\" type=\"button\">Export CSV filtrado</button>
     </div>
@@ -1254,6 +1359,23 @@ const THEME_KEY = 'ev_dashboard_theme';
 
 function n(v) {{ const x = Number(v); return Number.isFinite(x) ? x : 0; }}
 function pct(v) {{ return (n(v)*100).toFixed(1) + '%'; }}
+function mean(rows, key) {{
+  if (!rows.length) return 0;
+  return rows.reduce((a, r) => a + n(r[key]), 0) / rows.length;
+}}
+function weightedMean(rows, valueKey, weightKey) {{
+  const w = rows.reduce((a, r) => a + Math.max(1, n(r[weightKey])), 0);
+  if (!w) return 0;
+  return rows.reduce((a, r) => a + n(r[valueKey]) * Math.max(1, n(r[weightKey])), 0) / w;
+}}
+function escapeHtml(v) {{
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}}
 function dstr(v) {{
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return '';
@@ -1310,20 +1432,29 @@ function setMeta() {{
     'Patio en pico: ' + pct(k.ocupacion_pico_patio || 0) + ' y dwell p95 de ' + n(k.dwell_p95_min || 0).toFixed(0) + ' min.',
     'Escenario con mejor balance actual: ' + (META.executive_snapshot.top_scenario || 'N/A') + '.'
   ];
-  document.getElementById('executive_list').innerHTML = list.map(x => '<li>' + x + '</li>').join('');
+  document.getElementById('executive_list').innerHTML = list.map(x => '<li>' + escapeHtml(x) + '</li>').join('');
 
   const opList = [
     'Reservar carga para unidades con salida inmediata cuando el readiness real quede por debajo del objetivo.',
     'Reducir dwell en las zonas con mayor p95 antes de ampliar físicamente patio.',
     'Tratar la desviación de secuencia como señal temprana de rotura, no solo como efecto de la congestión.'
   ];
-  document.getElementById('operational_list').innerHTML = opList.map(x => '<li>' + x + '</li>').join('');
+  document.getElementById('operational_list').innerHTML = opList.map(x => '<li>' + escapeHtml(x) + '</li>').join('');
 
   document.getElementById('hero_message').textContent =
     'El cuello dominante ya no está solo en la línea. La presión se desplaza a patio, carga y salida: el foco inmediato es '
     + (META.executive_snapshot.top_area || 'N/A')
     + ', con prioridad para ' + (META.executive_snapshot.top_action || 'N/A')
     + ' y validación contra el escenario ' + (META.executive_snapshot.top_scenario || 'N/A') + '.';
+
+  document.getElementById('command_matter').textContent = 'Proteger readiness de salida';
+  document.getElementById('command_matter_note').textContent = 'El riesgo visible no es volumen total, sino vehículos que llegan a expedición sin preparación suficiente.';
+  document.getElementById('command_critical').textContent = pct(k.ratio_salida_retrasada || 0) + ' de salidas retrasadas';
+  document.getElementById('command_critical_note').textContent = 'Con este nivel, la prioridad es reducir cola y secuencia rota antes de perseguir más throughput.';
+  document.getElementById('command_action').textContent = META.executive_snapshot.top_action || 'N/A';
+  document.getElementById('command_action_note').textContent = 'Acción táctica sugerida por el ranking OPI, aplicable primero en ' + (META.executive_snapshot.top_area || 'N/A') + '.';
+  document.getElementById('command_impact').textContent = Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES') + ' no ready';
+  document.getElementById('command_impact_note').textContent = 'Backlog operativo que conecta carga, patio y expedición; si no baja, el ramp-up EV amplifica el cuello.';
 }}
 
 function fillSelect(id, values, label) {{
@@ -1494,28 +1625,75 @@ function truncLabels(arr, n=20) {{
   return arr.map(x => x.length > n ? x.slice(0, n-1) + '…' : x);
 }}
 
-function renderOfficialKpis() {{
-  const k = META.kpi_official || {{}};
+function classifyKpi(key, value) {{
+  if (key === 'throughput_gap') return value < 0 ? 'kpi-critical' : 'kpi-good';
+  if (key === 'utilizacion_media_cargadores') return value > 0.82 ? 'kpi-critical' : (value > 0.68 ? 'kpi-warning' : 'kpi-good');
+  if (key === 'ratio_salida_retrasada') return value > 0.12 ? 'kpi-critical' : (value > 0.05 ? 'kpi-warning' : 'kpi-good');
+  if (key === 'ocupacion_pico_patio') return value > 0.85 ? 'kpi-critical' : (value > 0.70 ? 'kpi-warning' : 'kpi-good');
+  if (key === 'vehiculos_no_ready') return value > 0 ? 'kpi-critical' : 'kpi-good';
+  if (key === 'score_readiness_global') return value >= 70 ? 'kpi-good' : (value >= 50 ? 'kpi-warning' : 'kpi-critical');
+  return 'kpi-warning';
+}}
+
+function calculateVisibleKpis(ctx) {{
+  const official = META.kpi_official || {{}};
+  const throughputPlan = ctx.fThrough.reduce((a, r) => a + n(r.throughput_plan), 0);
+  const throughputReal = ctx.fThrough.reduce((a, r) => a + n(r.throughput_real), 0);
+  const dispatchVehicles = ctx.fDispatchBase.reduce((a, r) => a + Math.max(1, n(r.vehicles)), 0);
+  const delayRate = dispatchVehicles
+    ? ctx.fDispatchBase.reduce((a, r) => a + n(r.delay_rate) * Math.max(1, n(r.vehicles)), 0) / dispatchVehicles
+    : n(official.ratio_salida_retrasada);
+  const readinessRate = dispatchVehicles
+    ? ctx.fDispatchBase.reduce((a, r) => a + n(r.readiness_rate) * Math.max(1, n(r.vehicles)), 0) / dispatchVehicles
+    : n(official.score_readiness_global) / 100;
+  const chargeWait = mean(ctx.fCharge, 'wait');
+  const chargeUtil = mean(ctx.fCharge, 'utilization');
+  const yardOccPeak = ctx.fYard.length ? Math.max(...ctx.fYard.map(r => n(r.occupancy))) : n(official.ocupacion_pico_patio);
+  const yardDwellP95 = mean(ctx.fYard, 'dwell_p95');
+  const yardDwell = mean(ctx.fYard, 'dwell');
+  const evRows = ctx.fFlowProp.filter(r => String(r.tipo_propulsion) === 'EV');
+  const allFlow = ctx.fFlowProp;
+  const shareEv = allFlow.reduce((a, r) => a + n(r.throughput), 0)
+    ? evRows.reduce((a, r) => a + n(r.throughput), 0) / allFlow.reduce((a, r) => a + n(r.throughput), 0)
+    : n(official.share_ev);
+  const noReady = dispatchVehicles ? Math.round(dispatchVehicles * Math.max(0, 1 - readinessRate)) : n(official.vehiculos_no_ready);
+  return {{
+    throughput_real: throughputReal || n(official.throughput_real),
+    throughput_gap: (throughputReal || 0) - (throughputPlan || 0),
+    share_ev: shareEv,
+    utilizacion_media_cargadores: chargeUtil || n(official.utilizacion_media_cargadores),
+    ratio_salida_retrasada: delayRate,
+    ocupacion_pico_patio: yardOccPeak,
+    vehiculos_no_ready: noReady,
+    tiempo_medio_patio_min: yardDwell || n(official.tiempo_medio_patio_min),
+    dwell_p95_min: yardDwellP95 || n(official.dwell_p95_min),
+    score_readiness_global: readinessRate * 100,
+    causa_principal_cuello: official.causa_principal_cuello || 'N/A',
+    tiempo_medio_espera_carga_min: chargeWait || n(official.tiempo_medio_espera_carga_min),
+  }};
+}}
+
+function renderOfficialKpis(k = META.kpi_official || {{}}, contextLabel = 'baseline gobernado') {{
   const cards = [
-    {{ label:'Throughput real', value:Math.round(n(k.throughput_real || 0)).toLocaleString('es-ES'), subtitle:'Volumen ejecutado en el periodo filtrado.', tone:'kpi-good', primary:true, kicker:'Entrega' }},
-    {{ label:'Gap vs plan', value:Math.round(n(k.throughput_gap || 0)).toLocaleString('es-ES'), subtitle:'Desviación neta entre plan y ejecución.', tone:n(k.throughput_gap || 0) < 0 ? 'kpi-critical' : 'kpi-warning', primary:true, kicker:'Disciplina' }},
-    {{ label:'Utilización de carga', value:pct(k.utilizacion_media_cargadores || 0), subtitle:'Uso medio de la infraestructura crítica.', tone:n(k.utilizacion_media_cargadores || 0) > 0.82 ? 'kpi-critical' : 'kpi-warning', primary:true, kicker:'Infraestructura' }},
-    {{ label:'Delay rate salida', value:pct(k.ratio_salida_retrasada || 0), subtitle:'Riesgo material de expedición en el periodo.', tone:n(k.ratio_salida_retrasada || 0) > 0.12 ? 'kpi-critical' : 'kpi-warning', primary:true, kicker:'Expedición' }},
-    {{ label:'Share EV', value:pct(k.share_ev || 0), subtitle:'Mix de fabricación y fuente de presión estructural.', tone:'kpi-warning', primary:false, kicker:'Mix' }},
-    {{ label:'Ocupación pico patio', value:pct(k.ocupacion_pico_patio || 0), subtitle:'Punto más alto de saturación observada.', tone:n(k.ocupacion_pico_patio || 0) > 0.85 ? 'kpi-critical' : 'kpi-warning', primary:false, kicker:'Patio' }},
-    {{ label:'Vehículos no ready', value:Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES'), subtitle:'Backlog de salida pendiente de readiness.', tone:n(k.vehiculos_no_ready || 0) > 0 ? 'kpi-critical' : 'kpi-good', primary:false, kicker:'Backlog' }},
-    {{ label:'Tiempo medio patio', value:n(k.tiempo_medio_patio_min || 0).toFixed(1) + ' min', subtitle:'Espera media interna antes de avanzar.', tone:'kpi-warning', primary:false, kicker:'Espera' }},
-    {{ label:'Dwell p95', value:n(k.dwell_p95_min || 0).toFixed(1) + ' min', subtitle:'Cola extrema que tensiona la operación.', tone:'kpi-warning', primary:false, kicker:'Cola extrema' }},
-    {{ label:'Áreas críticas', value:Math.round(n(k.areas_criticas || 0)).toLocaleString('es-ES'), subtitle:'Áreas con necesidad de intervención inmediata.', tone:n(k.areas_criticas || 0) > 0 ? 'kpi-critical' : 'kpi-good', primary:false, kicker:'Foco' }},
-    {{ label:'Readiness global', value:n(k.score_readiness_global || 0).toFixed(1), subtitle:'Preparación media de las unidades para salida.', tone:n(k.score_readiness_global || 0) >= 70 ? 'kpi-good' : 'kpi-warning', primary:false, kicker:'Readiness' }},
-    {{ label:'Causa principal de cuello', value:(k.causa_principal_cuello || 'N/A'), subtitle:'Driver más repetido del estrés operativo actual.', tone:'kpi-warning', primary:false, kicker:'Driver' }},
+    {{ key:'throughput_real', label:'Throughput real', value:Math.round(n(k.throughput_real || 0)).toLocaleString('es-ES'), subtitle:'Entrega visible en ' + contextLabel + '; confirma si el sistema sostiene volumen.', primary:true, kicker:'Entrega' }},
+    {{ key:'throughput_gap', label:'Gap vs plan', value:Math.round(n(k.throughput_gap || 0)).toLocaleString('es-ES'), subtitle:n(k.throughput_gap || 0) < 0 ? 'Déficit operativo: activar contención de secuencia y salida.' : 'Sin déficit neto; vigilar que no oculte tensión por área.', primary:true, kicker:'Disciplina' }},
+    {{ key:'utilizacion_media_cargadores', label:'Utilización de carga', value:pct(k.utilizacion_media_cargadores || 0), subtitle:n(k.utilizacion_media_cargadores || 0) > 0.82 ? 'Crítico: poca holgura para absorber picos EV.' : 'Capacidad con margen; mirar colas antes de ampliar slots.', primary:true, kicker:'Infraestructura' }},
+    {{ key:'ratio_salida_retrasada', label:'Delay rate salida', value:pct(k.ratio_salida_retrasada || 0), subtitle:n(k.ratio_salida_retrasada || 0) > 0.12 ? 'Crítico: expedición ya está degradando el flujo final.' : 'Controlable si no sube junto con no-ready.', primary:true, kicker:'Expedición' }},
+    {{ key:'share_ev', label:'Share EV', value:pct(k.share_ev || 0), subtitle:'Mix EV que explica presión incremental sobre carga y readiness.', primary:false, kicker:'Mix' }},
+    {{ key:'ocupacion_pico_patio', label:'Ocupación pico patio', value:pct(k.ocupacion_pico_patio || 0), subtitle:'Pico físico; si sube con dwell p95, el bloqueo se vuelve estructural.', primary:false, kicker:'Patio' }},
+    {{ key:'vehiculos_no_ready', label:'Vehículos no ready', value:Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES'), subtitle:'Backlog accionable: priorizar SOC, secuencia y ventanas de expedición.', primary:false, kicker:'Backlog' }},
+    {{ key:'tiempo_medio_patio_min', label:'Tiempo medio patio', value:n(k.tiempo_medio_patio_min || 0).toFixed(1) + ' min', subtitle:'Tiempo improductivo medio antes de avanzar al siguiente hito.', primary:false, kicker:'Espera' }},
+    {{ key:'dwell_p95_min', label:'Dwell p95', value:n(k.dwell_p95_min || 0).toFixed(1) + ' min', subtitle:'Cola extrema; mejor indicador de riesgo que la media cuando hay picos.', primary:false, kicker:'Cola extrema' }},
+    {{ key:'tiempo_medio_espera_carga_min', label:'Espera carga', value:n(k.tiempo_medio_espera_carga_min || 0).toFixed(1) + ' min', subtitle:'Bottleneck directo de transición EV: cola antes de energía disponible.', primary:false, kicker:'Carga' }},
+    {{ key:'score_readiness_global', label:'Readiness global', value:n(k.score_readiness_global || 0).toFixed(1), subtitle:n(k.score_readiness_global || 0) >= 70 ? 'Readiness aceptable; sostener disciplina por turno.' : 'Readiness insuficiente: bloquear salida de unidades frágiles.', primary:false, kicker:'Readiness' }},
+    {{ key:'causa_principal_cuello', label:'Causa principal de cuello', value:(k.causa_principal_cuello || 'N/A'), subtitle:'Driver dominante que debe guiar la primera intervención operativa.', primary:false, kicker:'Driver' }},
   ];
   document.getElementById('kpi_cards').innerHTML = cards.map(c =>
-    '<div class="kpi ' + c.tone + (c.primary ? ' is-primary' : '') + '">'
-    + '<div class="kpi-top">' + c.kicker + '</div>'
-    + '<div class="k">' + c.label + '</div>'
-    + '<div class="v">' + c.value + '</div>'
-    + '<div class="s">' + c.subtitle + '</div>'
+    '<div class="kpi ' + classifyKpi(c.key, n(k[c.key])) + (c.primary ? ' is-primary' : '') + '">'
+    + '<div class="kpi-top">' + escapeHtml(c.kicker) + '</div>'
+    + '<div class="k">' + escapeHtml(c.label) + '</div>'
+    + '<div class="v">' + escapeHtml(c.value) + '</div>'
+    + '<div class="s">' + escapeHtml(c.subtitle) + '</div>'
     + '</div>'
   ).join('');
 }}
@@ -1632,6 +1810,15 @@ function updateCharts() {{
   const fBDetail = filterRows(DATA.b_detail, {{ date:'fecha', turno:'turno', area:'area', severity:'severidad' }});
   const fFlowProp = filterRows(DATA.flow_prop_daily, {{ date:'fecha', turno:'turno' }});
   const fPrio = filterRows(DATA.priorities, {{ area:'area' }});
+  const filterState = getFilterState();
+  const hasActiveContext = Object.entries(filterState).some(([key, value]) => {{
+    if (key === 'from' || key === 'to') return false;
+    return value && value !== 'ALL';
+  }});
+  renderOfficialKpis(
+    calculateVisibleKpis({{ fThrough, fDispatchBase, fCharge, fYard, fFlowProp }}),
+    hasActiveContext ? 'contexto filtrado' : 'periodo completo'
+  );
   const fRisk = fPrio.map(r => ({{
     area: r.area,
     throughput_loss_score: r.throughput_loss_score,
@@ -1847,12 +2034,12 @@ function renderPriorityTable(rows) {{
   body.innerHTML = data.map((r, idx) =>
     '<tr>' +
     '<td><span class="score-badge">' + (idx + 1) + '</span></td>' +
-    '<td>' + (r.area || 'N/A') + '</td>' +
+    '<td>' + escapeHtml(r.area || 'N/A') + '</td>' +
     '<td><span class="score-badge">' + n(r.operational_priority_index).toFixed(1) + '</span></td>' +
-    '<td><span class="tier-badge ' + tierClass(r.area_priority_tier) + '">' + (r.area_priority_tier || 'N/A') + '</span></td>' +
-    '<td>' + (r.main_risk_driver || 'N/A') + '</td>' +
-    '<td class="action-cell"><strong>' + (r.recommended_action || 'N/A') + '</strong><span>Riesgo: ' + (r.main_risk_driver || 'N/A') + '</span></td>' +
-    '<td>' + (r.main_bottleneck_driver || 'N/A') + '</td>' +
+    '<td><span class="tier-badge ' + tierClass(r.area_priority_tier) + '">' + escapeHtml(r.area_priority_tier || 'N/A') + '</span></td>' +
+    '<td>' + escapeHtml(r.main_risk_driver || 'N/A') + '</td>' +
+    '<td class="action-cell"><strong>' + escapeHtml(r.recommended_action || 'N/A') + '</strong><span>Riesgo: ' + escapeHtml(r.main_risk_driver || 'N/A') + '</span></td>' +
+    '<td>' + escapeHtml(r.main_bottleneck_driver || 'N/A') + '</td>' +
     '</tr>'
   ).join('');
 
@@ -1977,7 +2164,7 @@ def _write_dashboard_docs(official_path: Path, version: str) -> None:
 - Sin lógica de scoring crítica en frontend.
 - Payload agregado para rendimiento y legibilidad.
 - Filtros aplicados por contrato de dataset.
-- QA de build con manifest y reporte dedicado.
+- QA de build con manifest técnico.
 """,
         encoding="utf-8",
     )
@@ -1991,15 +2178,14 @@ def _write_dashboard_docs(official_path: Path, version: str) -> None:
 4. Revisar tabla de priorización y bloque de decisión ejecutiva
 
 ## Trazabilidad
-- Manifest técnico: `outputs/reports/dashboard_build_manifest.json`
-- Estado de release: `outputs/reports/release_readiness.json`
+- El pipeline genera trazas técnicas en ejecución para validar el build y el estado de release.
 """,
         encoding="utf-8",
     )
 
 
 def _write_manifest_and_qc(
-    payload: Dict[str, object],
+    payload: dict[str, object],
     output_path: Path,
     version: str,
     archived: list[str],
@@ -2038,6 +2224,7 @@ def _write_manifest_and_qc(
         "html_size_bytes": html_size,
         "datasets_rows": row_counts,
         "archived_dashboards": archived,
+        "kpi_validation": payload["meta"].get("kpi_validation", {}),
         "checks": {
             "placeholder_free": all(tok not in html for tok in ["__PAYLOAD__", "__FILTERS__", "__CHARTJS__"]),
             "single_official_dashboard": len(list(output_path.parent.glob("*.html"))) == 1,
@@ -2048,6 +2235,7 @@ def _write_manifest_and_qc(
             "severity_filter_wired": "f_severity" in html and "severity:'severidad'" in html,
             "executive_snapshot_consistent": payload["meta"]["executive_snapshot"]["top_area"] == top_priority_area,
             "density_guard": density_guard,
+            "kpi_logic_valid": all(payload["meta"].get("kpi_validation", {}).values()),
         },
     }
 
@@ -2055,29 +2243,6 @@ def _write_manifest_and_qc(
         json.dumps(manifest, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
-
-    qa_lines = [
-        "# Dashboard QA Report",
-        "",
-        f"- Versión: **{version}**",
-        f"- Dashboard oficial: `{manifest['official_dashboard']}`",
-        f"- Tamaño HTML: **{manifest['html_size_bytes']} bytes**",
-        "",
-        "## Checks",
-    ]
-    for k, v in manifest["checks"].items():
-        qa_lines.append(f"- {k}: {'PASS' if v else 'WARN'}")
-
-    qa_lines.extend(
-        [
-            "",
-            "## Dataset row counts",
-        ]
-    )
-    for k, v in row_counts.items():
-        qa_lines.append(f"- {k}: {v}")
-
-    (OUTPUT_REPORTS_DIR / "dashboard_qa_report.md").write_text("\n".join(qa_lines), encoding="utf-8")
 
 
 def run_ev_build_dashboard() -> DashboardResult:

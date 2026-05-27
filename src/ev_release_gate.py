@@ -23,8 +23,15 @@ def run_release_gate() -> ReleaseGateResult:
     if not manifest_path.exists():
         return ReleaseGateResult(False, "unknown", "Falta dashboard_build_manifest.json")
 
-    readiness = json.loads(readiness_path.read_text(encoding="utf-8"))
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    try:
+        readiness = json.loads(readiness_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return ReleaseGateResult(False, "unknown", "release_readiness.json no es JSON válido")
+
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return ReleaseGateResult(False, "unknown", "dashboard_build_manifest.json no es JSON válido")
 
     release_grade = str(readiness.get("release_grade", "unknown"))
     publish_blocked = bool(readiness.get("publish_blocked", True))

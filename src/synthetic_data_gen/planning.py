@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ def generate_escenarios_transicion(
     fechas = pd.date_range(start, end, freq="D")
 
     records = []
-    phase_positions: Dict[str, int] = {"pre_lanzamiento": 0, "pre_serie": 0, "ramp_up": 0, "estable": 0}
+    phase_positions: dict[str, int] = {"pre_lanzamiento": 0, "pre_serie": 0, "ramp_up": 0, "estable": 0}
     phase_totals = {"pre_lanzamiento": 1, "pre_serie": 1, "ramp_up": 1, "estable": 1}
 
     assigned_phases = [ordered_phase(i, len(fechas)) for i in range(len(fechas))]

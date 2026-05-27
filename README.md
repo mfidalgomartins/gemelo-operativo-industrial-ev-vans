@@ -11,7 +11,7 @@ En un ramp-up EV, el throughput deja de depender solo de la línea. La presión 
 - Consolida una capa SQL en DuckDB con marts y KPIs operativos trazables.
 - Construye features y scores interpretables para diagnóstico, priorización y riesgo.
 - Ejecuta escenarios de transición EV para comparar palancas y trade-offs.
-- Publica un dashboard ejecutivo único y un reporte formal de validación.
+- Publica un dashboard ejecutivo único, trazable y listo para abrir.
 
 ## Decisiones que habilita
 - Cuándo ajustar reglas de secuenciación por mezcla EV/ICE y complejidad de versión.
@@ -20,26 +20,33 @@ En un ramp-up EV, el throughput deja de depender solo de la línea. La presión 
 - Qué áreas requieren intervención inmediata y cuáles deben pasar a monitorización reforzada.
 
 ## Arquitectura, en una vista
-`generate_synthetic_data.py` crea la base operativa. `src/run_pipeline.py` orquesta la ruta oficial: SQL (`src/ev_sql_layer.py`), feature engineering (`src/ev_feature_engineering.py`), diagnóstico (`src/ev_diagnostic_analysis.py`), gemelo de escenarios (`src/ev_scenario_twin.py`), scoring (`src/ev_scoring_framework.py`), dashboard (`src/ev_build_dashboard.py`) y validación/release gate (`src/ev_validate_project.py`).
+`generate_synthetic_data.py` crea la base operativa. `src/run_pipeline.py` orquesta la ruta oficial: SQL (`src/ev_sql_layer.py`), feature engineering (`src/ev_feature_engineering.py`), diagnóstico (`src/ev_diagnostic_analysis.py`), gemelo de escenarios (`src/ev_scenario_twin.py`), scoring (`src/ev_scoring_framework.py`), dashboard (`src/ev_build_dashboard.py`) y validación/release gate (`src/ev_validate_project.py`). Helpers compartidos centralizados en `src/utils.py`.
 
 ## Estructura principal
 ```text
-src/
-data/raw/ev_factory/
-data/processed/ev_factory/
-sql/ev_factory/
-docs/
-tests/
-outputs/charts/
-outputs/dashboard/
-outputs/reports/
+src/                          # Código ejecutable del pipeline
+  utils.py                    # Helpers compartidos
+  config.py                   # Rutas y ensure_directories
+  run_pipeline.py             # Orquestador
+  ev_sql_layer.py             # DuckDB SQL layer
+  ev_feature_engineering.py   # Feature building
+  ev_diagnostic_analysis.py   # Scoring y diagnosis
+  ev_scenario_twin.py         # Simulación de escenarios
+  ev_scoring_framework.py     # OPI, sensibilidad, Monte Carlo
+  ev_build_dashboard.py       # Dashboard ejecutivo
+  ev_validate_project.py      # Validación y release grade
+  ev_release_gate.py          # Gate de publicación
+  synthetic_data_gen/         # Generador sintético industrial
+data/raw/ev_factory/          # 14 tablas CSV base
+data/processed/ev_factory/    # Tablas gobernadas exportadas
+sql/ev_factory/               # 11 scripts DuckDB en orden
+docs/                         # Documentación técnica y gobierno
+tests/                        # Tests unitarios e integración
+outputs/dashboard/            # Dashboard final
 ```
 
 ## Entregables clave
 - Dashboard final: `outputs/dashboard/industrial-ev-operating-command-center.html`
-- Reporte de validación: `outputs/reports/validation_report.md`
-- Estado de release: `outputs/reports/release_readiness.json`
-- Hallazgos y drivers: `outputs/reports/diagnostic_findings.md`
 
 ## Live dashboard
 [Industrial EV Operating Command Center · Live](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/dashboard/industrial-ev-operating-command-center.html)
@@ -61,4 +68,4 @@ python -m src.run_pipeline
 - Los escenarios son paramétricos e interpretables; no sustituyen inferencia causal.
 - Los umbrales/pesos de scoring deben ajustarse con criterio operativo local.
 
-Herramientas: Python, SQL, DuckDB, pandas, NumPy, Matplotlib, Seaborn, Chart.js, pytest.
+Herramientas: Python, SQL, DuckDB, pandas, NumPy, Chart.js, pytest.

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+
 
 import numpy as np
 import pandas as pd
@@ -38,11 +38,11 @@ def _select_version(
     return str(rng.choice(subset["version_id"].values, p=probs))
 
 
-def _build_impact_lookup(daily_restriction_map: pd.DataFrame) -> Dict[Tuple[pd.Timestamp, str], float]:
+def _build_impact_lookup(daily_restriction_map: pd.DataFrame) -> dict[tuple[pd.Timestamp, str], float]:
     if daily_restriction_map.empty:
         return {}
 
-    lookup: Dict[Tuple[pd.Timestamp, str], float] = {}
+    lookup: dict[tuple[pd.Timestamp, str], float] = {}
     tmp = daily_restriction_map.copy()
     tmp["fecha"] = pd.to_datetime(tmp["fecha"]).dt.normalize()
     for row in tmp.itertuples(index=False):
@@ -102,8 +102,8 @@ def generate_operational_tables(
 
     base_units_shift = {"A": 76, "B": 68, "C": 54}
 
-    order_rows: List[Dict[str, object]] = []
-    vehicle_rows: List[Dict[str, object]] = []
+    order_rows: list[dict[str, object]] = []
+    vehicle_rows: list[dict[str, object]] = []
 
     order_counter = 1
     vehicle_counter = 1
@@ -242,8 +242,8 @@ def generate_operational_tables(
     start_slot_clock = pd.to_datetime(ordenes_df["fecha_programada"]).min().floor("h") + pd.Timedelta(hours=5)
     slot_next_free = {slot_id: start_slot_clock for slot_id in active_slots["slot_id"]}
 
-    sessions_rows: List[Dict[str, object]] = []
-    battery_rows: List[Dict[str, object]] = []
+    sessions_rows: list[dict[str, object]] = []
+    battery_rows: list[dict[str, object]] = []
 
     ev_vehicle_idx = vehiculos_df[
         vehiculos_df["version_id"].map(lambda x: int(version_map[x]["requiere_carga_salida_flag"]) == 1)
@@ -367,9 +367,9 @@ def generate_operational_tables(
             }
         )
 
-    logistics_rows: List[Dict[str, object]] = []
-    patio_rows: List[Dict[str, object]] = []
-    move_rows: List[Dict[str, object]] = []
+    logistics_rows: list[dict[str, object]] = []
+    patio_rows: list[dict[str, object]] = []
+    move_rows: list[dict[str, object]] = []
 
     salida_counter = 1
     mov_counter = 1
@@ -473,7 +473,7 @@ def generate_operational_tables(
         ts_entry = pd.Timestamp(veh.timestamp_entrada_patio)
         zone_entry = str(rng.choice(["NORTE", "SUR", "ESTE", "OESTE"], p=[0.30, 0.27, 0.23, 0.20]))
 
-        patio_points: List[Tuple[pd.Timestamp, str, str]] = [(ts_entry, zone_entry, "INGRESO_PATIO")]
+        patio_points: list[tuple[pd.Timestamp, str, str]] = [(ts_entry, zone_entry, "INGRESO_PATIO")]
 
         if pd.notna(veh.timestamp_inicio_carga):
             ts_wait = max(ts_entry + pd.Timedelta(minutes=8), pd.Timestamp(veh.timestamp_inicio_carga) - pd.Timedelta(minutes=int(rng.integers(4, 45))))

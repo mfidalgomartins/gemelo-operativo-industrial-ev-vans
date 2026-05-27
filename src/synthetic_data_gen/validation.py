@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List
+
 
 import pandas as pd
 
 
-REQUIRED_COLUMNS: Dict[str, List[str]] = {
+REQUIRED_COLUMNS: dict[str, list[str]] = {
     "ordenes": [
         "orden_id",
         "fecha_programada",
@@ -158,12 +158,12 @@ REQUIRED_COLUMNS: Dict[str, List[str]] = {
 
 
 def validate_synthetic_data(
-    tables: Dict[str, pd.DataFrame],
+    tables: dict[str, pd.DataFrame],
     report_dir: Path,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     report_dir.mkdir(parents=True, exist_ok=True)
 
-    checks: List[Dict[str, object]] = []
+    checks: list[dict[str, object]] = []
 
     for table_name, required_cols in REQUIRED_COLUMNS.items():
         df = tables[table_name]

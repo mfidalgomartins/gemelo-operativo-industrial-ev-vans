@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+
 
 import numpy as np
 import pandas as pd
@@ -37,7 +37,7 @@ def ordered_phase(day_idx: int, total_days: int) -> str:
     return "estable"
 
 
-def scenario_curve(phase: str, position_in_phase: float, rng: np.random.Generator) -> Dict[str, float]:
+def scenario_curve(phase: str, position_in_phase: float, rng: np.random.Generator) -> dict[str, float]:
     jitter = lambda s=0.02: float(rng.normal(0, s))
 
     if phase == "pre_lanzamiento":

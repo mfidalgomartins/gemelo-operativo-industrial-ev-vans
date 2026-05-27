@@ -1,0 +1,28 @@
+[project]
+name = "gemelo-operativo-ev"
+version = "1.0.0"
+description = "Operational digital twin for EV van manufacturing transition — sequencing, yard, charging and dispatch analytics"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0.0,<4.0.0",
+    "numpy>=1.24.0,<3.0.0",
+    "duckdb>=1.1.0,<2.0.0",
+    "plotly>=5.20.0,<7.0.0",
+    "nbformat>=5.9.0,<6.0.0",
+]
+
+[project.scripts]
+generate-data = "generate_synthetic_data:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP"]
+ignore = ["E501"]

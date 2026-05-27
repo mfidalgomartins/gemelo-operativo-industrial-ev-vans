@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List
+
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ def generate_cuellos_botella(
     turnos: pd.DataFrame,
     restricciones_operativas: pd.DataFrame,
 ) -> pd.DataFrame:
-    rows: List[Dict[str, object]] = []
+    rows: list[dict[str, object]] = []
     event_counter = 1
 
     if not sesiones_carga.empty:

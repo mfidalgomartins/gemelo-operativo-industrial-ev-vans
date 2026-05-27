@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict
 
 import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
+from .utils import read_ev_csv
 
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
@@ -15,14 +14,11 @@ EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
 @dataclass
 class FeatureBuildResult:
-    tables: Dict[str, int]
+    tables: dict[str, int]
 
 
 def _read_csv(name: str, parse_dates: list[str] | None = None) -> pd.DataFrame:
-    path = EV_DIR / f"{name}.csv"
-    if not path.exists():
-        raise FileNotFoundError(f"No existe tabla requerida para features: {path}")
-    return pd.read_csv(path, parse_dates=parse_dates)
+    return read_ev_csv(name, EV_DIR, parse_dates=parse_dates, context="tabla requerida para features")
 
 
 def _build_vehicle_readiness_features(vf: pd.DataFrame) -> pd.DataFrame:
@@ -295,7 +291,7 @@ def run_ev_feature_engineering() -> FeatureBuildResult:
         "launch_transition_features": launch_features,
     }
 
-    counts: Dict[str, int] = {}
+    counts: dict[str, int] = {}
     for name, df in outputs.items():
         out_path = EV_DIR / f"{name}.csv"
         df.to_csv(out_path, index=False)

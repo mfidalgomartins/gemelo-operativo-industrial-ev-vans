@@ -20,7 +20,7 @@ def create_notebooks() -> None:
             "from src.ev_release_gate import run_release_gate"
         ),
         nbf.v4.new_code_cell(
-            "# Recomendado: manter generate_data=False para evitar regeneração desnecessária.\n"
+            "# Recomendado: conservar generate_data=False para evitar regeneración innecesaria.\n"
             "result = run_pipeline(generate_data=False)\n"
             "result"
         ),

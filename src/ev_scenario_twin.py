@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
+from .utils import read_ev_csv
 
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
@@ -19,13 +19,10 @@ class ScenarioTwinResult:
 
 
 def _read(name: str, parse_dates: list[str] | None = None) -> pd.DataFrame:
-    path = EV_DIR / f"{name}.csv"
-    if not path.exists():
-        raise FileNotFoundError(f"No existe tabla para escenarios: {path}")
-    return pd.read_csv(path, parse_dates=parse_dates)
+    return read_ev_csv(name, EV_DIR, parse_dates=parse_dates, context="tabla para escenarios")
 
 
-def _base_metrics() -> Dict[str, float]:
+def _base_metrics() -> dict[str, float]:
     vehicle = _read("vehicle_readiness_features")
     yard = _read("yard_features")
     charging = _read("charging_features")
@@ -57,7 +54,7 @@ def _base_metrics() -> Dict[str, float]:
     }
 
 
-def _simulate(base: Dict[str, float], params: Dict[str, float]) -> Dict[str, float]:
+def _simulate(base: dict[str, float], params: dict[str, float]) -> dict[str, float]:
     ev_delta = params["share_ev_delta"]
     seq_gain = params["sequencing_gain"]
     charge_gain = params["charging_gain"]
@@ -174,7 +171,7 @@ def run_ev_scenario_twin() -> ScenarioTwinResult:
     OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     base = _base_metrics()
 
-    scenarios: List[Dict[str, float]] = [
+    scenarios: list[dict[str, float]] = [
         {
             "escenario": "1_ramp_up_ev_base",
             "descripcion": "Ramp-up EV base con adaptación mínima",

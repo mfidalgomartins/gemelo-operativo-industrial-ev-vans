@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
 import json
 
 import numpy as np
 import pandas as pd
 
 from .config import DATA_RAW_DIR, DATA_PROCESSED_DIR, EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR, OUTPUT_DASHBOARD_DIR
+from .utils import to_markdown_safe
 
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
@@ -36,22 +36,6 @@ def _resolve_ev_raw(table_name: str) -> Path:
     if fallback.exists():
         return fallback
     raise FileNotFoundError(f"No existe tabla raw EV requerida: {primary}")
-
-
-def _to_markdown_safe(df: pd.DataFrame) -> str:
-    try:
-        return df.to_markdown(index=False)
-    except Exception:
-        if df.empty:
-            return "_(sin filas)_"
-        cols = [str(c) for c in df.columns]
-        header = "| " + " | ".join(cols) + " |"
-        sep = "| " + " | ".join(["---"] * len(cols)) + " |"
-        rows = []
-        for _, row in df.iterrows():
-            vals = [str(row[c]).replace("\n", " ") for c in df.columns]
-            rows.append("| " + " | ".join(vals) + " |")
-        return "\n".join([header, sep] + rows)
 
 
 def run_ev_validation() -> ValidationResult:
@@ -90,7 +74,7 @@ def run_ev_validation() -> ValidationResult:
         else {}
     )
 
-    issues: List[Dict[str, object]] = []
+    issues: list[dict[str, object]] = []
 
     def add_issue(check: str, severity: str, failed_rows: int, detail: str, fix: str = "N/A") -> None:
         if failed_rows <= 0:
@@ -463,7 +447,7 @@ def run_ev_validation() -> ValidationResult:
     if issues_df.empty:
         lines.append("No se detectaron issues materiales en esta ejecución.")
     else:
-        lines.append(_to_markdown_safe(issues_df))
+        lines.append(to_markdown_safe(issues_df))
 
     lines.extend(
         [

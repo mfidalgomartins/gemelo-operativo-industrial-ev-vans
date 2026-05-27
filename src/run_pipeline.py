@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from pathlib import Path
 import json
 
-from .config import EV_DATA_RAW_DIR, OUTPUT_CHARTS_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
+from .config import EV_DATA_RAW_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
 from .create_notebooks import create_notebooks
 from .ev_build_dashboard import run_ev_build_dashboard
-from .ev_create_visuals import run_ev_create_visuals
 from .ev_diagnostic_analysis import run_ev_diagnostic_analysis
 from .ev_feature_engineering import run_ev_feature_engineering
 from .ev_release_gate import run_release_gate
@@ -45,19 +43,12 @@ def _curate_outputs() -> int:
         OUTPUT_REPORTS_DIR / "synthetic_data_plausibility.md",
         OUTPUT_REPORTS_DIR / "synthetic_data_validation.json",
         OUTPUT_REPORTS_DIR / "synthetic_generation_run.json",
-        OUTPUT_REPORTS_DIR / "visualizations_index.md",
         OUTPUT_REPORTS_DIR / "bottleneck_matrix.csv",
     ]
     removed = 0
     for path in remove_candidates:
         if path.exists():
             path.unlink()
-            removed += 1
-
-    # Conserva apenas gráficos EV oficiais.
-    for chart in OUTPUT_CHARTS_DIR.glob("*.png"):
-        if not chart.name.startswith("ev_"):
-            chart.unlink()
             removed += 1
 
     # Limpa dashboards legacy arquivados.
@@ -88,7 +79,6 @@ def run_pipeline(generate_data: bool = False, seed: int = 20260328, months: int 
     run_ev_diagnostic_analysis()
     run_ev_scenario_twin()
     run_ev_scoring_framework()
-    run_ev_create_visuals()
     dashboard_result = run_ev_build_dashboard()
     validation_result = run_ev_validation()
     release_result = run_release_gate()
@@ -101,7 +91,7 @@ def run_pipeline(generate_data: bool = False, seed: int = 20260328, months: int 
         release_grade=validation_result.release_grade,
         release_approved=release_result.approved,
         release_reason=release_result.reason,
-        explore_report=str(Path("outputs/reports/explore_data_audit.md")),
+        explore_report=str(OUTPUT_REPORTS_DIR / "explore_data_audit.md"),
         validation_status=validation_result.status,
         curated_removed_files=curated_removed_files,
     )

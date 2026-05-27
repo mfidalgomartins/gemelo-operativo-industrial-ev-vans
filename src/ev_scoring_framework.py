@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
+from .utils import read_ev_csv
 
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
@@ -19,10 +19,7 @@ class ScoringResult:
 
 
 def _read(name: str) -> pd.DataFrame:
-    path = EV_DIR / f"{name}.csv"
-    if not path.exists():
-        raise FileNotFoundError(f"No existe tabla para scoring: {path}")
-    return pd.read_csv(path)
+    return read_ev_csv(name, EV_DIR, context="tabla para scoring")
 
 
 def _normalize_100(series: pd.Series, upper: float) -> pd.Series:
@@ -159,7 +156,7 @@ def run_ev_scoring_framework() -> ScoringResult:
         + weights["readiness_score"] * (100 - base["readiness_score"])
     )
 
-    def _weighted_score(df: pd.DataFrame, w: Dict[str, float]) -> pd.Series:
+    def _weighted_score(df: pd.DataFrame, w: dict[str, float]) -> pd.Series:
         return (
             w["yard_risk_score"] * df["yard_risk_score"]
             + w["charging_risk_score"] * df["charging_risk_score"]
@@ -193,7 +190,7 @@ def run_ev_scoring_framework() -> ScoringResult:
     out.to_csv(EV_DIR / "operational_prioritization_table.csv", index=False)
 
     # Sensibilidad: variación +/-20% de pesos de cada driver
-    sensitivity_rows: List[Dict[str, object]] = []
+    sensitivity_rows: list[dict[str, object]] = []
     for col in [
         "yard_risk_score",
         "charging_risk_score",
@@ -235,8 +232,8 @@ def run_ev_scoring_framework() -> ScoringResult:
     ]
     base_weight_vec = np.array([weights[k] for k in weight_keys], dtype=float)
     draws = 300
-    top1_rows: List[Dict[str, object]] = []
-    top3_rows: List[Dict[str, object]] = []
+    top1_rows: list[dict[str, object]] = []
+    top3_rows: list[dict[str, object]] = []
     for draw_id in range(draws):
         noise = rng.lognormal(mean=0.0, sigma=0.22, size=len(weight_keys))
         w_vec = base_weight_vec * noise

@@ -1,23 +1,23 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 
+from .config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR
+from .utils import to_markdown_safe
 
-RAW_DIR = Path("data/raw/ev_factory")
-REPORT_DIR = Path("outputs/reports")
+RAW_DIR = EV_DATA_RAW_DIR
+REPORT_DIR = OUTPUT_REPORTS_DIR
 
 
 @dataclass(frozen=True)
 class TableSpec:
     name: str
     grain: str
-    key_candidates: List[str]
-    expected_fks: Dict[str, str]
+    key_candidates: list[str]
+    expected_fks: dict[str, str]
 
 
 TABLE_SPECS = [
@@ -57,25 +57,8 @@ DATETIME_CANDIDATES = [
 ]
 
 
-def _to_markdown_safe(df: pd.DataFrame) -> str:
-    """Render markdown sin depender obligatoriamente de tabulate."""
-    try:
-        return df.to_markdown(index=False)
-    except Exception:
-        if df.empty:
-            return "_(sin filas)_"
-        cols = [str(c) for c in df.columns]
-        header = "| " + " | ".join(cols) + " |"
-        sep = "| " + " | ".join(["---"] * len(cols)) + " |"
-        rows = []
-        for _, row in df.iterrows():
-            vals = [str(row[c]).replace("\n", " ") for c in df.columns]
-            rows.append("| " + " | ".join(vals) + " |")
-        return "\n".join([header, sep] + rows)
-
-
-def _load_tables() -> Dict[str, pd.DataFrame]:
-    tables: Dict[str, pd.DataFrame] = {}
+def _load_tables() -> dict[str, pd.DataFrame]:
+    tables: dict[str, pd.DataFrame] = {}
     for spec in TABLE_SPECS:
         path = RAW_DIR / f"{spec.name}.csv"
         if not path.exists():
@@ -97,8 +80,6 @@ def _classify_column(series: pd.Series, col_name: str) -> str:
     if "fecha" in lname or "timestamp" in lname or lname.startswith("inicio_") or lname.startswith("fin_"):
         return "temporales"
     if pd.api.types.is_numeric_dtype(series):
-        if any(tok in lname for tok in ["rate", "score", "indice", "pct", "kwh", "min", "severidad", "capacidad"]):
-            return "metricas"
         return "metricas"
     if any(tok in lname for tok in ["turno", "zona", "tipo", "area", "estado", "mercado", "escenario", "causa"]):
         return "dimensiones"
@@ -120,7 +101,7 @@ def _table_temporal_coverage(df: pd.DataFrame) -> str:
     return f"{min(mins)} -> {max(maxs)}"
 
 
-def _profile_tables(tables: Dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _profile_tables(tables: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, pd.DataFrame]:
     summary_rows = []
     column_rows = []
 
@@ -184,8 +165,8 @@ def _profile_tables(tables: Dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, pd.D
     return pd.DataFrame(summary_rows), pd.DataFrame(column_rows)
 
 
-def _detect_issues(tables: Dict[str, pd.DataFrame]) -> pd.DataFrame:
-    issues: List[Dict[str, object]] = []
+def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    issues: list[dict[str, object]] = []
 
     ordenes = tables["ordenes"]
     vehiculos = tables["vehiculos"]
@@ -375,7 +356,7 @@ def _build_recommendations_md(issues: pd.DataFrame) -> str:
     return "\n".join(recommendations)
 
 
-def run_explore_data_audit() -> Dict[str, object]:
+def run_explore_data_audit() -> dict[str, object]:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
     tables = _load_tables()
@@ -394,7 +375,7 @@ def run_explore_data_audit() -> Dict[str, object]:
         "Auditoría formal de calidad y readiness operacional sobre las 14 tablas base del gemelo operativo EV.",
         "",
         "## Resumen por dataset",
-        _to_markdown_safe(summary_df),
+        to_markdown_safe(summary_df),
         "",
         "## Issues priorizados",
     ]
@@ -402,7 +383,7 @@ def run_explore_data_audit() -> Dict[str, object]:
     if issues_df.empty:
         lines.append("No se detectaron issues materiales en esta ejecución.")
     else:
-        lines.append(_to_markdown_safe(issues_df))
+        lines.append(to_markdown_safe(issues_df))
 
     lines.append("")
     lines.append(_build_recommendations_md(issues_df))
