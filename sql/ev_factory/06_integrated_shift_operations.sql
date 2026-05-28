@@ -29,11 +29,14 @@ WITH bottleneck_shift AS (
         b.area
 ),
 dominant_cause AS (
+    -- Determinismo: ante empates en `cnt`, ordenamos también por causa_probable
+    -- para garantizar que la misma causa siempre gane el desempate entre
+    -- ejecuciones (MAX_BY puro elegía arbitrariamente).
     SELECT
-        base.fecha,
-        base.turno,
-        base.area,
-        MAX_BY(base.causa_probable, base.cnt) AS causa_dominante
+        fecha,
+        turno,
+        area,
+        causa_probable AS causa_dominante
     FROM (
         SELECT
             CAST(b.timestamp AS DATE) AS fecha,
@@ -44,7 +47,18 @@ dominant_cause AS (
             END AS turno,
             b.area,
             b.causa_probable,
-            COUNT(*) AS cnt
+            COUNT(*) AS cnt,
+            ROW_NUMBER() OVER (
+                PARTITION BY
+                    CAST(b.timestamp AS DATE),
+                    CASE
+                        WHEN EXTRACT('hour' FROM b.timestamp) BETWEEN 6 AND 13 THEN 'A'
+                        WHEN EXTRACT('hour' FROM b.timestamp) BETWEEN 14 AND 21 THEN 'B'
+                        ELSE 'C'
+                    END,
+                    b.area
+                ORDER BY COUNT(*) DESC, b.causa_probable ASC
+            ) AS rk
         FROM stg_bottlenecks b
         GROUP BY
             CAST(b.timestamp AS DATE),
@@ -55,8 +69,8 @@ dominant_cause AS (
             END,
             b.area,
             b.causa_probable
-    ) base
-    GROUP BY base.fecha, base.turno, base.area
+    ) ranked
+    WHERE rk = 1
 ),
 resource_stress AS (
     SELECT

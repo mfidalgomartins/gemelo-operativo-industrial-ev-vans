@@ -135,6 +135,10 @@ def run_ev_sql_layer() -> SQLRunResult:
 
     con = duckdb.connect(DB_PATH.as_posix())
     try:
+        # Determinismo: la reducción paralela de DuckDB introduce diferencias
+        # de último dígito en las agregaciones float entre ejecuciones. Forzar
+        # un único thread garantiza salidas byte-idénticas reproducibles.
+        con.execute("PRAGMA threads=1")
         _load_raw_tables(con)
         executed = _run_sql_files(con)
         exported_rows = _export_objects(con)

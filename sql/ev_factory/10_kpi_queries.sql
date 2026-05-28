@@ -40,10 +40,41 @@ dispatch AS (
         AVG(dispatch_readiness_risk_score) AS score_readiness_global
     FROM vw_dispatch_readiness
 ),
+-- Determinismo: ante empates, MAX_BY puede devolver valores arbitrarios.
+-- Agregamos primero por la clave de empate y usamos ROW_NUMBER con desempate
+-- alfabético para garantizar reproducibilidad byte-estable.
+bneck_cause AS (
+    SELECT causa_dominante
+    FROM (
+        SELECT
+            causa_dominante,
+            SUM(eventos_cuello) AS total_eventos,
+            ROW_NUMBER() OVER (
+                ORDER BY SUM(eventos_cuello) DESC, causa_dominante ASC
+            ) AS rk
+        FROM vw_shift_bottleneck_summary
+        GROUP BY causa_dominante
+    ) ranked
+    WHERE rk = 1
+),
+bneck_area AS (
+    SELECT area
+    FROM (
+        SELECT
+            area,
+            SUM(impacto_throughput_total) AS total_impacto,
+            ROW_NUMBER() OVER (
+                ORDER BY SUM(impacto_throughput_total) DESC, area ASC
+            ) AS rk
+        FROM vw_shift_bottleneck_summary
+        GROUP BY area
+    ) ranked
+    WHERE rk = 1
+),
 bneck AS (
     SELECT
-        MAX_BY(causa_dominante, eventos_cuello) AS causa_principal_cuello,
-        MAX_BY(area, impacto_throughput_total) AS area_mayor_perdida_throughput,
+        (SELECT causa_dominante FROM bneck_cause) AS causa_principal_cuello,
+        (SELECT area FROM bneck_area) AS area_mayor_perdida_throughput,
         SUM(impacto_throughput_total) AS perdida_throughput_total
     FROM vw_shift_bottleneck_summary
 ),
