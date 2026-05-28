@@ -363,7 +363,22 @@ def _build_html(payload: dict[str, object], version: str) -> str:
   --series-8:#0e7490;
   --series-9:#a8a29e;
 
+  /* Semantic series aliases consumed by chart JS (themeColors).
+     Mapped to the sober editorial palette so charts share the dashboard's
+     visual language and remain legible in both themes. */
+  --series-plan:#a8a29e;
+  --series-real:#1c1917;
+  --series-ev:#1d4ed8;
+  --series-gap:#b91c1c;
+  --series-aux:#78716c;
+  --series-yard:#a16207;
+  --series-load:#0e7490;
+  --series-dispatch:#7c3aed;
+  --series-priority:#15803d;
+
   --grid:#f1f1ef;
+  --grid-x:#f1f1ef;
+  --grid-y:#f1f1ef;
   --tooltip-bg:#0a0a0a;
   --tooltip-text:#fafafa;
   --focus:rgba(29,78,216,.24);
@@ -397,7 +412,19 @@ html[data-theme='dark'] {{
   --series-8:#22d3ee;
   --series-9:#52525b;
 
+  --series-plan:#52525b;
+  --series-real:#fafafa;
+  --series-ev:#60a5fa;
+  --series-gap:#f87171;
+  --series-aux:#a1a1aa;
+  --series-yard:#fbbf24;
+  --series-load:#22d3ee;
+  --series-dispatch:#a78bfa;
+  --series-priority:#4ade80;
+
   --grid:#1a1a1a;
+  --grid-x:#1a1a1a;
+  --grid-y:#1a1a1a;
   --tooltip-bg:#fafafa;
   --tooltip-text:#0a0a0a;
   --focus:rgba(96,165,250,.32);
@@ -466,6 +493,7 @@ body {{
 /* ───── Main shell ───── */
 .shell {{ max-width:1440px; margin:0 auto; padding:32px; }}
 .shell > section + section {{ margin-top:48px; }}
+.shell > .kpi-strip + section {{ margin-top:48px; }}
 
 /* ───── Verdict ───── */
 .verdict {{
@@ -633,6 +661,7 @@ h1 {{
   color:var(--muted);
   max-width:680px;
 }}
+.section-head .section-num + h2 {{ margin-top:8px; }}
 .section-num {{
   font-family:var(--font-mono);
   font-size:11px;
@@ -826,6 +855,8 @@ html[data-theme='dark'] .tier.t2 {{ background:#0f2a14; color:var(--positive); }
   max-width:520px;
 }}
 .decision-strip .lead strong {{ color:var(--ink); font-weight:500; }}
+.decision-strip .lead .eyebrow {{ margin:0 0 8px 0; }}
+.decision-strip .lead #decision_text {{ display:block; }}
 .decision-stat span {{
   display:block;
   font-size:11px;
@@ -913,7 +944,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
     <div class=\"brand-context\">Dashboard de transición industrial</div>
   </div>
   <div class=\"topbar-right\">
-    <button id=\"btn_toggle_filters\" class=\"icon-btn\" type=\"button\" aria-expanded=\"true\" aria-controls=\"filters_shell\">Filtros</button>
+    <button id=\"btn_toggle_filters\" class=\"icon-btn\" type=\"button\" aria-expanded=\"true\" aria-controls=\"filters_shell\">Ocultar filtros</button>
     <button id=\"btn_print\" class=\"icon-btn\" type=\"button\" aria-label=\"Exportar PDF\">Exportar</button>
     <button id=\"theme_toggle\" class=\"icon-btn\" type=\"button\" aria-label=\"Cambiar tema\">Tema</button>
   </div>
@@ -954,11 +985,11 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
 
 <div class=\"kpi-strip\" id=\"kpi_cards\" aria-label=\"Indicadores clave\"></div>
 
-<section style=\"margin-top:48px;\">
+<section class=\"flow-section\">
   <div class=\"section-head\">
     <div>
       <span class=\"section-num\">01 — Flujo &amp; Mix</span>
-      <h2 style=\"margin-top:6px;\">Plan vs ejecución, y la presión que introduce el mix EV</h2>
+      <h2>Plan vs ejecución, y la presión que introduce el mix EV</h2>
       <p class=\"desc\">Si plan y real divergen y la curva EV sube, la pérdida de capacidad es estructural, no incidental.</p>
     </div>
   </div>
@@ -988,7 +1019,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
   <div class=\"section-head\">
     <div>
       <span class=\"section-num\">02 — Patio &amp; Carga</span>
-      <h2 style=\"margin-top:6px;\">Dónde se está bloqueando físicamente el flujo</h2>
+      <h2>Dónde se está bloqueando físicamente el flujo</h2>
       <p class=\"desc\">Ocupación, dwell extremo, utilización de carga y SOC: las cuatro señales que precipitan el cuello de salida.</p>
     </div>
   </div>
@@ -1028,7 +1059,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
   <div class=\"section-head\">
     <div>
       <span class=\"section-num\">03 — Riesgo &amp; Expedición</span>
-      <h2 style=\"margin-top:6px;\">Quién pierde flujo, por qué, y cuál es el siguiente movimiento</h2>
+      <h2>Quién pierde flujo, por qué, y cuál es el siguiente movimiento</h2>
       <p class=\"desc\">Causas de retraso, comparativa EV vs ICE, matriz de riesgo y ranking de palancas para intervenir.</p>
     </div>
   </div>
@@ -1075,7 +1106,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
   <div class=\"section-head\">
     <div>
       <span class=\"section-num\">04 — Priorización operativa</span>
-      <h2 style=\"margin-top:6px;\">Ranking de áreas y acciones para esta semana</h2>
+      <h2>Ranking de áreas y acciones para esta semana</h2>
       <p class=\"desc\">Ordenado por Operational Priority Index (OPI). Buscar por área o driver; exportar como CSV para iterar.</p>
     </div>
   </div>
@@ -1112,9 +1143,9 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
 </section>
 
 <section class=\"decision-strip\">
-  <div class=\"lead\" id=\"decision_text\">
-    <strong>Intervención recomendada.</strong>
-    <span id=\"command_matter_note\"></span>
+  <div class=\"lead\">
+    <span class=\"eyebrow\">Intervención recomendada</span>
+    <span id=\"decision_text\"></span>
   </div>
   <div class=\"decision-stat text\"><span>Área</span><strong id=\"decision_area\">—</strong></div>
   <div class=\"decision-stat text\"><span>Acción</span><strong id=\"decision_action\">—</strong></div>
