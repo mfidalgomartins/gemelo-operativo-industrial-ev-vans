@@ -106,12 +106,20 @@ def _export_objects(con: duckdb.DuckDBPyConnection) -> dict[str, int]:
     exported_row_counts: dict[str, int] = {}
     for obj in EXPORT_OBJECTS:
         out_csv = export_dir / f"{obj}.csv"
+        # Orden determinista: SELECT sin ORDER BY puede devolver filas en orden
+        # arbitrario (paralelismo de DuckDB). Ordenamos por todas las columnas
+        # para que el CSV exportado sea byte-estable entre ejecuciones.
+        columns = [row[0] for row in con.execute(
+            f"SELECT column_name FROM information_schema.columns "
+            f"WHERE table_name = '{obj}' ORDER BY ordinal_position"
+        ).fetchall()]
+        order_clause = ", ".join(f'"{c}"' for c in columns)
         con.execute(
             f"""
             COPY (
-                SELECT
-                    *
+                SELECT *
                 FROM {obj}
+                ORDER BY {order_clause}
             )
             TO '{out_csv.as_posix()}'
             (HEADER, DELIMITER ',');

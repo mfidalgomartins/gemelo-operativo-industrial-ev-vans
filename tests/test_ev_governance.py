@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -17,8 +19,22 @@ from src.ev_validate_project import run_ev_validation
 from src.synthetic_data_gen import SyntheticGenerationConfig, generate_synthetic_factory_data
 
 
+@pytest.fixture
+def restore_canonical_data():
+    """Después del test, regenera el dataset canónico (seed 20260328, 12 meses) y
+    vuelve a correr el pipeline para dejar el repositorio en estado limpio."""
+    yield
+    subprocess.run(
+        [sys.executable, "-m", "src.synthetic_data_gen", "--seed", "20260328",
+         "--start-date", "2025-01-01", "--months", "12"],
+        check=True,
+    )
+    from src.run_pipeline import run_pipeline
+    run_pipeline(generate_data=False)
+
+
 @pytest.mark.integration
-def test_ev_release_governance_contract() -> None:
+def test_ev_release_governance_contract(restore_canonical_data) -> None:
     cfg = SyntheticGenerationConfig(
         seed=20260402,
         start_date="2025-01-01",
