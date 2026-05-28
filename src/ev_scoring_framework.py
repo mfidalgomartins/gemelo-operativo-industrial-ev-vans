@@ -175,7 +175,17 @@ def run_ev_scoring_framework() -> ScoringResult:
         "readiness_score",
     ]
 
-    base["main_risk_driver"] = base[risk_columns].idxmax(axis=1)
+    # Find the driver with highest weighted OPI contribution.
+    # readiness_score is a quality score (high = good), so its contribution is inverted.
+    opi_contribs = pd.DataFrame({
+        "yard_risk_score": weights["yard_risk_score"] * base["yard_risk_score"],
+        "charging_risk_score": weights["charging_risk_score"] * base["charging_risk_score"],
+        "dispatch_risk_score": weights["dispatch_risk_score"] * base["dispatch_risk_score"],
+        "throughput_loss_score": weights["throughput_loss_score"] * base["throughput_loss_score"],
+        "launch_transition_risk_score": weights["launch_transition_risk_score"] * base["launch_transition_risk_score"],
+        "readiness_score": weights["readiness_score"] * (100 - base["readiness_score"]),
+    })
+    base["main_risk_driver"] = opi_contribs.idxmax(axis=1)
     base["recommended_action"] = base["main_risk_driver"].map(_map_action)
     base["area_priority_tier"] = base["operational_priority_index"].apply(_map_tier)
 

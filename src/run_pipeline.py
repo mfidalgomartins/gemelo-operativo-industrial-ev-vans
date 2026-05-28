@@ -30,7 +30,7 @@ class PipelineRunResult:
 
 
 def _curate_outputs() -> int:
-    """Mantém apenas artefactos de alto sinal para apresentação de portfolio."""
+    """Elimina artefactos de señal baja o redundantes; conserva solo los de alto valor para portfolio."""
     remove_candidates = [
         OUTPUT_REPORTS_DIR / "dashboard_legacy_deprecated.md",
         OUTPUT_REPORTS_DIR / "data_quality_audit.json",
@@ -51,7 +51,7 @@ def _curate_outputs() -> int:
             path.unlink()
             removed += 1
 
-    # Limpa dashboards legacy arquivados.
+    # Limpia dashboards legacy archivados.
     legacy_dir = OUTPUT_DASHBOARD_DIR / "legacy"
     if legacy_dir.exists():
         for p in legacy_dir.glob("*.html"):

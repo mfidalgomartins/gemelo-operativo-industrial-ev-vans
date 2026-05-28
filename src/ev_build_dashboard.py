@@ -146,7 +146,7 @@ def _prepare_datasets(
         )
         .fillna(0)
     )
-    throughput["fecha"] = pd.to_datetime(throughput["fecha"]) 
+    throughput["fecha"] = pd.to_datetime(throughput["fecha"])
     throughput["throughput_gap"] = throughput["throughput_real"] - throughput["throughput_plan"]
 
     ev_share_week = (
@@ -165,7 +165,7 @@ def _prepare_datasets(
             lead_time=("total_internal_lead_time_min", "mean"),
         )
     )
-    seq_gap["fecha"] = pd.to_datetime(seq_gap["fecha"]) 
+    seq_gap["fecha"] = pd.to_datetime(seq_gap["fecha"])
 
     lead_version = (
         f.groupby(["version_id", "tipo_propulsion"], as_index=False)
@@ -206,7 +206,7 @@ def _prepare_datasets(
             non_productive=("non_productive_move_rate", "mean"),
         )
     )
-    yard_daily["fecha"] = pd.to_datetime(yard_daily["fecha"]) 
+    yard_daily["fecha"] = pd.to_datetime(yard_daily["fecha"])
 
     ch = charging.copy()
     ch["fecha"] = pd.to_datetime(ch["fecha"], errors="coerce")
@@ -222,7 +222,7 @@ def _prepare_datasets(
             sessions=("sessions_per_shift", "sum"),
         )
     )
-    charge_daily["fecha"] = pd.to_datetime(charge_daily["fecha"]) 
+    charge_daily["fecha"] = pd.to_datetime(charge_daily["fecha"])
 
     d = dispatch.copy()
     d["fecha"] = pd.to_datetime(d["fecha"], errors="coerce")
