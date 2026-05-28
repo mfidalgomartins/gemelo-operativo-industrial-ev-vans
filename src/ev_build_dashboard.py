@@ -330,6 +330,7 @@ def _build_html(payload: dict[str, object], version: str) -> str:
 <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin />
 <link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap\" />
 <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js\"></script>
+<noscript><style>.kpi-strip,.card,.canvas-wrap{{display:none}}</style></noscript>
 <style>
 :root {{
   --font-sans:"Geist","Söhne","Helvetica Neue",Arial,sans-serif;
@@ -384,11 +385,11 @@ def _build_html(payload: dict[str, object], version: str) -> str:
   --focus:rgba(29,78,216,.24);
 }}
 html[data-theme='dark'] {{
-  --bg:#0a0a0a;
-  --surface:#0f0f0f;
-  --surface-2:#141414;
-  --line:#1f1f1f;
-  --line-strong:#2a2a2a;
+  --bg:#070707;
+  --surface:#0e0e0e;
+  --surface-2:#161616;
+  --line:#222222;
+  --line-strong:#2e2e2e;
   --ink:#fafafa;
   --ink-2:#d4d4d8;
   --muted:#a1a1aa;
@@ -457,14 +458,24 @@ body {{
 }}
 .topbar-left {{ display:flex; align-items:center; gap:14px; min-width:0; }}
 .brand-mark {{
-  width:22px; height:22px; flex:0 0 22px;
-  border-radius:5px;
-  background:var(--ink);
+  width:24px; height:24px; flex:0 0 24px;
   display:flex; align-items:center; justify-content:center;
-  color:var(--surface);
+  color:var(--ink);
   font-family:var(--font-mono);
-  font-size:10px; font-weight:600;
-  letter-spacing:-.02em;
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:-.04em;
+  border:1px solid var(--line-strong);
+  border-radius:6px;
+  position:relative;
+}}
+.brand-mark::after {{
+  content:'';
+  position:absolute;
+  right:-3px; bottom:-3px;
+  width:6px; height:6px;
+  border-radius:99px;
+  background:var(--accent);
 }}
 .brand-title {{
   font-size:13px; font-weight:500; color:var(--ink);
@@ -489,6 +500,7 @@ body {{
 }}
 .icon-btn:hover {{ border-color:var(--line-strong); color:var(--ink); }}
 .icon-btn svg {{ width:14px; height:14px; }}
+.icon-btn-square {{ width:30px; padding:0; }}
 
 /* ───── Main shell ───── */
 .shell {{ max-width:1440px; margin:0 auto; padding:32px; }}
@@ -938,7 +950,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
 <body>
 <header class=\"topbar\">
   <div class=\"topbar-left\">
-    <div class=\"brand-mark\" aria-hidden=\"true\">EV</div>
+    <div class=\"brand-mark\" aria-hidden=\"true\">ev</div>
     <div class=\"brand-title\">Gemelo Operativo EV</div>
     <div class=\"brand-sep\"></div>
     <div class=\"brand-context\">Dashboard de transición industrial</div>
@@ -946,7 +958,9 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
   <div class=\"topbar-right\">
     <button id=\"btn_toggle_filters\" class=\"icon-btn\" type=\"button\" aria-expanded=\"true\" aria-controls=\"filters_shell\">Ocultar filtros</button>
     <button id=\"btn_print\" class=\"icon-btn\" type=\"button\" aria-label=\"Exportar PDF\">Exportar</button>
-    <button id=\"theme_toggle\" class=\"icon-btn\" type=\"button\" aria-label=\"Cambiar tema\">Tema</button>
+    <button id=\"theme_toggle\" class=\"icon-btn icon-btn-square\" type=\"button\" aria-label=\"Cambiar tema\" title=\"Cambiar tema\">
+      <svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8\" r=\"3\"/><path d=\"M8 1.5v1.5M8 13v1.5M3.5 3.5l1 1M11.5 11.5l1 1M1.5 8h1.5M13 8h1.5M3.5 12.5l1-1M11.5 4.5l1-1\"/></svg>
+    </button>
   </div>
 </header>
 
@@ -988,28 +1002,28 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
 <section class=\"flow-section\">
   <div class=\"section-head\">
     <div>
-      <span class=\"section-num\">01 — Flujo &amp; Mix</span>
+      <span class=\"section-num\">01 / Flujo &amp; Mix</span>
       <h2>Plan vs ejecución, y la presión que introduce el mix EV</h2>
       <p class=\"desc\">Si plan y real divergen y la curva EV sube, la pérdida de capacidad es estructural, no incidental.</p>
     </div>
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Throughput planificado vs real</h3><p class=\"hint\">Ritmo diario; cualquier divergencia sostenida señala pérdida de capacidad.</p></div><span class=\"tag\">Diario</span></div>
+      <div class=\"card-head\"><div><h3>Throughput planificado vs real</h3><p class=\"hint\">Ritmo diario; cualquier divergencia sostenida señala pérdida de capacidad.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_throughput\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Share EV semanal</h3><p class=\"hint\">Mix que explica la presión incremental sobre carga, patio y expedición.</p></div><span class=\"tag\">Semanal</span></div>
+      <div class=\"card-head\"><div><h3>Share EV semanal</h3><p class=\"hint\">Mix que explica la presión incremental sobre carga, patio y expedición.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_ev_share\"></canvas></div></div>
     </div>
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Gap de secuencia plan–real</h3><p class=\"hint\">Desviación del orden objetivo; señal temprana antes de que la cola se rompa.</p></div><span class=\"tag\">Secuencia</span></div>
+      <div class=\"card-head\"><div><h3>Gap de secuencia plan–real</h3><p class=\"hint\">Desviación del orden objetivo; señal temprana antes de que la cola se rompa.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_seq_gap\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Lead time por versión</h3><p class=\"hint\">Versiones con mayor tiempo interno: candidatas a arrastrar congestión.</p></div><span class=\"tag\">Complejidad</span></div>
+      <div class=\"card-head\"><div><h3>Lead time por versión</h3><p class=\"hint\">Versiones con mayor tiempo interno: candidatas a arrastrar congestión.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_lead_version\"></canvas></div></div>
     </div>
   </div>
@@ -1018,38 +1032,38 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
 <section>
   <div class=\"section-head\">
     <div>
-      <span class=\"section-num\">02 — Patio &amp; Carga</span>
+      <span class=\"section-num\">02 / Patio &amp; Carga</span>
       <h2>Dónde se está bloqueando físicamente el flujo</h2>
       <p class=\"desc\">Ocupación, dwell extremo, utilización de carga y SOC: las cuatro señales que precipitan el cuello de salida.</p>
     </div>
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Ocupación de patio y dwell p95</h3><p class=\"hint\">Saturación + cola extrema = bloqueo físico inminente.</p></div><span class=\"tag\">Patio</span></div>
+      <div class=\"card-head\"><div><h3>Ocupación de patio y dwell p95</h3><p class=\"hint\">Saturación + cola extrema = bloqueo físico inminente.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_yard_occ\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Dwell por zona</h3><p class=\"hint\">Buffers improductivos y movimientos sin valor por zona física.</p></div><span class=\"tag\">Zona</span></div>
+      <div class=\"card-head\"><div><h3>Dwell por zona</h3><p class=\"hint\">Buffers improductivos y movimientos sin valor por zona física.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_yard_zone\"></canvas></div></div>
     </div>
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Utilización de carga</h3><p class=\"hint\">Uso medio por zona y miss-rate de SOC objetivo.</p></div><span class=\"tag\">Carga</span></div>
+      <div class=\"card-head\"><div><h3>Utilización de carga</h3><p class=\"hint\">Uso medio por zona y miss-rate de SOC objetivo.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_charge_util\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Cola media de carga</h3><p class=\"hint\">Espera previa: señal directa del cuello energético EV.</p></div><span class=\"tag\">Cola</span></div>
+      <div class=\"card-head\"><div><h3>Cola media de carga</h3><p class=\"hint\">Espera previa: señal directa del cuello energético EV.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_charge_wait\"></canvas></div></div>
     </div>
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>SOC objetivo vs real</h3><p class=\"hint\">Gap de energía antes de expedir: clave para asignación de slots.</p></div><span class=\"tag\">Readiness</span></div>
+      <div class=\"card-head\"><div><h3>SOC objetivo vs real</h3><p class=\"hint\">Gap de energía antes de expedir: clave para asignación de slots.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_soc\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Interrupciones de carga</h3><p class=\"hint\">Sesiones frágiles que degradan estabilidad sin subir utilización.</p></div><span class=\"tag\">Robustez</span></div>
+      <div class=\"card-head\"><div><h3>Interrupciones de carga</h3><p class=\"hint\">Sesiones frágiles que degradan estabilidad sin subir utilización.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_interrupt\"></canvas></div></div>
     </div>
   </div>
@@ -1058,38 +1072,38 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
 <section>
   <div class=\"section-head\">
     <div>
-      <span class=\"section-num\">03 — Riesgo &amp; Expedición</span>
+      <span class=\"section-num\">03 / Riesgo &amp; Expedición</span>
       <h2>Quién pierde flujo, por qué, y cuál es el siguiente movimiento</h2>
       <p class=\"desc\">Causas de retraso, comparativa EV vs ICE, matriz de riesgo y ranking de palancas para intervenir.</p>
     </div>
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Retraso por causa</h3><p class=\"hint\">Separa incidencias aisladas de fricción sistémica de salida.</p></div><span class=\"tag\">Causas</span></div>
+      <div class=\"card-head\"><div><h3>Retraso por causa</h3><p class=\"hint\">Separa incidencias aisladas de fricción sistémica de salida.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_delay_cause\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Delay y readiness por turno</h3><p class=\"hint\">Distingue tensión localizada de problema estructural por turno.</p></div><span class=\"tag\">Turno</span></div>
+      <div class=\"card-head\"><div><h3>Delay y readiness por turno</h3><p class=\"hint\">Distingue tensión localizada de problema estructural por turno.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_shift_readiness\"></canvas></div></div>
     </div>
   </div>
   <div class=\"grid grid-3\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Impacto de cuellos por área</h3><p class=\"hint\">Throughput perdido por área en tensión.</p></div><span class=\"tag\">Área</span></div>
+      <div class=\"card-head\"><div><h3>Impacto de cuellos por área</h3><p class=\"hint\">Throughput perdido por área en tensión.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_bneck_area\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Matriz de riesgo</h3><p class=\"hint\">Pérdida × riesgo de expedición: dónde actuar primero.</p></div><span class=\"tag\">Matriz</span></div>
+      <div class=\"card-head\"><div><h3>Matriz de riesgo</h3><p class=\"hint\">Pérdida × riesgo de expedición: dónde actuar primero.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_risk_matrix\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Ranking de acciones</h3><p class=\"hint\">Prioridad media por palanca operativa.</p></div><span class=\"tag\">Acción</span></div>
+      <div class=\"card-head\"><div><h3>Ranking de acciones</h3><p class=\"hint\">Prioridad media por palanca operativa.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_actions\"></canvas></div></div>
     </div>
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Comparativa EV vs ICE</h3><p class=\"hint\">Dónde se concentra la carga incremental del mix EV.</p></div><span class=\"tag\">Comparativa</span></div>
+      <div class=\"card-head\"><div><h3>Comparativa EV vs ICE</h3><p class=\"hint\">Dónde se concentra la carga incremental del mix EV.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_ev_vs_ice\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
@@ -1105,7 +1119,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
 <section>
   <div class=\"section-head\">
     <div>
-      <span class=\"section-num\">04 — Priorización operativa</span>
+      <span class=\"section-num\">04 / Priorización operativa</span>
       <h2>Ranking de áreas y acciones para esta semana</h2>
       <p class=\"desc\">Ordenado por Operational Priority Index (OPI). Buscar por área o driver; exportar como CSV para iterar.</p>
     </div>
@@ -1172,8 +1186,8 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
 </div>
 
 <footer class=\"foot\">
-  <span>Gemelo Operativo EV — v{version}</span>
-  <span>Dataset gobernado · Tabular nums · pt/es</span>
+  <span>{version}</span>
+  <span><span id=\"foot_coverage\"></span> · <span id=\"foot_rows\"></span> registros · imprimir con ⌘P</span>
 </footer>
 
 </main>
@@ -1256,6 +1270,10 @@ function setMeta() {{
   document.getElementById('meta_top_scenario').textContent = META.executive_snapshot.top_scenario || 'N/A';
   document.getElementById('meta_yard_zones_card').textContent = (META.yard_zones || 0).toLocaleString('es-ES');
   document.getElementById('meta_charge_zones_card').textContent = (META.charge_zones || 0).toLocaleString('es-ES');
+  const footCov = document.getElementById('foot_coverage');
+  if (footCov) footCov.textContent = META.coverage || '';
+  const footRows = document.getElementById('foot_rows');
+  if (footRows) footRows.textContent = (META.orders || 0).toLocaleString('es-ES');
 
   const list = [
     'Área con mayor presión actual: ' + (META.executive_snapshot.top_area || 'N/A') + '.',
@@ -1279,11 +1297,12 @@ function setMeta() {{
     'La presión operativa se concentra en ' + topArea + '. El cuello ya no es la línea: es patio, carga y expedición.';
   const subEl = document.getElementById('verdict_sub');
   if (subEl) {{
+    const noReadyCount = Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES');
+    const delayPct = pct(k.ratio_salida_retrasada || 0);
     subEl.textContent =
-      'Acción prioritaria: ' + topAction + '. Validada contra el escenario ' + topScenario + '. '
-      + Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES')
-      + ' vehículos llegan a expedición sin preparación suficiente, con ' + pct(k.ratio_salida_retrasada || 0)
-      + ' de salidas retrasadas.';
+      noReadyCount + ' vehículos no llegan listos a expedición y ' + delayPct +
+      ' de las salidas se retrasan. La intervención con mejor retorno inmediato es ' +
+      topAction.toLowerCase() + '.';
   }}
   const dotEl = document.getElementById('verdict_dot');
   if (dotEl) {{
@@ -1583,7 +1602,7 @@ function renderOfficialKpis(k = META.kpi_official || {{}}) {{
       key:'ocupacion_pico_patio',
       label:'Ocupación pico patio',
       value:pctCompact(k.ocupacion_pico_patio || 0),
-      foot:'p95 dwell ' + Math.round(n(k.dwell_p95_min || 0)) + ' min',
+      foot:'pico físico del período',
     }},
     {{
       key:'share_ev',
@@ -1609,7 +1628,7 @@ function applyTheme(theme) {{
   document.documentElement.setAttribute('data-theme', theme);
   try {{ localStorage.setItem(THEME_KEY, theme); }} catch (e) {{}}
   const btn = document.getElementById('theme_toggle');
-  if (btn) btn.textContent = theme === 'dark' ? 'Claro' : 'Oscuro';
+  if (btn) btn.setAttribute('aria-label', theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
   applyChartTheme();
 }}
 
