@@ -1,8 +1,8 @@
 {
-  "dashboard_version": "ev-official-20260528-040119-e62cce67c9",
-  "generated_at": "2026-05-28 04:01:19",
+  "dashboard_version": "ev-official-20260528-041158-8e37623451",
+  "generated_at": "2026-05-28 04:11:58",
   "official_dashboard": "outputs/dashboard/industrial-ev-operating-command-center.html",
-  "html_size_bytes": 1843648,
+  "html_size_bytes": 1836152,
   "datasets_rows": {
     "throughput": 820,
     "ev_share_week": 40,

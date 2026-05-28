@@ -326,1026 +326,826 @@ def _build_html(payload: dict[str, object], version: str) -> str:
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
 <meta name=\"dashboard-version\" content=\"{version}\" />
 <title>Gemelo Operativo EV · Dashboard Oficial</title>
+<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\" />
+<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin />
+<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap\" />
 <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js\"></script>
 <style>
 :root {{
-  --font-body:"IBM Plex Sans","Segoe UI",sans-serif;
-  --font-display:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
-  --bg:#eef3f8;
-  --bg-soft:#e1ebf4;
-  --bg-deep:#d4e3ef;
-  --bg-panel:rgba(255,255,255,.74);
-  --card:#ffffff;
-  --line:#d4dfeb;
-  --line-strong:#b9c9dc;
-  --ink:#0f2031;
-  --muted:#5a7187;
-  --accent:#0d7089;
-  --accent-soft:#d9edf2;
-  --accent-glow:rgba(13,112,137,.14);
-  --ok:#2e7d54;
-  --warn:#b6731e;
-  --danger:#b53b50;
-  --shadow:0 16px 40px rgba(17,39,63,.09);
-  --shadow-soft:0 8px 18px rgba(17,39,63,.05);
-  --shadow-card:0 18px 40px rgba(17,39,63,.08), 0 1px 0 rgba(255,255,255,.75) inset;
-  --control:#ffffff;
-  --control-soft:#f5f9fd;
-  --control-strong:#ebf3fb;
-  --grid-x:#ebf1f8;
-  --grid-y:#e1e9f3;
-  --tooltip-bg:#14263a;
-  --tooltip-text:#f4f8fd;
-  --table-head:#f4f8fd;
-  --series-plan:#c78a35;
-  --series-real:#0d718c;
-  --series-ev:#29734b;
-  --series-gap:#b53b50;
-  --series-aux:#6785a0;
-  --series-yard:#af7726;
-  --series-load:#2c8b89;
-  --series-dispatch:#955164;
-  --series-priority:#4d7892;
-  --hero-grad:linear-gradient(135deg, rgba(13,112,137,.12), rgba(255,255,255,.92) 45%, rgba(183,121,31,.08));
+  --font-sans:"Geist","Söhne","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"Geist Mono","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  --bg:#fafaf9;
+  --surface:#ffffff;
+  --surface-2:#fafaf9;
+  --line:#e7e5e4;
+  --line-strong:#d6d3d1;
+  --ink:#1c1917;
+  --ink-2:#44403c;
+  --muted:#78716c;
+  --subtle:#a8a29e;
+
+  --accent:#1d4ed8;
+  --accent-soft:#eff6ff;
+  --accent-line:#bfdbfe;
+  --danger:#b91c1c;
+  --danger-soft:#fef2f2;
+  --warn:#a16207;
+  --positive:#15803d;
+
+  --series-1:#1c1917;
+  --series-2:#78716c;
+  --series-3:#1d4ed8;
+  --series-4:#b91c1c;
+  --series-5:#a16207;
+  --series-6:#15803d;
+  --series-7:#7c3aed;
+  --series-8:#0e7490;
+  --series-9:#a8a29e;
+
+  --grid:#f1f1ef;
+  --tooltip-bg:#0a0a0a;
+  --tooltip-text:#fafafa;
+  --focus:rgba(29,78,216,.24);
 }}
 html[data-theme='dark'] {{
-  --bg:#0b1420;
-  --bg-soft:#101d2d;
-  --bg-deep:#16273a;
-  --bg-panel:rgba(16,27,43,.78);
-  --card:#142033;
-  --line:#27384f;
-  --line-strong:#38516f;
-  --ink:#e8eef8;
-  --muted:#9eb0c8;
-  --accent:#65bdd9;
-  --accent-soft:#163041;
-  --accent-glow:rgba(101,189,217,.18);
-  --ok:#67cb92;
-  --warn:#f0c160;
-  --danger:#ef8298;
-  --shadow:0 18px 42px rgba(0,0,0,.35);
-  --shadow-soft:0 10px 20px rgba(0,0,0,.24);
-  --shadow-card:0 24px 44px rgba(0,0,0,.30), 0 1px 0 rgba(255,255,255,.03) inset;
-  --control:#101b2b;
-  --control-soft:#17263a;
-  --control-strong:#1d3048;
-  --grid-x:#26384e;
-  --grid-y:#203247;
-  --tooltip-bg:#ecf2ff;
-  --tooltip-text:#102238;
-  --table-head:#1a2940;
-  --series-plan:#e7bc72;
-  --series-real:#6dc2d8;
-  --series-ev:#76ca92;
-  --series-gap:#ef8ba0;
-  --series-aux:#9cb8d3;
-  --series-yard:#efba63;
-  --series-load:#69d0cb;
-  --series-dispatch:#df9aac;
-  --series-priority:#95bfd9;
-  --hero-grad:linear-gradient(135deg, rgba(101,189,217,.14), rgba(20,32,51,.96) 46%, rgba(239,186,99,.08));
+  --bg:#0a0a0a;
+  --surface:#0f0f0f;
+  --surface-2:#141414;
+  --line:#1f1f1f;
+  --line-strong:#2a2a2a;
+  --ink:#fafafa;
+  --ink-2:#d4d4d8;
+  --muted:#a1a1aa;
+  --subtle:#52525b;
+
+  --accent:#60a5fa;
+  --accent-soft:#0c1a35;
+  --accent-line:#1e3a8a;
+  --danger:#f87171;
+  --danger-soft:#2a1010;
+  --warn:#fbbf24;
+  --positive:#4ade80;
+
+  --series-1:#fafafa;
+  --series-2:#a1a1aa;
+  --series-3:#60a5fa;
+  --series-4:#f87171;
+  --series-5:#fbbf24;
+  --series-6:#4ade80;
+  --series-7:#a78bfa;
+  --series-8:#22d3ee;
+  --series-9:#52525b;
+
+  --grid:#1a1a1a;
+  --tooltip-bg:#fafafa;
+  --tooltip-text:#0a0a0a;
+  --focus:rgba(96,165,250,.32);
 }}
+
 * {{ box-sizing:border-box; }}
-html {{ overflow-x:hidden; }}
+html,body {{ margin:0; padding:0; }}
+html {{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }}
 body {{
-  margin:0;
-  font-family:var(--font-body);
+  font-family:var(--font-sans);
+  font-feature-settings:"ss01","cv11";
+  font-size:14px;
+  line-height:1.5;
   color:var(--ink);
-  background:linear-gradient(180deg, var(--bg-soft), var(--bg));
-  position:relative;
-  overflow-x:hidden;
+  background:var(--bg);
 }}
-body::before {{
-  content:'';
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:linear-gradient(180deg, rgba(255,255,255,.16), transparent 18%);
-}}
-.wrapper {{ max-width:1680px; margin:0 auto; padding:18px 22px 26px; position:relative; z-index:1; }}
 .sr-only {{
-  position:absolute;
-  width:1px;
-  height:1px;
-  padding:0;
-  margin:-1px;
-  overflow:hidden;
-  clip:rect(0,0,0,0);
-  white-space:nowrap;
-  border:0;
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
 }}
-.section, header, .decision {{
-  background:var(--card);
+
+/* ───── Top bar ───── */
+.topbar {{
+  position:sticky; top:0; z-index:50;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:24px;
+  padding:14px 32px;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+}}
+.topbar-left {{ display:flex; align-items:center; gap:14px; min-width:0; }}
+.brand-mark {{
+  width:22px; height:22px; flex:0 0 22px;
+  border-radius:5px;
+  background:var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--surface);
+  font-family:var(--font-mono);
+  font-size:10px; font-weight:600;
+  letter-spacing:-.02em;
+}}
+.brand-title {{
+  font-size:13px; font-weight:500; color:var(--ink);
+  letter-spacing:-.005em;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}}
+.brand-sep {{ width:1px; height:14px; background:var(--line-strong); margin:0 4px; }}
+.brand-context {{ font-size:13px; color:var(--muted); white-space:nowrap; }}
+.topbar-right {{ display:flex; align-items:center; gap:8px; }}
+.icon-btn {{
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:6px;
+  height:30px; padding:0 11px;
   border:1px solid var(--line);
-  border-radius:8px;
-  box-shadow:var(--shadow);
-  position:relative;
+  background:var(--surface);
+  color:var(--ink-2);
+  border-radius:6px;
+  font:500 12px/1 var(--font-sans);
+  letter-spacing:-.005em;
+  cursor:pointer;
+  transition:border-color .12s ease, color .12s ease, background .12s ease;
 }}
-header {{
-  padding:20px 20px 18px;
-  background:var(--hero-grad);
-  overflow:hidden;
-  isolation:isolate;
+.icon-btn:hover {{ border-color:var(--line-strong); color:var(--ink); }}
+.icon-btn svg {{ width:14px; height:14px; }}
+
+/* ───── Main shell ───── */
+.shell {{ max-width:1440px; margin:0 auto; padding:32px; }}
+.shell > section + section {{ margin-top:48px; }}
+
+/* ───── Verdict ───── */
+.verdict {{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:32px;
+  align-items:end;
+  padding-bottom:28px;
+  margin-bottom:32px;
+  border-bottom:1px solid var(--line);
 }}
-header::after {{
-  content:'';
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:linear-gradient(180deg, rgba(255,255,255,.24), transparent 24%);
-  z-index:-1;
-}}
-.head-top {{ display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap; }}
-.title-wrap {{ max-width:1040px; }}
 .eyebrow {{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  margin-bottom:12px;
-  padding:6px 11px;
-  border-radius:999px;
-  border:1px solid var(--line);
-  background:rgba(255,255,255,.58);
-  color:var(--accent);
+  font-family:var(--font-mono);
   font-size:11px;
-  font-weight:700;
-  letter-spacing:0;
+  font-weight:500;
+  letter-spacing:.04em;
   text-transform:uppercase;
-  box-shadow:0 1px 0 rgba(255,255,255,.72) inset;
-}}
-html[data-theme='dark'] .eyebrow {{ background:rgba(16,27,43,.72); }}
-.eyebrow-soft {{
-  margin-bottom:6px;
-  background:var(--control-soft);
   color:var(--muted);
+  margin:0 0 12px 0;
 }}
 h1 {{
   margin:0;
-  font-family:var(--font-display);
-  font-size:34px;
-  line-height:1.02;
-  letter-spacing:0;
-  max-width:980px;
-  text-wrap:balance;
-  overflow-wrap:anywhere;
-}}
-.sub {{ margin:9px 0 0 0; font-size:13px; color:var(--muted); line-height:1.55; }}
-.sub-strong {{
+  font-size:32px;
+  line-height:1.15;
+  font-weight:500;
+  letter-spacing:-.025em;
+  color:var(--ink);
   max-width:880px;
+  text-wrap:balance;
+}}
+.verdict-sub {{
+  margin:14px 0 0 0;
   font-size:15px;
-  color:var(--ink);
-  font-weight:600;
-  line-height:1.6;
+  line-height:1.55;
+  color:var(--muted);
+  max-width:780px;
 }}
-.actions {{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }}
-.theme-toggle {{
-  border:1px solid var(--line-strong);
-  background:var(--control-strong);
-  color:var(--ink);
-  border-radius:999px;
-  padding:11px 16px;
+.verdict-meta {{
+  display:flex; flex-direction:column; align-items:flex-end; gap:8px;
   font-size:12px;
-  font-weight:700;
-  cursor:pointer;
-  box-shadow:var(--shadow-soft);
-  transition:transform .16s ease, border-color .16s ease, background .16s ease;
+  color:var(--muted);
+  white-space:nowrap;
 }}
-.print-btn {{
-  border:1px solid var(--line-strong);
-  background:var(--control);
-  color:var(--ink);
-  border-radius:999px;
-  padding:11px 16px;
-  font-size:12px;
-  font-weight:700;
-  cursor:pointer;
-  box-shadow:var(--shadow-soft);
-  transition:transform .16s ease, border-color .16s ease, background .16s ease;
+.verdict-meta strong {{ color:var(--ink); font-weight:500; font-variant-numeric:tabular-nums; }}
+.verdict-meta .row {{ display:flex; gap:8px; align-items:center; }}
+.verdict-meta .dot {{ width:5px; height:5px; border-radius:99px; background:var(--positive); display:inline-block; }}
+.verdict-meta .dot.warn {{ background:var(--warn); }}
+.verdict-meta .dot.bad {{ background:var(--danger); }}
+
+/* ───── Filter strip ───── */
+.filter-strip {{
+  display:flex; align-items:center; gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:24px;
 }}
-.theme-toggle:hover,.print-btn:hover {{
-  transform:translateY(-1px);
-  border-color:var(--accent);
+.filter-strip .label {{
+  font-size:12px; color:var(--muted); margin-right:4px;
 }}
-.hero-message {{
-  margin-top:14px;
-  padding:15px 17px;
+.filter-chip {{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 10px 5px 10px;
   border:1px solid var(--line);
-  border-left:4px solid var(--accent);
-  border-radius:8px;
-  background:linear-gradient(135deg, rgba(255,255,255,.72), rgba(244,249,253,.82));
-  font-size:14px;
-  line-height:1.62;
-  color:var(--ink);
-  box-shadow:var(--shadow-soft), 0 1px 0 rgba(255,255,255,.72) inset;
-  overflow-wrap:anywhere;
+  background:var(--surface);
+  border-radius:6px;
+  font-size:12px;
+  color:var(--ink-2);
+  cursor:pointer;
 }}
-.command-panel {{
-  margin-top:14px;
+.filter-chip[data-active='true'] {{
+  border-color:var(--line-strong);
+  background:var(--surface-2);
+  color:var(--ink);
+}}
+.filter-chip select,.filter-chip input {{
+  appearance:none;
+  -webkit-appearance:none;
+  border:none;
+  background:transparent;
+  font:500 12px/1 var(--font-sans);
+  color:inherit;
+  cursor:pointer;
+  padding:0;
+  letter-spacing:-.005em;
+}}
+.filter-chip input[type='date'] {{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--ink);
+  min-width:96px;
+}}
+.filter-chip select:focus,.filter-chip input:focus {{ outline:none; }}
+.filter-chip strong {{ font-weight:500; color:var(--muted); font-size:11px; }}
+.filter-reset {{
+  margin-left:auto;
+  font:500 12px/1 var(--font-sans);
+  color:var(--muted);
+  background:transparent; border:none; cursor:pointer;
+  padding:6px 10px;
+}}
+.filter-reset:hover {{ color:var(--ink); }}
+
+/* ───── KPI strip ───── */
+.kpi-strip {{
   display:grid;
-  grid-template-columns:1.2fr 1fr 1fr 1fr;
-  gap:10px;
-}}
-.command-card {{
+  grid-template-columns:repeat(7, minmax(0,1fr));
   border:1px solid var(--line);
   border-radius:8px;
-  padding:14px;
-  background:linear-gradient(180deg, rgba(255,255,255,.86), rgba(246,250,254,.70));
-  box-shadow:var(--shadow-card);
-  min-height:118px;
-}}
-.command-card.is-critical {{
-  border-color:rgba(181,59,80,.48);
-  background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(181,59,80,.10));
-}}
-.command-label {{
-  display:block;
-  margin-bottom:7px;
-  color:var(--muted);
-  font-size:11px;
-  font-weight:700;
-  letter-spacing:0;
-  text-transform:uppercase;
-}}
-.command-card strong {{
-  display:block;
-  font-size:18px;
-  line-height:1.22;
-}}
-.command-card p {{
-  margin:7px 0 0 0;
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.45;
-}}
-html[data-theme='dark'] .command-card {{
-  background:linear-gradient(180deg, rgba(20,32,51,.98), rgba(23,38,58,.94));
-}}
-html[data-theme='dark'] .command-card.is-critical {{
-  background:linear-gradient(180deg, rgba(38,28,42,.98), rgba(47,31,45,.94));
-}}
-html[data-theme='dark'] .hero-message {{
-  background:linear-gradient(135deg, rgba(19,32,49,.82), rgba(24,42,63,.88));
-}}
-.meta {{ margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; }}
-.pill {{
-  border:1px solid var(--line);
-  border-radius:18px;
-  padding:15px;
-  font-size:12px;
-  background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(247,250,253,.70));
-  min-height:84px;
-  box-shadow:var(--shadow-card);
-  position:relative;
+  background:var(--surface);
   overflow:hidden;
 }}
-.pill::before {{
-  content:'';
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  height:1px;
-  background:linear-gradient(90deg, rgba(255,255,255,.88), transparent);
-}}
-.pill strong {{
-  display:block;
-  color:var(--ink);
-  margin:6px 0 4px 0;
-  font-size:20px;
-  line-height:1.12;
-  letter-spacing:0;
-  overflow-wrap:anywhere;
-}}
-.pill-k {{
-  color:var(--muted);
-  font-size:11px;
-  text-transform:uppercase;
-  letter-spacing:0;
-  font-weight:700;
-}}
-.pill-s {{
-  color:var(--muted);
-  line-height:1.45;
-}}
-.control-strip {{
-  margin-top:12px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  flex-wrap:wrap;
-}}
-.filter-summary {{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  align-items:center;
-  color:var(--muted);
-  font-size:12px;
-}}
-.filter-pill {{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:7px 11px;
-  border-radius:999px;
-  border:1px solid var(--line);
-  background:var(--bg-panel);
-  box-shadow:var(--shadow-soft);
-}}
-.filter-pill strong {{
-  color:var(--ink);
-  font-weight:700;
-}}
-.control-actions {{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-wrap:wrap;
-}}
-.panel-toggle {{
-  border:1px solid var(--line-strong);
-  background:var(--control);
-  color:var(--ink);
-  border-radius:999px;
-  padding:10px 15px;
-  font-size:12px;
-  font-weight:700;
-  cursor:pointer;
-  box-shadow:var(--shadow-soft);
-}}
-.filters-shell {{
-  margin-top:10px;
-  padding:16px;
-  border:1px solid var(--line);
-  border-radius:8px;
-  background:linear-gradient(180deg, rgba(255,255,255,.76), rgba(244,249,253,.64));
-  box-shadow:var(--shadow-card);
-}}
-.filters-shell[data-collapsed='true'] .filters-head,
-.filters-shell[data-collapsed='true'] .filters {{
-  display:none;
-}}
-.filters-shell[data-collapsed='true'] {{
-  display:none;
-}}
-.filters-head {{
-  display:flex;
-  justify-content:space-between;
-  gap:14px;
-  align-items:flex-start;
-  flex-wrap:wrap;
-  margin-bottom:10px;
-}}
-.filters-caption {{
-  margin:0;
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.5;
-}}
-.filters-note {{
-  max-width:320px;
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.45;
-  padding:11px 13px;
-  border:1px dashed var(--line-strong);
-  border-radius:14px;
-  background:var(--control-soft);
-}}
-.filters {{ margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }}
-.filters > div {{ display:flex; flex-direction:column; gap:5px; }}
-.filters label {{ font-size:11px; color:var(--muted); display:block; margin-bottom:0; font-weight:700; letter-spacing:.02em; }}
-.filters select,.filters input,.filters button {{
-  width:100%;
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:10px 12px;
-  font-size:12px;
-  background:var(--control);
-  color:var(--ink);
-  min-height:42px;
-  box-shadow:0 1px 0 rgba(255,255,255,.62) inset;
-}}
-.filters button {{
-  background:linear-gradient(180deg, var(--control-strong), var(--control));
-  font-weight:700;
-  cursor:pointer;
-  box-shadow:var(--shadow-soft);
-}}
-.kpis {{ margin-top:16px; display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }}
-.kpi {{
-  border:1px solid var(--line);
-  border-radius:8px;
-  padding:14px;
-  background:linear-gradient(180deg, rgba(255,255,255,.84), rgba(246,250,254,.68));
-  min-height:104px;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-  box-shadow:var(--shadow-card);
+.kpi-cell {{
   position:relative;
-  overflow:hidden;
+  padding:20px 22px;
+  border-right:1px solid var(--line);
+  display:flex; flex-direction:column; gap:6px;
+  min-width:0;
 }}
-.kpi.is-primary {{
-  grid-column:span 2;
-  min-height:138px;
-  padding:18px;
-  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(240,246,255,.88));
-}}
-.kpi::before {{
-  content:'';
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  height:3px;
-  background:linear-gradient(90deg, var(--accent), transparent 82%);
-  opacity:.8;
-}}
-.kpi.kpi-critical {{ border-color:rgba(181,59,80,.36); background:linear-gradient(180deg,var(--control-soft),rgba(181,59,80,.10)); }}
-.kpi.kpi-warning {{ border-color:rgba(182,115,30,.36); background:linear-gradient(180deg,var(--control-soft),rgba(182,115,30,.10)); }}
-.kpi.kpi-good {{ border-color:rgba(46,125,84,.36); background:linear-gradient(180deg,var(--control-soft),rgba(46,125,84,.10)); }}
-.kpi-top {{
-  font-size:10px;
-  color:var(--muted);
-  text-transform:uppercase;
-  letter-spacing:0;
-  font-weight:700;
-}}
-.kpi .k {{ margin-top:4px; font-size:12px; color:var(--muted); line-height:1.35; }}
-.kpi .v {{ margin-top:6px; font-size:22px; font-weight:700; line-height:1.1; letter-spacing:0; }}
-.kpi .v {{ overflow-wrap:anywhere; }}
-.kpi.is-primary .v {{ font-size:32px; }}
-.kpi .s {{ margin-top:4px; font-size:12px; color:var(--muted); line-height:1.4; }}
-.summary {{ margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:10px; }}
-.box {{
-  border:1px solid var(--line);
-  border-radius:8px;
-  padding:16px;
-  background:linear-gradient(180deg, rgba(255,255,255,.80), rgba(246,250,254,.68));
-  box-shadow:var(--shadow-card);
-}}
-.box h3 {{
-  margin:0 0 10px 0;
-  font-size:15px;
-  line-height:1.3;
-  letter-spacing:0;
-}}
-.box ul {{ margin:0; padding-left:16px; font-size:12px; color:var(--ink); line-height:1.55; }}
-.box li {{ margin-bottom:5px; }}
-.section {{ margin-top:14px; padding:16px; overflow:hidden; }}
-.section[data-section='core'] {{ border-top:4px solid var(--accent); }}
-.section[data-section='yard'] {{ border-top:4px solid var(--series-yard); }}
-.section[data-section='risk'] {{ border-top:4px solid var(--series-gap); }}
-.section-head {{ display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; }}
-.section h2 {{
-  margin:0;
-  font-family:var(--font-display);
-  font-size:25px;
-  line-height:1.06;
-  letter-spacing:0;
-}}
-.desc {{ margin:6px 0 0 0; color:var(--muted); font-size:13px; line-height:1.55; max-width:940px; }}
-.section-tag {{
-  border:1px solid var(--line-strong);
-  border-radius:999px;
-  padding:6px 12px;
+.kpi-cell:last-child {{ border-right:none; }}
+.kpi-label {{
   font-size:11px;
   color:var(--muted);
-  background:var(--control-strong);
-  font-weight:700;
-  box-shadow:var(--shadow-soft);
+  font-weight:500;
+  letter-spacing:.005em;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }}
-.grid-2 {{ margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:12px; align-items:stretch; }}
-.grid-3 {{ margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; align-items:stretch; }}
-.grid-2 > *,.grid-3 > * {{ min-width:0; }}
-.chart-card {{
-  border:1px solid var(--line);
-  border-radius:8px;
-  padding:16px;
-  background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(246,250,254,.92));
-  min-height:320px;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  box-shadow:var(--shadow-card);
-  position:relative;
-}}
-html[data-theme='dark'] .chart-card {{
-  background:linear-gradient(180deg, rgba(20,32,51,.98), rgba(23,38,58,.94));
-}}
-.chart-card::before {{
-  content:'';
-  position:absolute;
-  inset:0 0 auto 0;
-  height:1px;
-  background:linear-gradient(90deg, rgba(255,255,255,.88), transparent 72%);
-}}
-.chart-head {{
-  margin-bottom:10px;
-  padding-bottom:10px;
-  border-bottom:1px solid var(--line);
-  min-height:78px;
-}}
-.chart-kicker {{
-  margin-bottom:5px;
-  font-size:10px;
-  color:var(--muted);
-  text-transform:uppercase;
-  letter-spacing:0;
-  font-weight:700;
-}}
-.chart-title {{
-  font-size:16px;
+.kpi-value {{
+  font-family:var(--font-mono);
+  font-size:28px;
+  line-height:1.05;
+  font-weight:500;
+  letter-spacing:-.03em;
   color:var(--ink);
-  margin:0;
-  font-weight:700;
-  line-height:1.28;
-  letter-spacing:0;
-}}
-.chart-note {{
-  margin-top:5px;
-  font-size:12px;
-  color:var(--muted);
-  line-height:1.5;
-  max-width:60ch;
-}}
-.canvas-wrap {{ flex:1; min-height:240px; height:280px; overflow:hidden; margin-top:2px; }}
-canvas {{ width:100% !important; height:100% !important; }}
-.table-wrap {{
-  margin-top:12px;
-  border:1px solid var(--line);
-  border-radius:8px;
-  overflow:auto;
-  max-height:440px;
-  background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(245,249,253,.72));
-  box-shadow:var(--shadow-card);
-}}
-.table-tools {{
-  margin-top:12px;
-  display:flex;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  gap:10px;
-  align-items:center;
-}}
-.table-tools > div:first-child {{
-  display:flex;
-  gap:8px;
-  align-items:center;
-  flex-wrap:wrap;
-}}
-.table-tools input {{
-  min-width:280px;
-}}
-#table_status {{
-  font-size:12px;
-  color:var(--muted);
-}}
-.table-tools input,.table-tools button {{
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:10px 12px;
-  font-size:12px;
-  background:var(--control);
-  color:var(--ink);
-  min-height:42px;
-  box-shadow:0 1px 0 rgba(255,255,255,.62) inset;
-}}
-.table-tools button {{
-  background:linear-gradient(180deg, var(--control-strong), var(--control));
-  cursor:pointer;
-  font-weight:700;
-  box-shadow:var(--shadow-soft);
-}}
-html[data-theme='dark'] .table-tools input,
-html[data-theme='dark'] .table-tools button,
-html[data-theme='dark'] .filters select,
-html[data-theme='dark'] .filters input,
-html[data-theme='dark'] .filters button,
-html[data-theme='dark'] .decision-card,
-html[data-theme='dark'] .pill,
-html[data-theme='dark'] .box {{
-  box-shadow:0 1px 0 rgba(255,255,255,.04) inset;
-}}
-html[data-theme='dark'] .table-wrap {{
-  background:linear-gradient(180deg, rgba(20,32,51,.98), rgba(23,38,58,.94));
-}}
-html[data-theme='dark'] .filters-shell,
-html[data-theme='dark'] .box,
-html[data-theme='dark'] .pill,
-html[data-theme='dark'] .kpi,
-html[data-theme='dark'] .decision-card {{
-  background:linear-gradient(180deg, rgba(20,32,51,.98), rgba(23,38,58,.94));
-}}
-html[data-theme='dark'] .kpi.is-primary {{
-  background:linear-gradient(180deg, rgba(23,38,58,.98), rgba(18,32,50,.96));
-}}
-table {{ width:100%; border-collapse:collapse; font-size:12px; min-width:1020px; }}
-th,td {{
-  padding:11px 12px;
-  border-bottom:1px solid var(--line);
-  text-align:left;
-  vertical-align:top;
-  line-height:1.45;
-  word-break:break-word;
   font-variant-numeric:tabular-nums;
 }}
-th {{
-  position:sticky;
-  top:0;
-  background:linear-gradient(180deg, var(--table-head), rgba(244,248,253,.96));
-  z-index:2;
+.kpi-value.is-text {{ font-family:var(--font-sans); font-size:16px; letter-spacing:-.01em; }}
+.kpi-foot {{
+  margin-top:auto;
+  display:flex; align-items:center; gap:6px;
   font-size:11px;
-  text-transform:uppercase;
-  letter-spacing:0;
   color:var(--muted);
-  box-shadow:inset 0 -1px 0 var(--line);
 }}
-tbody tr:nth-child(even) {{ background:rgba(15,112,137,.02); }}
-tbody tr:hover {{ background:rgba(15,112,137,.06); }}
-.table-wrap tbody td:nth-child(2),
-.table-wrap tbody td:nth-child(5) {{
-  font-weight:600;
+.kpi-dot {{
+  width:6px; height:6px; border-radius:99px; background:var(--subtle); flex:0 0 6px;
 }}
-.tier-badge {{
-  display:inline-block;
-  padding:5px 10px;
-  border-radius:999px;
-  font-size:11px;
-  font-weight:700;
-  border:1px solid var(--line);
-  background:var(--control-soft);
+.kpi-dot.bad {{ background:var(--danger); }}
+.kpi-dot.warn {{ background:var(--warn); }}
+.kpi-dot.good {{ background:var(--positive); }}
+
+/* ───── Sections ───── */
+.section-head {{
+  display:flex; align-items:baseline; justify-content:space-between;
+  gap:16px;
+  margin-bottom:20px;
 }}
-.tier-badge.t0 {{ border-color:rgba(180,55,74,.4); color:var(--danger); }}
-.tier-badge.t1 {{ border-color:rgba(196,122,29,.45); color:var(--warn); }}
-.tier-badge.t2 {{ border-color:rgba(47,125,77,.45); color:var(--ok); }}
-.score-badge {{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-width:58px;
-  padding:5px 10px;
-  border-radius:999px;
-  background:var(--control-strong);
-  border:1px solid var(--line);
-  font-weight:700;
-}}
-.action-cell strong {{
-  display:block;
+.section-head h2 {{
+  margin:0;
+  font-size:18px;
+  font-weight:500;
+  letter-spacing:-.015em;
   color:var(--ink);
-  margin-bottom:3px;
 }}
-.action-cell span {{
-  display:block;
+.section-head .desc {{
+  margin:6px 0 0 0;
+  font-size:13px;
   color:var(--muted);
+  max-width:680px;
+}}
+.section-num {{
+  font-family:var(--font-mono);
   font-size:11px;
-  line-height:1.4;
+  font-weight:500;
+  color:var(--subtle);
+  letter-spacing:.04em;
 }}
-.decision {{
-  margin-top:14px;
-  padding:18px;
-  border-left:5px solid var(--accent);
-  background:linear-gradient(135deg, rgba(13,112,137,.10), rgba(255,255,255,.95));
+
+/* ───── Grid ───── */
+.grid {{ display:grid; gap:16px; }}
+.grid-2 {{ grid-template-columns:repeat(2, minmax(0,1fr)); }}
+.grid-3 {{ grid-template-columns:repeat(3, minmax(0,1fr)); }}
+.grid + .grid {{ margin-top:16px; }}
+
+/* ───── Card ───── */
+.card {{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:20px;
+  display:flex; flex-direction:column;
+  min-width:0;
 }}
-.decision-head {{
+.card.tall {{ min-height:340px; }}
+.card-head {{
+  margin-bottom:16px;
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:12px;
+}}
+.card-head h3 {{
+  margin:0;
+  font-size:14px;
+  font-weight:500;
+  letter-spacing:-.005em;
+  color:var(--ink);
+}}
+.card-head .hint {{
+  margin:4px 0 0 0;
+  font-size:12px;
+  color:var(--muted);
+  max-width:48ch;
+}}
+.card-head .tag {{
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:.04em;
+  color:var(--subtle);
+  text-transform:uppercase;
+  white-space:nowrap;
+}}
+.card-body {{ flex:1; min-height:0; }}
+.canvas-wrap {{ position:relative; height:260px; }}
+canvas {{ width:100% !important; height:100% !important; }}
+
+/* ───── Priority table ───── */
+.table-card {{ padding:0; overflow:hidden; }}
+.table-head-row {{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px;
+  padding:18px 20px;
+  border-bottom:1px solid var(--line);
+}}
+.table-head-row h3 {{ margin:0; font-size:14px; font-weight:500; }}
+.table-head-row .desc {{ margin:4px 0 0 0; font-size:12px; color:var(--muted); }}
+.table-tools {{ display:flex; align-items:center; gap:8px; }}
+.input,.btn {{
+  height:30px;
+  padding:0 11px;
+  border:1px solid var(--line);
+  background:var(--surface);
+  color:var(--ink);
+  border-radius:6px;
+  font:500 12px/1 var(--font-sans);
+  letter-spacing:-.005em;
+}}
+.input {{ min-width:240px; }}
+.input::placeholder {{ color:var(--subtle); }}
+.btn {{ cursor:pointer; }}
+.btn:hover {{ border-color:var(--line-strong); }}
+.btn-ghost {{
+  background:transparent; border-color:transparent; color:var(--muted);
+}}
+.btn-ghost:hover {{ color:var(--ink); background:var(--surface-2); }}
+
+.table-wrap {{ overflow:auto; max-height:520px; }}
+table {{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  font-variant-numeric:tabular-nums;
+}}
+thead th {{
+  position:sticky; top:0;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  text-align:left;
+  padding:10px 16px;
+  font-size:11px;
+  font-weight:500;
+  color:var(--muted);
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  z-index:1;
+}}
+thead th.num {{ text-align:right; }}
+tbody td {{
+  padding:12px 16px;
+  border-bottom:1px solid var(--line);
+  color:var(--ink-2);
+  vertical-align:top;
+}}
+tbody tr:last-child td {{ border-bottom:none; }}
+tbody tr:hover td {{ background:var(--surface-2); color:var(--ink); }}
+td.num {{ text-align:right; font-family:var(--font-mono); color:var(--ink); }}
+td.rank {{ font-family:var(--font-mono); color:var(--subtle); font-size:12px; width:48px; }}
+td .area {{ font-weight:500; color:var(--ink); display:block; }}
+td .action-main {{ font-weight:500; color:var(--ink); display:block; }}
+td .action-sub {{ display:block; color:var(--muted); font-size:12px; margin-top:2px; }}
+.tier {{
+  display:inline-flex; align-items:center;
+  padding:2px 8px;
+  border-radius:99px;
+  font-family:var(--font-mono);
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}}
+.tier.t0 {{ background:var(--danger-soft); color:var(--danger); }}
+.tier.t1 {{ background:#fef3c7; color:var(--warn); }}
+.tier.t2 {{ background:#dcfce7; color:var(--positive); }}
+html[data-theme='dark'] .tier.t1 {{ background:#2a200a; color:var(--warn); }}
+html[data-theme='dark'] .tier.t2 {{ background:#0f2a14; color:var(--positive); }}
+.opi {{
+  display:inline-block;
+  font-family:var(--font-mono);
+  font-size:13px;
+  color:var(--ink);
+  font-weight:500;
+}}
+.bar-cell {{ display:flex; flex-direction:column; gap:5px; min-width:120px; }}
+.bar-cell .bar-track {{
+  height:4px;
+  background:var(--surface-2);
+  border-radius:99px;
+  overflow:hidden;
+}}
+.bar-cell .bar-fill {{
+  height:100%;
+  background:var(--ink);
+  border-radius:99px;
+}}
+.bar-cell .bar-fill.t0 {{ background:var(--danger); }}
+.bar-cell .bar-fill.t1 {{ background:var(--warn); }}
+.bar-cell .bar-fill.t2 {{ background:var(--positive); }}
+.table-status {{
+  padding:12px 20px;
+  border-top:1px solid var(--line);
+  font-size:12px;
+  color:var(--muted);
+}}
+
+/* ───── Scenario block ───── */
+.scenario-head {{
+  display:flex; align-items:center; gap:12px;
+}}
+.scenario-head select {{
+  height:30px; padding:0 28px 0 11px;
+  border:1px solid var(--line);
+  background:var(--surface);
+  color:var(--ink);
+  border-radius:6px;
+  font:500 12px/1 var(--font-sans);
+  cursor:pointer;
+}}
+
+/* ───── Footer / decision ───── */
+.decision-strip {{
+  margin-top:32px;
+  padding:24px 0 0 0;
+  border-top:1px solid var(--line);
+  display:grid;
+  grid-template-columns:1fr auto auto auto auto;
+  gap:32px;
+  align-items:end;
+}}
+.decision-strip .lead {{
+  font-size:14px;
+  line-height:1.55;
+  color:var(--ink-2);
+  max-width:520px;
+}}
+.decision-strip .lead strong {{ color:var(--ink); font-weight:500; }}
+.decision-stat span {{
+  display:block;
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:4px;
+  letter-spacing:.005em;
+}}
+.decision-stat strong {{
+  display:block;
+  font-family:var(--font-mono);
+  font-size:18px;
+  font-weight:500;
+  color:var(--ink);
+  letter-spacing:-.02em;
+  white-space:nowrap;
+}}
+.decision-stat.text strong {{
+  font-family:var(--font-sans);
+  font-size:14px;
+}}
+
+footer.foot {{
+  margin-top:48px;
+  padding:20px 0 8px;
+  border-top:1px solid var(--line);
+  font-size:11px;
+  color:var(--subtle);
   display:flex;
   justify-content:space-between;
-  gap:12px;
-  align-items:flex-start;
-  flex-wrap:wrap;
+  font-family:var(--font-mono);
+  letter-spacing:.02em;
 }}
-.decision h3 {{
-  margin:6px 0 0 0;
-  font-family:var(--font-display);
-  font-size:23px;
-  line-height:1.04;
-  letter-spacing:0;
-}}
-.decision-chip {{
-  display:inline-flex;
-  align-items:center;
-  padding:8px 12px;
-  border-radius:999px;
-  background:var(--control-strong);
-  border:1px solid var(--line-strong);
-  font-size:12px;
-  font-weight:700;
-  color:var(--ink);
-}}
-.decision-grid {{
-  margin-top:14px;
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:12px;
-}}
-.scenario-toolbar {{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  align-items:center;
-  margin-bottom:6px;
-}}
-.scenario-toolbar label {{
-  font-size:12px;
-  color:var(--muted);
-  font-weight:700;
-}}
-.scenario-select {{
-  border:1px solid var(--line);
-  border-radius:10px;
-  padding:7px 10px;
-  font-size:12px;
-  background:var(--control);
-  color:var(--ink);
-}}
-.decision-card {{
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:13px;
-  background:linear-gradient(180deg, rgba(255,255,255,.80), rgba(246,250,254,.72));
-  box-shadow:var(--shadow-card);
-}}
-.decision-card span {{
-  display:block;
-  font-size:11px;
-  color:var(--muted);
-  text-transform:uppercase;
-  letter-spacing:0;
-  font-weight:700;
-  margin-bottom:5px;
-}}
-.decision-card strong {{
-  display:block;
-  font-size:17px;
-  line-height:1.25;
-}}
-.decision p {{ margin:14px 0 0 0; font-size:13px; line-height:1.55; max-width:1100px; }}
-button,select,input {{
+
+/* ───── Focus states ───── */
+button:focus-visible, select:focus-visible, input:focus-visible {{
   outline:none;
-}}
-button:focus-visible,select:focus-visible,input:focus-visible {{
   border-color:var(--accent);
-  box-shadow:0 0 0 3px var(--accent-glow), 0 1px 0 rgba(255,255,255,.62) inset;
+  box-shadow:0 0 0 3px var(--focus);
 }}
-@media (max-width:1300px) {{
-  h1 {{ font-size:31px; }}
-  .canvas-wrap {{ height:260px; min-height:220px; }}
+
+/* ───── Responsive ───── */
+@media (max-width:1280px) {{
+  .kpi-strip {{ grid-template-columns:repeat(4, minmax(0,1fr)); }}
+  .kpi-cell:nth-child(4) {{ border-right:none; }}
+  .kpi-cell:nth-child(n+5) {{ border-top:1px solid var(--line); }}
+  .grid-3 {{ grid-template-columns:repeat(2, minmax(0,1fr)); }}
 }}
 @media (max-width:900px) {{
-  .wrapper {{ padding:10px; }}
-  header,.section,.decision {{ border-radius:8px; }}
-  h1 {{ font-size:28px; }}
-  .command-panel {{ grid-template-columns:1fr; }}
-  .pill strong {{ font-size:18px; }}
-  .kpi.is-primary {{ grid-column:span 1; min-height:122px; }}
+  .shell {{ padding:24px 20px; }}
+  .topbar {{ padding:12px 20px; }}
+  .verdict {{ grid-template-columns:1fr; gap:20px; }}
+  .verdict-meta {{ align-items:flex-start; }}
+  h1 {{ font-size:26px; }}
+  .kpi-strip {{ grid-template-columns:repeat(2, minmax(0,1fr)); }}
+  .kpi-cell {{ border-right:1px solid var(--line); border-bottom:1px solid var(--line); }}
+  .kpi-cell:nth-child(2n) {{ border-right:none; }}
   .grid-2,.grid-3 {{ grid-template-columns:1fr; }}
-  .chart-card {{ min-height:300px; }}
-  .canvas-wrap {{ height:240px; min-height:210px; }}
-  .filters-note {{ max-width:none; }}
-  .table-tools input {{ min-width:0; width:100%; }}
-  .control-strip {{ align-items:stretch; }}
-  table {{ min-width:820px; }}
+  .decision-strip {{ grid-template-columns:1fr 1fr; }}
 }}
 @media (max-width:600px) {{
-  .wrapper {{ padding:10px; }}
-  header {{ padding:16px 12px; }}
-  .head-top {{ display:block; }}
-  .actions {{ margin-top:14px; }}
-  .command-panel,.meta,.kpis,.summary,.decision-grid {{ grid-template-columns:1fr; }}
-  .pill,.kpi,.box,.command-card,.decision-card {{ min-width:0; }}
-  .kpi.is-primary {{ grid-column:auto; }}
-  h1 {{ font-size:26px; line-height:1.08; }}
-  .sub-strong {{ font-size:14px; }}
-  .filter-summary,.control-actions {{ width:100%; }}
-  .filter-pill {{ max-width:100%; }}
-  .filter-pill span {{ overflow-wrap:anywhere; }}
+  .brand-context, .brand-sep {{ display:none; }}
+  .kpi-strip {{ grid-template-columns:1fr; }}
+  .kpi-cell {{ border-right:none; }}
+  .kpi-value {{ font-size:24px; }}
+  .decision-strip {{ grid-template-columns:1fr; }}
 }}
+
+/* ───── Print ───── */
 @media print {{
-  @page {{ size: A4 landscape; margin: 10mm; }}
-  .filters-shell,.table-tools,.actions {{ display:none !important; }}
-  body {{ background:white; color:#10243a; }}
-  body::before,body::after {{ display:none; }}
-  .wrapper {{ max-width:none; padding:0; }}
-  .section,header,.decision {{ box-shadow:none; break-inside: avoid-page; }}
-  .section {{ page-break-inside: avoid; margin-top:8px; }}
-  .grid-3 {{ grid-template-columns:1fr 1fr 1fr; }}
-  .chart-card {{ min-height:260px; }}
-  .canvas-wrap {{ min-height:220px; height:220px; }}
-  .table-wrap {{ max-height:none; overflow:visible; }}
-  table {{ min-width:0; font-size:10px; }}
+  @page {{ size:A4 landscape; margin:10mm; }}
+  .topbar, .filter-strip, .table-tools, .scenario-head select, .icon-btn {{ display:none !important; }}
+  body {{ background:white; }}
+  .shell {{ max-width:none; padding:0; }}
+  .card, .kpi-strip {{ break-inside:avoid; }}
+  .canvas-wrap {{ height:220px; }}
 }}
 </style>
 </head>
 <body>
-<div class=\"wrapper\">
-<header>
-  <div class=\"head-top\">
-    <div class=\"title-wrap\">
-      <div class=\"eyebrow\">Industrial EV Operating Command Center</div>
-      <h1>Gemelo Operativo de Lanzamiento Industrial EV</h1>
-      <p class=\"sub sub-strong\">Centro de decisión para secuenciación, patio, carga y expedición en una transición industrial hacia furgonetas eléctricas.</p>
-      <p class=\"sub\"><strong>Cobertura:</strong> <span id=\"meta_coverage\"></span> · <strong>Órdenes:</strong> <span id=\"meta_orders\"></span> · <strong>Vehículos:</strong> <span id=\"meta_vehicles\"></span> · <strong>Zonas patio:</strong> <span id=\"meta_yard_zones\"></span> · <strong>Zonas carga:</strong> <span id=\"meta_charge_zones\"></span></p>
-    </div>
-    <div class=\"actions\">
-      <button id=\"theme_toggle\" class=\"theme-toggle\" type=\"button\" aria-label=\"Cambiar tema\">Modo oscuro</button>
-      <button id=\"btn_print\" class=\"print-btn\" type=\"button\" aria-label=\"Imprimir dashboard\">Imprimir</button>
-    </div>
+<header class=\"topbar\">
+  <div class=\"topbar-left\">
+    <div class=\"brand-mark\" aria-hidden=\"true\">EV</div>
+    <div class=\"brand-title\">Gemelo Operativo EV</div>
+    <div class=\"brand-sep\"></div>
+    <div class=\"brand-context\">Dashboard de transición industrial</div>
   </div>
-  <div class=\"hero-message\" id=\"hero_message\"></div>
-  <div class=\"command-panel\" aria-label=\"Resumen ejecutivo de decisión\">
-    <div class=\"command-card is-critical\">
-      <span class=\"command-label\">Qué importa ahora</span>
-      <strong id=\"command_matter\">N/A</strong>
-      <p id=\"command_matter_note\">N/A</p>
-    </div>
-    <div class=\"command-card\">
-      <span class=\"command-label\">Crítico</span>
-      <strong id=\"command_critical\">N/A</strong>
-      <p id=\"command_critical_note\">N/A</p>
-    </div>
-    <div class=\"command-card\">
-      <span class=\"command-label\">Acción requerida</span>
-      <strong id=\"command_action\">N/A</strong>
-      <p id=\"command_action_note\">N/A</p>
-    </div>
-    <div class=\"command-card\">
-      <span class=\"command-label\">Impacto operativo</span>
-      <strong id=\"command_impact\">N/A</strong>
-      <p id=\"command_impact_note\">N/A</p>
-    </div>
-  </div>
-  <div class=\"meta\">
-    <div class=\"pill\">
-      <span class=\"pill-k\">Área prioritaria</span>
-      <strong id=\"meta_top_area\"></strong>
-      <span class=\"pill-s\">Zona donde la pérdida de flujo exige intervención primero.</span>
-    </div>
-    <div class=\"pill\">
-      <span class=\"pill-k\">Acción recomendada</span>
-      <strong id=\"meta_top_action\"></strong>
-      <span class=\"pill-s\">Palanca operativa con mayor efecto inmediato sobre estabilidad.</span>
-    </div>
-    <div class=\"pill\">
-      <span class=\"pill-k\">Escenario preferente</span>
-      <strong id=\"meta_top_scenario\"></strong>
-      <span class=\"pill-s\">Combinación de medidas con mejor equilibrio entre throughput y riesgo.</span>
-    </div>
-    <div class=\"pill\">
-      <span class=\"pill-k\">Huella operativa</span>
-      <strong><span id=\"meta_yard_zones_card\"></span> patio · <span id=\"meta_charge_zones_card\"></span> carga</strong>
-      <span class=\"pill-s\">Cobertura física incluida en la vista ejecutiva actual.</span>
-    </div>
-  </div>
-
-  <div class=\"control-strip no-print\">
-    <div class=\"filter-summary\" id=\"filter_summary\">
-      <span class=\"filter-pill\"><strong>Vista</strong><span id=\"filter_summary_text\">Todos los datos</span></span>
-      <span class=\"filter-pill\"><strong>Escenario</strong><span id=\"scenario_summary_text\">N/A</span></span>
-    </div>
-    <div class=\"control-actions\">
-      <button id=\"btn_toggle_filters\" class=\"panel-toggle\" type=\"button\" aria-expanded=\"false\" aria-controls=\"filters_shell\">Mostrar filtros</button>
-    </div>
-  </div>
-
-  <div class=\"filters-shell no-print\" id=\"filters_shell\" data-collapsed=\"true\">
-    <div class=\"filters-head\">
-      <div>
-        <div class=\"eyebrow eyebrow-soft\">Contexto de lectura</div>
-        <p class=\"filters-caption\">Los filtros sincronizan KPIs, gráficos y tabla final. Úsalos para aislar picos, mix EV, áreas o zonas concretas sin perder comparabilidad.</p>
-      </div>
-      <div class=\"filters-note\">Lectura rápida: empieza por fecha + turno y añade después propulsión, área o severidad para ver qué cambia de verdad.</div>
-    </div>
-    <div class=\"filters\">
-      <div><label for=\"f_date_from\">Fecha desde</label><input id=\"f_date_from\" type=\"date\" /></div>
-      <div><label for=\"f_date_to\">Fecha hasta</label><input id=\"f_date_to\" type=\"date\" /></div>
-      <div><label for=\"f_turno\">Turno</label><select id=\"f_turno\"></select></div>
-      <div><label for=\"f_prop\">Propulsión</label><select id=\"f_prop\"></select></div>
-      <div><label for=\"f_version\">Versión</label><select id=\"f_version\"></select></div>
-      <div><label for=\"f_area\">Área</label><select id=\"f_area\"></select></div>
-      <div><label for=\"f_yard\">Zona Patio</label><select id=\"f_yard\"></select></div>
-      <div><label for=\"f_charge\">Zona Carga</label><select id=\"f_charge\"></select></div>
-      <div><label for=\"f_severity\">Severidad Cuello</label><select id=\"f_severity\"></select></div>
-      <div><span class=\"sr-only\">Aplicar filtros</span><button id=\"btn_apply\" type=\"button\">Aplicar filtros</button></div>
-      <div><span class=\"sr-only\">Reset filtros</span><button id=\"btn_reset\" type=\"button\">Reset filtros</button></div>
-    </div>
-  </div>
-
-  <div class=\"kpis\" id=\"kpi_cards\"></div>
-
-  <div class=\"summary\">
-    <div class=\"box\">
-      <h3>Lectura ejecutiva</h3>
-      <ul id=\"executive_list\"></ul>
-    </div>
-    <div class=\"box\">
-      <h3>Palancas operativas</h3>
-      <ul id=\"operational_list\"></ul>
-    </div>
+  <div class=\"topbar-right\">
+    <button id=\"btn_toggle_filters\" class=\"icon-btn\" type=\"button\" aria-expanded=\"true\" aria-controls=\"filters_shell\">Filtros</button>
+    <button id=\"btn_print\" class=\"icon-btn\" type=\"button\" aria-label=\"Exportar PDF\">Exportar</button>
+    <button id=\"theme_toggle\" class=\"icon-btn\" type=\"button\" aria-label=\"Cambiar tema\">Tema</button>
   </div>
 </header>
 
-<section class=\"section\" data-section=\"core\">
+<main class=\"shell\">
+
+<section class=\"verdict\">
+  <div>
+    <p class=\"eyebrow\">Lectura ejecutiva</p>
+    <h1 id=\"hero_message\">El cuello dominante se ha desplazado de línea a patio, carga y expedición.</h1>
+    <p class=\"verdict-sub\" id=\"verdict_sub\"></p>
+  </div>
+  <div class=\"verdict-meta\">
+    <div class=\"row\"><span class=\"dot\" id=\"verdict_dot\"></span><span>Cobertura</span><strong id=\"meta_coverage\">—</strong></div>
+    <div class=\"row\"><span>Órdenes</span><strong id=\"meta_orders\">—</strong></div>
+    <div class=\"row\"><span>Vehículos</span><strong id=\"meta_vehicles\">—</strong></div>
+    <div class=\"row\"><span>Zonas</span><strong><span id=\"meta_yard_zones\">—</span> patio · <span id=\"meta_charge_zones\">—</span> carga</strong></div>
+  </div>
+</section>
+
+<div id=\"filters_shell\" class=\"filter-strip\" role=\"group\" aria-label=\"Filtros del dashboard\">
+  <span class=\"label\">Vista:</span>
+  <span class=\"filter-chip\"><strong>De</strong><input id=\"f_date_from\" type=\"date\" /></span>
+  <span class=\"filter-chip\"><strong>A</strong><input id=\"f_date_to\" type=\"date\" /></span>
+  <span class=\"filter-chip\"><strong>Turno</strong><select id=\"f_turno\" aria-label=\"Turno\"></select></span>
+  <span class=\"filter-chip\"><strong>Propulsión</strong><select id=\"f_prop\" aria-label=\"Propulsión\"></select></span>
+  <span class=\"filter-chip\"><strong>Área</strong><select id=\"f_area\" aria-label=\"Área\"></select></span>
+  <span class=\"sr-only\"><select id=\"f_version\" aria-hidden=\"true\"></select></span>
+  <span class=\"sr-only\"><select id=\"f_yard\" aria-hidden=\"true\"></select></span>
+  <span class=\"sr-only\"><select id=\"f_charge\" aria-hidden=\"true\"></select></span>
+  <span class=\"sr-only\"><select id=\"f_severity\" aria-hidden=\"true\"></select></span>
+  <button id=\"btn_apply\" class=\"icon-btn\" type=\"button\">Aplicar</button>
+  <button id=\"btn_reset\" class=\"filter-reset\" type=\"button\">Restablecer</button>
+  <span class=\"sr-only\" id=\"filter_summary_text\"></span>
+  <span class=\"sr-only\" id=\"scenario_summary_text\"></span>
+</div>
+
+<div class=\"kpi-strip\" id=\"kpi_cards\" aria-label=\"Indicadores clave\"></div>
+
+<section style=\"margin-top:48px;\">
   <div class=\"section-head\">
     <div>
-      <h2>Flujo Global y Secuenciación</h2>
-      <p class=\"desc\">Comparación plan-real y evolución del mix EV con densidad controlada para lectura ejecutiva.</p>
+      <span class=\"section-num\">01 — Flujo &amp; Mix</span>
+      <h2 style=\"margin-top:6px;\">Plan vs ejecución, y la presión que introduce el mix EV</h2>
+      <p class=\"desc\">Si plan y real divergen y la curva EV sube, la pérdida de capacidad es estructural, no incidental.</p>
     </div>
-    <span class=\"section-tag\">Prioridad de flujo</span>
   </div>
-  <div class=\"grid-2\">
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Flujo</div><div class=\"chart-title\">Throughput planificado vs real</div><div class=\"chart-note\">Ritmo diario del plan frente a la ejecución real para detectar pérdida inmediata de capacidad.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_throughput\"></canvas></div></div>
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Mix</div><div class=\"chart-title\">Share EV semanal</div><div class=\"chart-note\">Evolución del mix EV y presión estructural que introduce sobre el sistema operativo.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_ev_share\"></canvas></div></div>
+  <div class=\"grid grid-2\">
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Throughput planificado vs real</h3><p class=\"hint\">Ritmo diario; cualquier divergencia sostenida señala pérdida de capacidad.</p></div><span class=\"tag\">Diario</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_throughput\"></canvas></div></div>
+    </div>
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Share EV semanal</h3><p class=\"hint\">Mix que explica la presión incremental sobre carga, patio y expedición.</p></div><span class=\"tag\">Semanal</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_ev_share\"></canvas></div></div>
+    </div>
   </div>
-  <div class=\"grid-2\">
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Secuencia</div><div class=\"chart-title\">Gap de secuencia plan-real</div><div class=\"chart-note\">Desviación media del orden objetivo; una señal temprana de rotura de flujo y reordenación interna.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_seq_gap\"></canvas></div></div>
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Complejidad</div><div class=\"chart-title\">Lead time medio por versión</div><div class=\"chart-note\">Versiones con mayor tiempo interno total y mayor capacidad de arrastrar congestión.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_lead_version\"></canvas></div></div>
-  </div>
-</section>
-
-<section class=\"section\" data-section=\"yard\">
-  <div class=\"section-head\"><div><h2>Patio y Carga</h2><p class=\"desc\">Lectura de ocupación, dwell, utilización y colas sin sobrecargar ejes ni etiquetas.</p></div><span class=\"section-tag\">Capacidad crítica</span></div>
-  <div class=\"grid-2\">
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Patio</div><div class=\"chart-title\">Ocupación de patio y dwell p95</div><div class=\"chart-note\">Relación entre saturación y cola extrema para anticipar bloqueo físico antes de que afecte expedición.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_yard_occ\"></canvas></div></div>
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Zonas</div><div class=\"chart-title\">Dwell por zona de patio</div><div class=\"chart-note\">Comparación por zona para localizar buffers improductivos y movimientos de bajo valor.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_yard_zone\"></canvas></div></div>
-  </div>
-  <div class=\"grid-2\">
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Carga</div><div class=\"chart-title\">Utilización de carga por zona</div><div class=\"chart-note\">Uso medio de la infraestructura y miss rate de SOC para distinguir saturación de mala asignación.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_charge_util\"></canvas></div></div>
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Colas</div><div class=\"chart-title\">Cola media de carga</div><div class=\"chart-note\">Espera previa a carga como señal directa de cuello operativo en la transición EV.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_charge_wait\"></canvas></div></div>
-  </div>
-  <div class=\"grid-2\">
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Readiness</div><div class=\"chart-title\">SOC objetivo vs SOC real</div><div class=\"chart-note\">Gap de energía disponible antes de salida; clave para expedición selectiva y asignación de slots.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_soc\"></canvas></div></div>
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Robustez</div><div class=\"chart-title\">Interrupciones de carga por zona</div><div class=\"chart-note\">Frecuencia de cortes o sesiones frágiles que degradan estabilidad sin necesariamente subir utilización.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_interrupt\"></canvas></div></div>
+  <div class=\"grid grid-2\">
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Gap de secuencia plan–real</h3><p class=\"hint\">Desviación del orden objetivo; señal temprana antes de que la cola se rompa.</p></div><span class=\"tag\">Secuencia</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_seq_gap\"></canvas></div></div>
+    </div>
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Lead time por versión</h3><p class=\"hint\">Versiones con mayor tiempo interno: candidatas a arrastrar congestión.</p></div><span class=\"tag\">Complejidad</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_lead_version\"></canvas></div></div>
+    </div>
   </div>
 </section>
 
-<section class=\"section\" data-section=\"risk\">
-  <div class=\"section-head\"><div><h2>Expedición, Cuellos y Priorización</h2><p class=\"desc\">Señales de riesgo de salida y ranking de acciones para intervención.</p></div><span class=\"section-tag\">Decisión ejecutiva</span></div>
-  <div class=\"grid-2\">
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Expedición</div><div class=\"chart-title\">Retraso medio por causa</div><div class=\"chart-note\">Lectura causal para separar incidencias aisladas de fricción sistémica de salida.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_delay_cause\"></canvas></div></div>
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Turnos</div><div class=\"chart-title\">Delay rate y readiness por turno</div><div class=\"chart-note\">Comparación entre turnos para distinguir problemas estructurales de tensión operativa localizada.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_shift_readiness\"></canvas></div></div>
+<section>
+  <div class=\"section-head\">
+    <div>
+      <span class=\"section-num\">02 — Patio &amp; Carga</span>
+      <h2 style=\"margin-top:6px;\">Dónde se está bloqueando físicamente el flujo</h2>
+      <p class=\"desc\">Ocupación, dwell extremo, utilización de carga y SOC: las cuatro señales que precipitan el cuello de salida.</p>
+    </div>
   </div>
-  <div class=\"grid-3\">
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Bottlenecks</div><div class=\"chart-title\">Impacto de cuellos por área</div><div class=\"chart-note\">Cuánto throughput y salida pierde cada área cuando el sistema entra en tensión.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_bneck_area\"></canvas></div></div>
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Riesgo</div><div class=\"chart-title\">Matriz de riesgo por área</div><div class=\"chart-note\">Cruce entre pérdida de throughput y riesgo de expedición para decidir dónde actuar primero.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_risk_matrix\"></canvas></div></div>
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Acción</div><div class=\"chart-title\">Ranking de acciones recomendadas</div><div class=\"chart-note\">Prioridad media por palanca para traducir diagnóstico en intervención ejecutable.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_actions\"></canvas></div></div>
+  <div class=\"grid grid-2\">
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Ocupación de patio y dwell p95</h3><p class=\"hint\">Saturación + cola extrema = bloqueo físico inminente.</p></div><span class=\"tag\">Patio</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_yard_occ\"></canvas></div></div>
+    </div>
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Dwell por zona</h3><p class=\"hint\">Buffers improductivos y movimientos sin valor por zona física.</p></div><span class=\"tag\">Zona</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_yard_zone\"></canvas></div></div>
+    </div>
   </div>
-  <div class=\"grid-2\">
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Comparativa</div><div class=\"chart-title\">Comparación EV vs ICE</div><div class=\"chart-note\">Dónde se concentra la carga operativa adicional del mix EV frente a la operación convencional.</div></div><div class=\"canvas-wrap\"><canvas id=\"ch_ev_vs_ice\"></canvas></div></div>
-    <div class=\"chart-card\"><div class=\"chart-head\"><div class=\"chart-kicker\">Scenario twin</div><div class=\"chart-title\">Escenarios comparados</div><div class=\"chart-note\">Comparador de palancas para decidir si conviene secuenciar mejor, ampliar carga o reorganizar patio.</div></div>
-      <div class=\"scenario-toolbar\">
-        <label for=\"scenario_select\">Escenario</label>
-        <select id=\"scenario_select\" class=\"scenario-select\"></select>
+  <div class=\"grid grid-2\">
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Utilización de carga</h3><p class=\"hint\">Uso medio por zona y miss-rate de SOC objetivo.</p></div><span class=\"tag\">Carga</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_charge_util\"></canvas></div></div>
+    </div>
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Cola media de carga</h3><p class=\"hint\">Espera previa: señal directa del cuello energético EV.</p></div><span class=\"tag\">Cola</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_charge_wait\"></canvas></div></div>
+    </div>
+  </div>
+  <div class=\"grid grid-2\">
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>SOC objetivo vs real</h3><p class=\"hint\">Gap de energía antes de expedir: clave para asignación de slots.</p></div><span class=\"tag\">Readiness</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_soc\"></canvas></div></div>
+    </div>
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Interrupciones de carga</h3><p class=\"hint\">Sesiones frágiles que degradan estabilidad sin subir utilización.</p></div><span class=\"tag\">Robustez</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_interrupt\"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class=\"section-head\">
+    <div>
+      <span class=\"section-num\">03 — Riesgo &amp; Expedición</span>
+      <h2 style=\"margin-top:6px;\">Quién pierde flujo, por qué, y cuál es el siguiente movimiento</h2>
+      <p class=\"desc\">Causas de retraso, comparativa EV vs ICE, matriz de riesgo y ranking de palancas para intervenir.</p>
+    </div>
+  </div>
+  <div class=\"grid grid-2\">
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Retraso por causa</h3><p class=\"hint\">Separa incidencias aisladas de fricción sistémica de salida.</p></div><span class=\"tag\">Causas</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_delay_cause\"></canvas></div></div>
+    </div>
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Delay y readiness por turno</h3><p class=\"hint\">Distingue tensión localizada de problema estructural por turno.</p></div><span class=\"tag\">Turno</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_shift_readiness\"></canvas></div></div>
+    </div>
+  </div>
+  <div class=\"grid grid-3\">
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Impacto de cuellos por área</h3><p class=\"hint\">Throughput perdido por área en tensión.</p></div><span class=\"tag\">Área</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_bneck_area\"></canvas></div></div>
+    </div>
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Matriz de riesgo</h3><p class=\"hint\">Pérdida × riesgo de expedición: dónde actuar primero.</p></div><span class=\"tag\">Matriz</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_risk_matrix\"></canvas></div></div>
+    </div>
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Ranking de acciones</h3><p class=\"hint\">Prioridad media por palanca operativa.</p></div><span class=\"tag\">Acción</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_actions\"></canvas></div></div>
+    </div>
+  </div>
+  <div class=\"grid grid-2\">
+    <div class=\"card tall\">
+      <div class=\"card-head\"><div><h3>Comparativa EV vs ICE</h3><p class=\"hint\">Dónde se concentra la carga incremental del mix EV.</p></div><span class=\"tag\">Comparativa</span></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_ev_vs_ice\"></canvas></div></div>
+    </div>
+    <div class=\"card tall\">
+      <div class=\"card-head\">
+        <div><h3>Comparador de escenarios</h3><p class=\"hint\">Qué palanca da mejor equilibrio entre throughput y riesgo.</p></div>
+        <div class=\"scenario-head\"><select id=\"scenario_select\" aria-label=\"Seleccionar escenario\"></select></div>
       </div>
-      <div class=\"canvas-wrap\"><canvas id=\"ch_scenarios\"></canvas></div>
+      <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_scenarios\"></canvas></div></div>
     </div>
-  </div>
-
-  <div class=\"table-tools no-print\">
-    <div>
-      <label class=\"sr-only\" for=\"table_search\">Buscar en tabla de prioridades</label>
-      <input id=\"table_search\" type=\"text\" placeholder=\"Buscar área, driver, acción...\" />
-      <button id=\"btn_export\" type=\"button\">Export CSV filtrado</button>
-    </div>
-    <div id=\"table_status\"></div>
-  </div>
-  <div class=\"table-wrap\">
-    <table id=\"priority_table\">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Área</th>
-          <th>OPI</th>
-          <th>Tier</th>
-          <th>Main Driver</th>
-          <th>Action</th>
-          <th>Bottleneck</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
   </div>
 </section>
 
-<div class=\"decision\">
-  <div class=\"decision-head\">
+<section>
+  <div class=\"section-head\">
     <div>
-      <div class=\"eyebrow eyebrow-soft\">Decisión ejecutiva</div>
-      <h3>Intervención recomendada</h3>
+      <span class=\"section-num\">04 — Priorización operativa</span>
+      <h2 style=\"margin-top:6px;\">Ranking de áreas y acciones para esta semana</h2>
+      <p class=\"desc\">Ordenado por Operational Priority Index (OPI). Buscar por área o driver; exportar como CSV para iterar.</p>
     </div>
-    <div class=\"decision-chip\" id=\"decision_scenario\"></div>
   </div>
-  <div class=\"decision-grid\">
-    <div class=\"decision-card\"><span>Área</span><strong id=\"decision_area\">N/A</strong></div>
-    <div class=\"decision-card\"><span>Acción</span><strong id=\"decision_action\">N/A</strong></div>
-    <div class=\"decision-card\"><span>Driver dominante</span><strong id=\"decision_driver\">N/A</strong></div>
-    <div class=\"decision-card\"><span>Prioridad</span><strong id=\"decision_opi\">N/A</strong></div>
+  <div class=\"card table-card\">
+    <div class=\"table-head-row\">
+      <div>
+        <h3>Áreas críticas por OPI</h3>
+        <p class=\"desc\">Cada fila empareja el driver dominante con la acción recomendada.</p>
+      </div>
+      <div class=\"table-tools\">
+        <label class=\"sr-only\" for=\"table_search\">Buscar</label>
+        <input id=\"table_search\" class=\"input\" type=\"text\" placeholder=\"Buscar área, driver, acción…\" />
+        <button id=\"btn_export\" class=\"btn\" type=\"button\">Exportar CSV</button>
+      </div>
+    </div>
+    <div class=\"table-wrap\">
+      <table id=\"priority_table\">
+        <thead>
+          <tr>
+            <th class=\"rank\">#</th>
+            <th>Área</th>
+            <th class=\"num\">OPI</th>
+            <th>Tier</th>
+            <th>Driver dominante</th>
+            <th>Acción recomendada</th>
+            <th>Cuello asociado</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id=\"table_status\" class=\"table-status\"></div>
   </div>
-  <p id=\"decision_text\"></p>
+</section>
+
+<section class=\"decision-strip\">
+  <div class=\"lead\" id=\"decision_text\">
+    <strong>Intervención recomendada.</strong>
+    <span id=\"command_matter_note\"></span>
+  </div>
+  <div class=\"decision-stat text\"><span>Área</span><strong id=\"decision_area\">—</strong></div>
+  <div class=\"decision-stat text\"><span>Acción</span><strong id=\"decision_action\">—</strong></div>
+  <div class=\"decision-stat text\"><span>Driver</span><strong id=\"decision_driver\">—</strong></div>
+  <div class=\"decision-stat\"><span>OPI</span><strong id=\"decision_opi\">—</strong></div>
+</section>
+
+<div class=\"sr-only\">
+  <span id=\"command_matter\"></span>
+  <span id=\"command_critical\"></span>
+  <span id=\"command_critical_note\"></span>
+  <span id=\"command_action\"></span>
+  <span id=\"command_action_note\"></span>
+  <span id=\"command_impact\"></span>
+  <span id=\"command_impact_note\"></span>
+  <span id=\"meta_top_area\"></span>
+  <span id=\"meta_top_action\"></span>
+  <span id=\"meta_top_scenario\"></span>
+  <span id=\"meta_yard_zones_card\"></span>
+  <span id=\"meta_charge_zones_card\"></span>
+  <span id=\"decision_scenario\"></span>
+  <ul id=\"executive_list\"></ul>
+  <ul id=\"operational_list\"></ul>
 </div>
-</div>
+
+<footer class=\"foot\">
+  <span>Gemelo Operativo EV — v{version}</span>
+  <span>Dataset gobernado · Tabular nums · pt/es</span>
+</footer>
+
+</main>
 
 <script>
 const PAYLOAD = {json.dumps(payload, ensure_ascii=False)};
@@ -1441,11 +1241,24 @@ function setMeta() {{
   ];
   document.getElementById('operational_list').innerHTML = opList.map(x => '<li>' + escapeHtml(x) + '</li>').join('');
 
+  const topArea = META.executive_snapshot.top_area || 'N/A';
+  const topAction = META.executive_snapshot.top_action || 'N/A';
+  const topScenario = META.executive_snapshot.top_scenario || 'N/A';
   document.getElementById('hero_message').textContent =
-    'El cuello dominante ya no está solo en la línea. La presión se desplaza a patio, carga y salida: el foco inmediato es '
-    + (META.executive_snapshot.top_area || 'N/A')
-    + ', con prioridad para ' + (META.executive_snapshot.top_action || 'N/A')
-    + ' y validación contra el escenario ' + (META.executive_snapshot.top_scenario || 'N/A') + '.';
+    'La presión operativa se concentra en ' + topArea + '. El cuello ya no es la línea: es patio, carga y expedición.';
+  const subEl = document.getElementById('verdict_sub');
+  if (subEl) {{
+    subEl.textContent =
+      'Acción prioritaria: ' + topAction + '. Validada contra el escenario ' + topScenario + '. '
+      + Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES')
+      + ' vehículos llegan a expedición sin preparación suficiente, con ' + pct(k.ratio_salida_retrasada || 0)
+      + ' de salidas retrasadas.';
+  }}
+  const dotEl = document.getElementById('verdict_dot');
+  if (dotEl) {{
+    const ratio = n(k.ratio_salida_retrasada || 0);
+    dotEl.className = 'dot ' + (ratio > 0.12 ? 'bad' : (ratio > 0.05 ? 'warn' : ''));
+  }}
 
   document.getElementById('command_matter').textContent = 'Proteger readiness de salida';
   document.getElementById('command_matter_note').textContent = 'El riesgo visible no es volumen total, sino vehículos que llegan a expedición sin preparación suficiente.';
@@ -1546,9 +1359,11 @@ function updateFilterSummary() {{
 function setFilterPanelCollapsed(collapsed) {{
   const shell = document.getElementById('filters_shell');
   const btn = document.getElementById('btn_toggle_filters');
+  if (!shell || !btn) return;
   shell.dataset.collapsed = collapsed ? 'true' : 'false';
+  shell.style.display = collapsed ? 'none' : '';
   btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-  btn.textContent = collapsed ? 'Mostrar filtros' : 'Ocultar filtros';
+  btn.textContent = collapsed ? 'Filtros' : 'Ocultar filtros';
 }}
 
 function inDateRange(d, from, to) {{
@@ -1673,36 +1488,97 @@ function calculateVisibleKpis(ctx) {{
   }};
 }}
 
-function renderOfficialKpis(k = META.kpi_official || {{}}, contextLabel = 'baseline gobernado') {{
-  const cards = [
-    {{ key:'throughput_real', label:'Throughput real', value:Math.round(n(k.throughput_real || 0)).toLocaleString('es-ES'), subtitle:'Entrega visible en ' + contextLabel + '; confirma si el sistema sostiene volumen.', primary:true, kicker:'Entrega' }},
-    {{ key:'throughput_gap', label:'Gap vs plan', value:Math.round(n(k.throughput_gap || 0)).toLocaleString('es-ES'), subtitle:n(k.throughput_gap || 0) < 0 ? 'Déficit operativo: activar contención de secuencia y salida.' : 'Sin déficit neto; vigilar que no oculte tensión por área.', primary:true, kicker:'Disciplina' }},
-    {{ key:'utilizacion_media_cargadores', label:'Utilización de carga', value:pct(k.utilizacion_media_cargadores || 0), subtitle:n(k.utilizacion_media_cargadores || 0) > 0.82 ? 'Crítico: poca holgura para absorber picos EV.' : 'Capacidad con margen; mirar colas antes de ampliar slots.', primary:true, kicker:'Infraestructura' }},
-    {{ key:'ratio_salida_retrasada', label:'Delay rate salida', value:pct(k.ratio_salida_retrasada || 0), subtitle:n(k.ratio_salida_retrasada || 0) > 0.12 ? 'Crítico: expedición ya está degradando el flujo final.' : 'Controlable si no sube junto con no-ready.', primary:true, kicker:'Expedición' }},
-    {{ key:'share_ev', label:'Share EV', value:pct(k.share_ev || 0), subtitle:'Mix EV que explica presión incremental sobre carga y readiness.', primary:false, kicker:'Mix' }},
-    {{ key:'ocupacion_pico_patio', label:'Ocupación pico patio', value:pct(k.ocupacion_pico_patio || 0), subtitle:'Pico físico; si sube con dwell p95, el bloqueo se vuelve estructural.', primary:false, kicker:'Patio' }},
-    {{ key:'vehiculos_no_ready', label:'Vehículos no ready', value:Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES'), subtitle:'Backlog accionable: priorizar SOC, secuencia y ventanas de expedición.', primary:false, kicker:'Backlog' }},
-    {{ key:'tiempo_medio_patio_min', label:'Tiempo medio patio', value:n(k.tiempo_medio_patio_min || 0).toFixed(1) + ' min', subtitle:'Tiempo improductivo medio antes de avanzar al siguiente hito.', primary:false, kicker:'Espera' }},
-    {{ key:'dwell_p95_min', label:'Dwell p95', value:n(k.dwell_p95_min || 0).toFixed(1) + ' min', subtitle:'Cola extrema; mejor indicador de riesgo que la media cuando hay picos.', primary:false, kicker:'Cola extrema' }},
-    {{ key:'tiempo_medio_espera_carga_min', label:'Espera carga', value:n(k.tiempo_medio_espera_carga_min || 0).toFixed(1) + ' min', subtitle:'Bottleneck directo de transición EV: cola antes de energía disponible.', primary:false, kicker:'Carga' }},
-    {{ key:'score_readiness_global', label:'Readiness global', value:n(k.score_readiness_global || 0).toFixed(1), subtitle:n(k.score_readiness_global || 0) >= 70 ? 'Readiness aceptable; sostener disciplina por turno.' : 'Readiness insuficiente: bloquear salida de unidades frágiles.', primary:false, kicker:'Readiness' }},
-    {{ key:'causa_principal_cuello', label:'Causa principal de cuello', value:(k.causa_principal_cuello || 'N/A'), subtitle:'Driver dominante que debe guiar la primera intervención operativa.', primary:false, kicker:'Driver' }},
+function compactNumber(num) {{
+  const v = n(num);
+  const abs = Math.abs(v);
+  if (abs >= 1e6) return (v / 1e6).toFixed(abs >= 1e7 ? 0 : 1).replace('.0','') + 'M';
+  if (abs >= 1e4) return (v / 1e3).toFixed(0) + 'k';
+  if (abs >= 1e3) return (v / 1e3).toFixed(1).replace('.0','') + 'k';
+  return Math.round(v).toString();
+}}
+function signedCompact(num) {{
+  const v = n(num);
+  if (v === 0) return '0';
+  return (v > 0 ? '+' : '−') + compactNumber(Math.abs(v));
+}}
+function pctCompact(num) {{
+  return Math.round(n(num) * 100) + '%';
+}}
+function tone(key, value) {{
+  if (key === 'throughput_gap') return n(value) < 0 ? 'bad' : 'good';
+  if (key === 'ratio_salida_retrasada') return n(value) > 0.12 ? 'bad' : (n(value) > 0.05 ? 'warn' : 'good');
+  if (key === 'utilizacion_media_cargadores') return n(value) > 0.82 ? 'bad' : (n(value) > 0.68 ? 'warn' : 'good');
+  if (key === 'ocupacion_pico_patio') return n(value) > 0.85 ? 'bad' : (n(value) > 0.70 ? 'warn' : 'good');
+  if (key === 'vehiculos_no_ready') return n(value) > 0 ? 'warn' : 'good';
+  if (key === 'score_readiness_global') return n(value) >= 70 ? 'good' : (n(value) >= 50 ? 'warn' : 'bad');
+  return '';
+}}
+
+function renderOfficialKpis(k = META.kpi_official || {{}}) {{
+  // 7 KPIs above the fold — selected for executive decision-making
+  const cells = [
+    {{
+      key:'throughput_real',
+      label:'Throughput real',
+      value:compactNumber(k.throughput_real || 0),
+      foot:'unidades · período completo',
+    }},
+    {{
+      key:'throughput_gap',
+      label:'Gap vs plan',
+      value:signedCompact(k.throughput_gap || 0),
+      foot:n(k.throughput_gap || 0) < 0 ? 'déficit operativo' : 'sin déficit neto',
+    }},
+    {{
+      key:'ratio_salida_retrasada',
+      label:'Salidas retrasadas',
+      value:pctCompact(k.ratio_salida_retrasada || 0),
+      foot:'sobre vehículos despachados',
+    }},
+    {{
+      key:'vehiculos_no_ready',
+      label:'No-ready a expedición',
+      value:compactNumber(k.vehiculos_no_ready || 0),
+      foot:'backlog accionable',
+    }},
+    {{
+      key:'tiempo_medio_espera_carga_min',
+      label:'Espera media carga',
+      value:n(k.tiempo_medio_espera_carga_min || 0).toFixed(1),
+      unit:'min',
+      foot:'cola antes de energía disponible',
+    }},
+    {{
+      key:'ocupacion_pico_patio',
+      label:'Ocupación pico patio',
+      value:pctCompact(k.ocupacion_pico_patio || 0),
+      foot:'p95 dwell ' + Math.round(n(k.dwell_p95_min || 0)) + ' min',
+    }},
+    {{
+      key:'share_ev',
+      label:'Share EV',
+      value:pctCompact(k.share_ev || 0),
+      foot:'mix actual del flujo',
+    }},
   ];
-  document.getElementById('kpi_cards').innerHTML = cards.map(c =>
-    '<div class="kpi ' + classifyKpi(c.key, n(k[c.key])) + (c.primary ? ' is-primary' : '') + '">'
-    + '<div class="kpi-top">' + escapeHtml(c.kicker) + '</div>'
-    + '<div class="k">' + escapeHtml(c.label) + '</div>'
-    + '<div class="v">' + escapeHtml(c.value) + '</div>'
-    + '<div class="s">' + escapeHtml(c.subtitle) + '</div>'
-    + '</div>'
-  ).join('');
+  document.getElementById('kpi_cards').innerHTML = cells.map(c => {{
+    const t = tone(c.key, k[c.key]);
+    const valueHtml = c.unit
+      ? escapeHtml(c.value) + '<span style="font-family:var(--font-sans);font-size:14px;color:var(--muted);font-weight:400;margin-left:4px;">' + escapeHtml(c.unit) + '</span>'
+      : escapeHtml(c.value);
+    return '<div class="kpi-cell">'
+      + '<span class="kpi-label">' + escapeHtml(c.label) + '</span>'
+      + '<span class="kpi-value">' + valueHtml + '</span>'
+      + '<span class="kpi-foot"><span class="kpi-dot ' + t + '"></span>' + escapeHtml(c.foot) + '</span>'
+      + '</div>';
+  }}).join('');
 }}
 
 function applyTheme(theme) {{
   document.documentElement.setAttribute('data-theme', theme);
   try {{ localStorage.setItem(THEME_KEY, theme); }} catch (e) {{}}
   const btn = document.getElementById('theme_toggle');
-  if (btn) btn.textContent = theme === 'dark' ? 'Modo claro' : 'Modo oscuro';
+  if (btn) btn.textContent = theme === 'dark' ? 'Claro' : 'Oscuro';
   applyChartTheme();
 }}
 
@@ -2110,7 +1986,8 @@ function bind() {{
 
 function initCharts() {{
   const c = themeColors();
-  Chart.defaults.font.family = 'IBM Plex Sans, Segoe UI, sans-serif';
+  Chart.defaults.font.family = 'Geist, Söhne, Helvetica Neue, Arial, sans-serif';
+  Chart.defaults.font.size = 11;
   Chart.defaults.color = c.ink;
   makeChart('ch_throughput', 'line', {{ elements: {{ line: {{ borderWidth: 2 }}, point: {{ radius: 0, hoverRadius: 3 }} }} }});
   makeChart('ch_ev_share', 'line', {{ elements: {{ line: {{ borderWidth: 2 }}, point: {{ radius: 0, hoverRadius: 3 }} }} }});
@@ -2136,7 +2013,7 @@ function init() {{
   initTheme();
   setMeta();
   setupFilters();
-  setFilterPanelCollapsed(true);
+  setFilterPanelCollapsed(false);
   renderOfficialKpis();
   initCharts();
   bind();

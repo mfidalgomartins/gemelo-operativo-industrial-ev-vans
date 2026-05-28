@@ -47,17 +47,25 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
     assert "__FILTERS__" not in html
     assert "__CHARTJS__" not in html
 
-    # Layout safety contracts
-    assert "grid-template-columns:repeat(auto-fit,minmax(170px,1fr));" in html
-    assert "grid-template-columns:repeat(auto-fit,minmax(360px,1fr));" in html
-    assert "min-height:320px" in html
+    # Layout safety contracts — executive redesign (Geist typography, KPI strip,
+    # restrained palette, neutral surfaces, no gradients/glassmorphism).
+    assert '"Geist"' in html, "Display typeface must be Geist"
+    assert '"Geist Mono"' in html, "Tabular numerals must use Geist Mono"
+    assert "--font-sans:" in html and "--font-mono:" in html
+    assert "kpi-strip" in html, "Above-the-fold KPI strip must be present"
+    assert "min-height:340px" in html or "card tall" in html, "Chart cards must reserve adequate vertical room"
     assert "maxTicksLimit: 8" in html
     assert "html[data-theme='dark']" in html
     assert 'id="theme_toggle"' in html
     assert 'id="btn_toggle_filters"' in html
     assert 'id="filters_shell"' in html
-    assert "setFilterPanelCollapsed(true);" in html
+    assert "setFilterPanelCollapsed(false);" in html, "Filters are inline; start visible"
     assert "const THEME_KEY = 'ev_dashboard_theme';" in html
+    # AI-smell guardrails: no decorative gradients, glassmorphism, or eyebrow chips on the new design
+    assert "linear-gradient(135deg" not in html, "No decorative hero gradients"
+    assert 'class="eyebrow"' not in html or html.count('class="eyebrow"') <= 2, "Eyebrow chips must be minimal"
+    assert "Iowan Old Style" not in html, "Legacy serif must be removed"
+    assert "IBM Plex Sans" not in html, "Legacy sans must be removed"
 
     # Filter wiring contracts
     for fid in [
