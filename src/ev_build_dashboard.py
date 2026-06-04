@@ -1,16 +1,15 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-import hashlib
-import json
 
 import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
-
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 OFFICIAL_DASHBOARD_NAME = "industrial-ev-operating-command-center.html"

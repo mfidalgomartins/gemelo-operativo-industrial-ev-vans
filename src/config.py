@@ -12,7 +12,6 @@ OUTPUT_REPORTS_DIR = PROJECT_ROOT / "outputs" / "reports"
 NOTEBOOKS_DIR = PROJECT_ROOT / "notebooks"
 
 
-
 def ensure_directories() -> None:
     for path in [
         DATA_RAW_DIR,

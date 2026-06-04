@@ -8,7 +8,6 @@ import pandas as pd
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
 from .utils import read_ev_csv
 
-
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
 
@@ -42,10 +41,7 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
 
     vehicle = _read("vehicle_readiness_features", parse_dates=["fecha_real"])
     area = _read("area_shift_features", parse_dates=["fecha"])
-    charging = _read("charging_features", parse_dates=["fecha"])
-    yard = _read("yard_features", parse_dates=["timestamp"])
     launch = _read("launch_transition_features", parse_dates=["week"])
-    bottleneck = _read("vw_shift_bottleneck_summary", parse_dates=["fecha"])
 
     # Scores a nivel vehículo
     vehicle_diag = vehicle.copy()

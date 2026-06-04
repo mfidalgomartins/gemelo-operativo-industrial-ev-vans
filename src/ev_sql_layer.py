@@ -8,7 +8,6 @@ import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
 
-
 SQL_LAYER_DIR = PROJECT_ROOT / "sql" / "ev_factory"
 DB_PATH = DATA_PROCESSED_DIR / "gemelo_operativo_ev.duckdb"
 

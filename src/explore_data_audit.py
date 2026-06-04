@@ -174,7 +174,6 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     bateria = tables["estado_bateria"]
     sesiones = tables["sesiones_carga"]
     patio = tables["patio"]
-    movimientos = tables["movimientos_patio"]
     logistica = tables["logistica_salida"]
     cuellos = tables["cuellos_botella"]
     recursos = tables["recursos_operativos"]

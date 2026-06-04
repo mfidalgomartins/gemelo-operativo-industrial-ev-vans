@@ -21,12 +21,12 @@ from src.synthetic_data_gen import SyntheticGenerationConfig, generate_synthetic
 
 @pytest.fixture
 def restore_canonical_data():
-    """Después del test, regenera el dataset canónico (seed 20260328, 12 meses) y
-    vuelve a correr el pipeline para dejar el repositorio en estado limpio."""
+    """After the test, restore the canonical dataset (seed 20260328, 12 months) and
+    re-run the pipeline to leave the repository in a clean state."""
     yield
     subprocess.run(
-        [sys.executable, "-m", "src.synthetic_data_gen", "--seed", "20260328",
-         "--start-date", "2025-01-01", "--months", "12"],
+        [sys.executable, "generate_synthetic_data.py",
+         "--seed", "20260328", "--start-date", "2025-01-01", "--months", "12"],
         check=True,
     )
     from src.run_pipeline import run_pipeline

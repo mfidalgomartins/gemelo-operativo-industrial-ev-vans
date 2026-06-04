@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-
-
 import numpy as np
 import pandas as pd
-
 
 SHIFT_START_HOUR = {"A": 6, "B": 14, "C": 22}
 
@@ -38,7 +35,8 @@ def ordered_phase(day_idx: int, total_days: int) -> str:
 
 
 def scenario_curve(phase: str, position_in_phase: float, rng: np.random.Generator) -> dict[str, float]:
-    jitter = lambda s=0.02: float(rng.normal(0, s))
+    def jitter(s: float = 0.02) -> float:
+        return float(rng.normal(0, s))
 
     if phase == "pre_lanzamiento":
         share_ev = 0.04 + 0.08 * position_in_phase + jitter(0.01)

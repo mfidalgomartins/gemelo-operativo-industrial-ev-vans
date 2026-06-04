@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from src.config import OUTPUT_REPORTS_DIR
@@ -29,11 +31,31 @@ def test_ev_release_gate_uses_generated_governance_outputs() -> None:
         assert result.reason.startswith("Release apto")
 
 
-def test_ev_release_gate_returns_unknown_when_files_missing(tmp_path: "Path") -> None:
-    """Release gate returns a safe result even with no pipeline outputs."""
-    result = run_release_gate.__wrapped__ if hasattr(run_release_gate, "__wrapped__") else None
-    # When readiness file is missing the gate returns approved=False, grade=unknown
-    from src.ev_release_gate import ReleaseGateResult
-    fallback = ReleaseGateResult(False, "unknown", "Falta release_readiness.json")
-    assert not fallback.approved
-    assert fallback.release_grade == "unknown"
+def test_ev_release_gate_returns_unapproved_when_readiness_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """run_release_gate returns approved=False, grade='unknown' when files are absent."""
+    monkeypatch.setattr("src.ev_release_gate.OUTPUT_REPORTS_DIR", tmp_path)
+    result = run_release_gate()
+    assert not result.approved
+    assert result.release_grade == "unknown"
+    assert "release_readiness.json" in result.reason
+
+
+def test_ev_release_gate_returns_unapproved_when_manifest_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Gate returns unapproved when manifest is missing but readiness file exists."""
+    import json
+
+    readiness = {
+        "release_grade": "decision-support only",
+        "publish_blocked": False,
+        "kpi_single_source_of_truth": True,
+    }
+    (tmp_path / "release_readiness.json").write_text(json.dumps(readiness), encoding="utf-8")
+
+    monkeypatch.setattr("src.ev_release_gate.OUTPUT_REPORTS_DIR", tmp_path)
+    result = run_release_gate()
+    assert not result.approved
+    assert "dashboard_build_manifest.json" in result.reason

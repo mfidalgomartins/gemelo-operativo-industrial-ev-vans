@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 import numpy as np
 import pandas as pd
 
@@ -237,7 +236,6 @@ def generate_operational_tables(
         active_slots = slots_carga.copy()
 
     slot_power = dict(zip(active_slots["slot_id"], active_slots["potencia_max_kw"]))
-    slot_zone = dict(zip(active_slots["slot_id"], active_slots["zona_carga"]))
 
     start_slot_clock = pd.to_datetime(ordenes_df["fecha_programada"]).min().floor("h") + pd.Timedelta(hours=5)
     slot_next_free = {slot_id: start_slot_clock for slot_id in active_slots["slot_id"]}

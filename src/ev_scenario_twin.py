@@ -8,7 +8,6 @@ import pandas as pd
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
 from .utils import read_ev_csv
 
-
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
 

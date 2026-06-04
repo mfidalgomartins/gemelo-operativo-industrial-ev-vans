@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 
 from src.ev_diagnostic_analysis import _initial_action, _score_to_100

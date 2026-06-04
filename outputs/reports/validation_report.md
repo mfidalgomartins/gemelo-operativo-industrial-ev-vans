@@ -43,11 +43,6 @@
 | salida_sin_readiness | medium | 2208 | Salidas reales sin readiness (rate=6.48%) | Bloqueo en lógica de expedición o excepción trazable por causa |
 | ocupacion_patio_vs_capacidad | medium | 99 | Ocupaciones por encima de capacidad estimada | Ajustar buffers y zonas dinámicas |
 
-## Fixes Applied
-- Fallback markdown sin `tabulate` en auditoría /explore-data.
-- Capa SQL dedicada `ev_factory` separada del pipeline legacy.
-- Corrección de rutas de escritura en feature engineering y dashboard.
-
 ## Caveats Obligatorios
 - Dato sintético: útil para arquitectura y lógica, no para benchmark real de planta.
 - Las elasticidades del gemelo operativo son supuestos calibrados, no estimación causal.

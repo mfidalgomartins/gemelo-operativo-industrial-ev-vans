@@ -4,7 +4,6 @@ import pandas as pd
 
 from src.synthetic_data_gen import SyntheticGenerationConfig, generate_synthetic_factory_data
 
-
 REQUIRED_TABLES = {
     "ordenes",
     "versiones_vehiculo",

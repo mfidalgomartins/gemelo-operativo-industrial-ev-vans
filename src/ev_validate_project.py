@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
-import json
 
 import numpy as np
 import pandas as pd
 
-from .config import DATA_RAW_DIR, DATA_PROCESSED_DIR, EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR, OUTPUT_DASHBOARD_DIR
+from .config import DATA_PROCESSED_DIR, DATA_RAW_DIR, EV_DATA_RAW_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
 from .utils import to_markdown_safe
-
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
@@ -53,10 +52,7 @@ def run_ev_validation() -> ValidationResult:
     # Capa analítica
     vehicle_flow = _read_csv(EV_DIR / "vw_vehicle_flow_timeline.csv")
     validation_checks = _read_csv(EV_DIR / "validation_checks.csv")
-    features_vehicle = _read_csv(EV_DIR / "vehicle_readiness_features.csv")
     area_shift_features = _read_csv(EV_DIR / "area_shift_features.csv")
-    launch_features = _read_csv(EV_DIR / "launch_transition_features.csv")
-    diagnostic = _read_csv(EV_DIR / "diagnostic_area_scores.csv")
     scenarios = _read_csv(EV_DIR / "scenario_table.csv")
     scoring = _read_csv(EV_DIR / "operational_prioritization_table.csv")
     scoring_sensitivity = _read_csv(EV_DIR / "scoring_sensitivity_analysis.csv")
@@ -199,7 +195,7 @@ def run_ev_validation() -> ValidationResult:
     )
 
     flat_area_metrics = int(
-        (
+        
             area_shift_features.groupby("area", as_index=False)
             .agg(
                 congestion_index=("congestion_index", "mean"),
@@ -212,7 +208,7 @@ def run_ev_validation() -> ValidationResult:
             .fillna(0)
             .eq(0)
             .sum()
-        )
+        
     )
     add_issue(
         "metrics_area_planas",
@@ -439,7 +435,7 @@ def run_ev_validation() -> ValidationResult:
         f"- consistencia KPI share_ev: {'OK' if share_ev_gap <= 0.02 else 'WARN'}",
         f"- single source of truth KPI: {'OK' if legacy_kpi_present == 0 else 'WARN'}",
         f"- spread de escenarios: {'OK' if scenario_spread >= 2.0 else 'WARN'}",
-        f"- riesgo de sobreinterpretación explicitado: OK",
+        "- riesgo de sobreinterpretación explicitado: OK",
         "",
         "## Issues Found",
     ]
@@ -451,11 +447,6 @@ def run_ev_validation() -> ValidationResult:
 
     lines.extend(
         [
-            "",
-            "## Fixes Applied",
-            "- Fallback markdown sin `tabulate` en auditoría /explore-data.",
-            "- Capa SQL dedicada `ev_factory` separada del pipeline legacy.",
-            "- Corrección de rutas de escritura en feature engineering y dashboard.",
             "",
             "## Caveats Obligatorios",
         ]

@@ -3,9 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 import pandas as pd
-
 
 REQUIRED_COLUMNS: dict[str, list[str]] = {
     "ordenes": [
@@ -312,7 +310,7 @@ def validate_synthetic_data(
     ]
     lines.extend([f"- [{c['status']}] `{c['check']}` -> {c['detail']}" for c in checks])
 
-    lines.extend(["", "## Cardinalidades"]) 
+    lines.extend(["", "## Cardinalidades"])
     lines.extend([f"- `{name}`: {count}" for name, count in cardinalidades.items()])
 
     (report_dir / "synthetic_data_plausibility.md").write_text("\n".join(lines), encoding="utf-8")

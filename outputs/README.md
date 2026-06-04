@@ -1,12 +1,13 @@
-# Output Principal
+# Outputs
 
-Este folder contiene el artefacto final de visualización del proyecto.
+Artefactos producidos por el pipeline oficial.
 
-## Estructura rápida
-- `dashboard/`: dashboard ejecutivo interactivo y punto de acceso principal.
+## Estructura
 
-## Dashboard en navegador (recomendado)
+- `dashboard/` — dashboard ejecutivo interactivo (entregable principal).
+- `graphs/` — pack de 6 gráficos PNG para portfolio/LinkedIn (generados por `scripts/generate_chart_pack.py`).
+- `reports/` — resúmenes técnicos y manifests de build generados en cada ejecución del pipeline.
+
+## Dashboard en vivo
+
 https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/dashboard/industrial-ev-operating-command-center.html
-
-Acceso al folder de dashboard:
-https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans/tree/main/outputs/dashboard

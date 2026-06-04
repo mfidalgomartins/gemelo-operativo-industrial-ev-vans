@@ -8,7 +8,6 @@ import pandas as pd
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
 from .utils import read_ev_csv
 
-
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
 
@@ -165,15 +164,6 @@ def run_ev_scoring_framework() -> ScoringResult:
             + w["launch_transition_risk_score"] * df["launch_transition_risk_score"]
             + w["readiness_score"] * (100 - df["readiness_score"])
         )
-
-    risk_columns = [
-        "yard_risk_score",
-        "charging_risk_score",
-        "dispatch_risk_score",
-        "throughput_loss_score",
-        "launch_transition_risk_score",
-        "readiness_score",
-    ]
 
     # Find the driver with highest weighted OPI contribution.
     # readiness_score is a quality score (high = good), so its contribution is inverted.
@@ -374,7 +364,7 @@ Se añade test Monte Carlo de estabilidad de top-1 bajo ruido de pesos.
         summary_lines.append(
             f"- {row.area}: OPI={row.operational_priority_index:.1f}, tier={row.area_priority_tier}, driver={row.main_risk_driver}, acción={row.recommended_action}"
         )
-    summary_lines.extend(["", "## Top acciones"]) 
+    summary_lines.extend(["", "## Top acciones"])
     for row in top_actions.head(8).itertuples(index=False):
         summary_lines.append(
             f"- {row.recommended_action}: prioridad_media={row.prioridad_media:.1f}, áreas_afectadas={int(row.areas_afectadas)}"

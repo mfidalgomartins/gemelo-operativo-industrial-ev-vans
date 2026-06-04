@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from src.ev_feature_engineering import (
     _build_area_shift_features,
@@ -21,7 +20,7 @@ def _make_vehicle_flow() -> pd.DataFrame:
             "vehiculo_id": [f"V{i:04d}" for i in range(n)],
             "version_id": [f"VER{i % 3:02d}" for i in range(n)],
             "tipo_propulsion": np.where(rng.random(n) > 0.4, "EV", "ICE"),
-            "turno": np.random.choice(["A", "B", "C"], n),
+            "turno": rng.choice(["A", "B", "C"], n),
             "fecha_real": pd.date_range("2025-01-01", periods=n, freq="8h"),
             "planned_to_actual_sequence_gap": rng.normal(0, 5, n),
             "total_internal_lead_time_min": rng.uniform(120, 480, n),
@@ -48,8 +47,8 @@ def _make_area_shift() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "fecha": pd.date_range("2025-01-01", periods=n, freq="D"),
-            "turno": np.random.choice(["A", "B", "C"], n),
-            "area": np.random.choice(["SECUENCIACION", "PATIO", "CARGA", "EXPEDICION"], n),
+            "turno": rng.choice(["A", "B", "C"], n),
+            "area": rng.choice(["SECUENCIACION", "PATIO", "CARGA", "EXPEDICION"], n),
             "throughput_gap": rng.normal(0, 3, n),
             "congestion_index": rng.uniform(0, 100, n),
             "avg_wait_time": rng.uniform(5, 120, n),
@@ -69,8 +68,8 @@ def _make_charging() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "fecha": pd.date_range("2025-01-01", periods=n, freq="6h"),
-            "turno": np.random.choice(["A", "B", "C"], n),
-            "zona_carga": np.random.choice(["Z1", "Z2", "Z3"], n),
+            "turno": rng.choice(["A", "B", "C"], n),
+            "zona_carga": rng.choice(["Z1", "Z2", "Z3"], n),
             "slot_id": [f"S{i % 10:02d}" for i in range(n)],
             "sessions_count": rng.integers(1, 20, n),
             "avg_wait_time_min": rng.uniform(0, 120, n),
@@ -88,7 +87,7 @@ def _make_yard() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "ts_hour": pd.date_range("2025-01-01", periods=n, freq="h"),
-            "zona_patio": np.random.choice(["NORTE", "SUR", "CENTRAL", "CARGA"], n),
+            "zona_patio": rng.choice(["NORTE", "SUR", "CENTRAL", "CARGA"], n),
             "avg_dwell_time_min": rng.uniform(10, 300, n),
             "p95_dwell_time_min": rng.uniform(60, 600, n),
             "blocking_rate": rng.uniform(0, 0.5, n),

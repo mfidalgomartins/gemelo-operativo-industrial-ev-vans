@@ -30,7 +30,7 @@ src/                          # Código ejecutable del pipeline
   run_pipeline.py             # Orquestador
   ev_sql_layer.py             # DuckDB SQL layer
   ev_feature_engineering.py   # Feature building
-  ev_diagnostic_analysis.py   # Scoring y diagnosis
+  ev_diagnostic_analysis.py   # Scoring y diagnóstico
   ev_scenario_twin.py         # Simulación de escenarios
   ev_scoring_framework.py     # OPI, sensibilidad, Monte Carlo
   ev_build_dashboard.py       # Dashboard ejecutivo
@@ -40,9 +40,12 @@ src/                          # Código ejecutable del pipeline
 data/raw/ev_factory/          # 14 tablas CSV base
 data/processed/ev_factory/    # Tablas gobernadas exportadas
 sql/ev_factory/               # 11 scripts DuckDB en orden
+scripts/                      # Utilidades de portfolio
+  generate_chart_pack.py      # 6 gráficos PNG de análisis ejecutivo
 docs/                         # Documentación técnica y gobierno
 tests/                        # Tests unitarios e integración
 outputs/dashboard/            # Dashboard final
+outputs/graphs/               # Pack de gráficos PNG
 ```
 
 ## Entregables clave
@@ -68,4 +71,4 @@ python -m src.run_pipeline
 - Los escenarios son paramétricos e interpretables; no sustituyen inferencia causal.
 - Los umbrales/pesos de scoring deben ajustarse con criterio operativo local.
 
-Herramientas: Python, SQL, DuckDB, pandas, NumPy, Chart.js, pytest.
+Herramientas: Python, SQL, DuckDB, pandas, NumPy, matplotlib, Chart.js, pytest.

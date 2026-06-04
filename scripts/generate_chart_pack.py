@@ -1,6 +1,6 @@
 """Genera el pack de gráficos de portfolio (PNG) a partir de los datos procesados.
 
-Salida: outputs/Graphs/*.png
+Salida: outputs/graphs/*.png
 
 Filosofía: 6 gráficos seleccionados por su valor analítico para review ejecutivo
 y para README/LinkedIn. Estilo sobrio inspirado en Linear/Stripe — fondo claro,
@@ -19,7 +19,7 @@ import pandas as pd
 # ── Rutas
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "processed" / "ev_factory"
-OUT = ROOT / "outputs" / "Graphs"
+OUT = ROOT / "outputs" / "graphs"
 OUT.mkdir(parents=True, exist_ok=True)
 
 # ── Paleta y tipografía
