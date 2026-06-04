@@ -81,7 +81,7 @@ def run_ev_validation() -> ValidationResult:
                 "severity": severity,
                 "failed_rows": int(failed_rows),
                 "detail": detail,
-                "fix_applied": fix,
+                "recommended_fix": fix,
             }
         )
 
@@ -466,7 +466,7 @@ def run_ev_validation() -> ValidationResult:
 
     issues_path = OUTPUT_REPORTS_DIR / "validation_issues_found.csv"
     if issues_df.empty:
-        pd.DataFrame(columns=["check", "severity", "failed_rows", "detail", "fix_applied"]).to_csv(issues_path, index=False)
+        pd.DataFrame(columns=["check", "severity", "failed_rows", "detail", "recommended_fix"]).to_csv(issues_path, index=False)
     else:
         issues_df.to_csv(issues_path, index=False)
 
