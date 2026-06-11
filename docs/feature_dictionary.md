@@ -14,7 +14,8 @@
 - `readiness_risk_score_input` (derivada): score interpretable de riesgo previo al scoring final.
 
 ## area_shift_features
-- `throughput_gap` (derivada): diferencia plan vs real por área-turno.
+- `dispatch_gap` (derivada): diferencia entre salidas reales y planificadas por turno.
+- `area_throughput_loss_proxy` (derivada): suma del impacto de throughput de eventos de bottleneck atribuidos al área-turno.
 - `congestion_index` (derivada): presión de flujo en área.
 - `avg_wait_time` (derivada): espera media operativa por área-turno.
 - `queue_pressure_score` (derivada): presión de cola de carga.

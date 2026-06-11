@@ -20,9 +20,17 @@ Thumbs.db
 *.tmp
 *.swp
 
+# Relatórios transitórios da geração sintética
+outputs/reports/synthetic_data_plausibility.md
+outputs/reports/synthetic_data_validation.json
+outputs/reports/synthetic_generation_run.json
+
 # Cobertura e build local
 .coverage
 htmlcov/
+build/
+dist/
+*.egg-info/
 
 # Segredos locais (se existirem)
 .env
@@ -31,3 +39,4 @@ htmlcov/
 # IDE
 .vscode/
 .idea/
+.claude/

@@ -109,7 +109,9 @@ def generate_cuellos_botella(
                         "tipo_cuello_botella": "DEGRADACION_TURNO",
                         "severidad": sev,
                         "duracion_min": int(max(25, rng.normal(75 + 30 * sev, 25))),
-                        "impacto_throughput_proxy": round(clamp(0.07 * sev + (1 - row.productividad_turno_indice), 0.05, 0.98), 4),
+                        "impacto_throughput_proxy": round(
+                            clamp(0.07 * sev + (1 - row.productividad_turno_indice), 0.05, 0.98), 4
+                        ),
                         "impacto_salida_proxy": round(clamp(0.05 * sev + row.absentismo_proxy, 0.04, 0.95), 4),
                         "causa_probable": "ABSENTISMO_Y_VARIABILIDAD_SECUENCIA",
                     }
@@ -126,9 +128,15 @@ def generate_cuellos_botella(
                     "area": str(row.area),
                     "tipo_cuello_botella": "RESTRICCION_CRITICA",
                     "severidad": int(row.severidad),
-                    "duracion_min": int((pd.Timestamp(row.timestamp_fin) - pd.Timestamp(row.timestamp_inicio)).total_seconds() // 60),
-                    "impacto_throughput_proxy": round(clamp(0.08 * row.severidad + 0.4 * row.impacto_capacidad_pct, 0.08, 0.99), 4),
-                    "impacto_salida_proxy": round(clamp(0.09 * row.severidad + 0.45 * row.impacto_capacidad_pct, 0.08, 0.99), 4),
+                    "duracion_min": int(
+                        (pd.Timestamp(row.timestamp_fin) - pd.Timestamp(row.timestamp_inicio)).total_seconds() // 60
+                    ),
+                    "impacto_throughput_proxy": round(
+                        clamp(0.08 * row.severidad + 0.4 * row.impacto_capacidad_pct, 0.08, 0.99), 4
+                    ),
+                    "impacto_salida_proxy": round(
+                        clamp(0.09 * row.severidad + 0.45 * row.impacto_capacidad_pct, 0.08, 0.99), 4
+                    ),
                     "causa_probable": str(row.tipo_restriccion),
                 }
             )

@@ -1,11 +1,11 @@
 # Feature Engineering Summary
 
 ## Tablas generadas
-- vehicle_readiness_features: 43903 filas
-- area_shift_features: 6552 filas
-- charging_features: 14712 filas
-- yard_features: 34232 filas
-- launch_transition_features: 40 filas
+- vehicle_readiness_features: 58697 filas
+- area_shift_features: 6570 filas
+- charging_features: 18980 filas
+- yard_features: 46155 filas
+- launch_transition_features: 53 filas
 
 ## Features clave
 - `readiness_risk_score_input`: base interpretable para scoring de readiness.

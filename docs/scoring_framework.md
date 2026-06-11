@@ -23,7 +23,7 @@ Priorizar acciones de secuenciación, patio, carga, expedición y capacidad para
 - <35: sin prioridad inmediata
 
 ## Lógica de decisión
-El `operational_priority_index` combina riesgo de patio, carga, expedición, pérdida de throughput y tensión de transición EV.
+El `operational_priority_index` combina riesgo de patio, carga, expedición, impacto de throughput atribuido al área y tensión de transición EV. `throughput_loss_score` usa `area_throughput_loss_proxy`; no repite el gap global de planta ni pretende estimar causalidad.
 
 ## Sensibilidad
 Se aplica perturbación de pesos (+/-20%) para verificar estabilidad del ranking de áreas críticas.

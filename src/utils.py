@@ -1,8 +1,27 @@
 from __future__ import annotations
 
+import json
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
+
+
+def write_text_utf8(path: Path, text: str) -> None:
+    """Write UTF-8 text with a final newline."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text if text.endswith("\n") else f"{text}\n", encoding="utf-8")
+
+
+def write_json_utf8(
+    path: Path,
+    payload: Any,
+    *,
+    default: Callable[[object], object] | None = None,
+) -> None:
+    """Write stable, readable UTF-8 JSON with a final newline."""
+    write_text_utf8(path, json.dumps(payload, indent=2, ensure_ascii=False, default=default))
 
 
 def read_ev_csv(

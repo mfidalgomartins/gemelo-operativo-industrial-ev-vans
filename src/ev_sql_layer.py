@@ -7,6 +7,7 @@ import duckdb
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
+from .utils import write_text_utf8
 
 SQL_LAYER_DIR = PROJECT_ROOT / "sql" / "ev_factory"
 DB_PATH = DATA_PROCESSED_DIR / "gemelo_operativo_ev.duckdb"
@@ -69,9 +70,7 @@ def _resolve_raw_csv(table: str) -> Path:
     if primary.exists():
         return primary
 
-    raise FileNotFoundError(
-        f"Falta tabla raw requerida en la ruta oficial EV: {primary}"
-    )
+    raise FileNotFoundError(f"Falta tabla raw requerida en la ruta oficial EV: {primary}")
 
 
 def _load_raw_tables(con: duckdb.DuckDBPyConnection) -> None:
@@ -108,10 +107,13 @@ def _export_objects(con: duckdb.DuckDBPyConnection) -> dict[str, int]:
         # Orden determinista: SELECT sin ORDER BY puede devolver filas en orden
         # arbitrario (paralelismo de DuckDB). Ordenamos por todas las columnas
         # para que el CSV exportado sea byte-estable entre ejecuciones.
-        columns = [row[0] for row in con.execute(
-            f"SELECT column_name FROM information_schema.columns "
-            f"WHERE table_name = '{obj}' ORDER BY ordinal_position"
-        ).fetchall()]
+        columns = [
+            row[0]
+            for row in con.execute(
+                f"SELECT column_name FROM information_schema.columns "
+                f"WHERE table_name = '{obj}' ORDER BY ordinal_position"
+            ).fetchall()
+        ]
         order_clause = ", ".join(f'"{c}"' for c in columns)
         con.execute(
             f"""
@@ -148,8 +150,8 @@ def run_ev_sql_layer() -> SQLRunResult:
     lines = [
         "# SQL Layer Execution Summary (DuckDB)",
         "",
-        f"- Base de datos: `{DB_PATH.as_posix()}`",
-        f"- Raw source EV (preferente): `{EV_DATA_RAW_DIR.as_posix()}`",
+        f"- Base de datos: `{DB_PATH.relative_to(PROJECT_ROOT).as_posix()}`",
+        f"- Fuente raw EV: `{EV_DATA_RAW_DIR.relative_to(PROJECT_ROOT).as_posix()}`",
         f"- Scripts ejecutados: {len(executed)}",
         "",
         "## Orden de ejecución",
@@ -159,10 +161,10 @@ def run_ev_sql_layer() -> SQLRunResult:
     lines.append("## Filas exportadas")
     for k, v in exported_rows.items():
         lines.append(f"- {k}: {v}")
-    summary_path.write_text("\n".join(lines), encoding="utf-8")
+    write_text_utf8(summary_path, "\n".join(lines))
 
     return SQLRunResult(
-        db_path=DB_PATH.as_posix(),
+        db_path=DB_PATH.relative_to(PROJECT_ROOT).as_posix(),
         executed_files=executed,
         exported_rows=exported_rows,
     )

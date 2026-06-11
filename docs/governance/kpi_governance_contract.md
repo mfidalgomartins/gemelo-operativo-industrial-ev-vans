@@ -13,6 +13,10 @@ Definir fuente, fórmula y validación mínima de KPI críticos para evitar deri
 - `ratio_salida_retrasada`: `kpi_operativos.csv`
 - `score_readiness_global`: `kpi_operativos.csv`
 
+Definiciones:
+- `score_readiness_global`: porcentaje de vehículos con readiness final, escala 0-100.
+- `ratio_salida_retrasada`: porcentaje de vehículos despachados con atraso superior a 120 minutos.
+
 ## Reglas de consistencia obligatorias
 1. `share_ev` KPI vs `vw_vehicle_flow_timeline.tipo_propulsion`:
    - tolerancia absoluta <= 0.02.
@@ -21,8 +25,9 @@ Definir fuente, fórmula y validación mínima de KPI críticos para evitar deri
 3. KPI fuera de rango:
    - proporciones deben estar en [0, 1].
    - scores en [0, 100].
+4. Ninguna salida real puede tener `readiness_final_flag = false`.
 
 ## Uso permitido
 - Dashboard ejecutivo: permitido.
 - Priorización inicial de operaciones: permitido.
-- Comité de inversión: requiere además `release_grade` >= `committee-grade candidate`.
+- Comité de inversión: no permitido sin calibración con datos reales y validación independiente.

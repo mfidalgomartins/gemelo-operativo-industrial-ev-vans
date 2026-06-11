@@ -2,8 +2,10 @@
 
 ## Métricas de Flujo
 - `throughput_planificado`: órdenes con fecha programada (base `stg_orders`).
-- `throughput_real`: órdenes/vehículos con fecha real de ejecución o salida.
+- `throughput_real`: órdenes con fecha real de ejecución de producción.
 - `throughput_gap`: `throughput_real - throughput_planificado`.
+- `dispatch_gap`: salidas reales menos salidas planificadas por fecha-turno.
+- `area_throughput_loss_proxy`: suma del impacto de throughput de bottlenecks atribuidos al área-turno.
 - `total_internal_lead_time_min`: minutos desde fin de línea hasta salida real.
 - `planned_to_actual_sequence_gap`: `secuencia_real - secuencia_planeada`.
 
@@ -24,11 +26,14 @@
 
 ## Métricas de Expedición y Readiness
 - `dispatch_delay_min`: diferencia planificada vs real de salida (min).
+- `turno` (`vw_dispatch_readiness`): turno derivado de la salida planificada.
+- `turno_produccion`: turno original de producción, conservado para trazabilidad.
 - `readiness_final_flag`: bandera final consolidada de readiness.
 - `soc_gap_before_dispatch`: `target_soc_salida_pct - soc_salida_pct`.
 - `dispatch_readiness_risk_score`: score compuesto de SOC gap, delay, cola carga, espera patio y bloqueo.
 - `readiness_rate`: proporción de vehículos listos por segmento.
-- `delay_rate`: proporción de vehículos retrasados por segmento.
+- `delayed_flag`: salida real con atraso superior a 120 minutos.
+- `delay_rate`: proporción de vehículos retrasados entre los efectivamente despachados.
 
 ## Métricas de Bottleneck y Estrés
 - `eventos_cuello`: número de eventos de cuello por área-turno.
@@ -50,6 +55,8 @@
 - `causa_principal_cuello`
 - `area_mayor_perdida_throughput`
 - `score_readiness_global`
+
+`score_readiness_global` es la tasa de readiness final expresada en escala 0-100. `ratio_salida_retrasada` usa únicamente vehículos efectivamente despachados.
 
 ## Validaciones (`validation_checks`)
 Checks de duplicados, secuencia, orden temporal, SOC, sesiones imposibles, EV sin carga, salida sin readiness, retraso sin causa y consistencia de capacidad.

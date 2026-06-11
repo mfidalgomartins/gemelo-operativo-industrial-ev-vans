@@ -8,7 +8,7 @@ Identificar dónde se rompe el flujo y priorizar acciones operativas interpretab
 2. Patio: espera, bloqueo y no productividad de movimientos.
 3. Carga: colas, presión de slot e incumplimiento de SOC objetivo.
 4. Expedición: retrasos y gap de readiness.
-5. Área-turno: estrés operacional y criticidad por impacto en throughput.
+5. Área-turno: estrés operacional y criticidad por impacto de throughput atribuido a eventos del área.
 
 ## Scores principales
 - `sequence_disruption_score`

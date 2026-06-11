@@ -24,10 +24,7 @@ def test_ev_dashboard_official_build_manifest_and_single_html() -> None:
     assert len(html_files) == 1
     assert html_files[0].name == OFFICIAL_DASHBOARD_NAME
 
-    archived_path = OUTPUT_DASHBOARD_DIR / "legacy" / legacy_candidate.name
-    assert archived_path.exists()
-    archived_path.unlink()
-    assert not list((OUTPUT_DASHBOARD_DIR / "legacy").glob("*.html"))
+    assert not legacy_candidate.exists()
 
     manifest_path = OUTPUT_REPORTS_DIR / "dashboard_build_manifest.json"
     assert manifest_path.exists()
@@ -61,7 +58,7 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
     assert 'id="filters_shell"' in html
     assert "setFilterPanelCollapsed(false);" in html, "Filters are inline; start visible"
     assert "const THEME_KEY = 'ev_dashboard_theme';" in html
-    # AI-smell guardrails: no decorative gradients, glassmorphism, or eyebrow chips on the new design
+    # Design guardrails: no decorative gradients, glassmorphism, or excessive eyebrow chips.
     assert "linear-gradient(135deg" not in html, "No decorative hero gradients"
     assert 'class="eyebrow"' not in html or html.count('class="eyebrow"') <= 2, "Eyebrow chips must be minimal"
     assert "Iowan Old Style" not in html, "Legacy serif must be removed"
@@ -80,7 +77,10 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
         "f_severity",
     ]:
         assert f'id="{fid}"' in html
-    assert "const filterIds = ['f_date_from','f_date_to','f_turno','f_prop','f_version','f_area','f_yard','f_charge','f_severity'];" in html
+    assert (
+        "const filterIds = ['f_date_from','f_date_to','f_turno','f_prop','f_version','f_area','f_yard','f_charge','f_severity'];"
+        in html
+    )
     assert "el.addEventListener('input', updateCharts);" in html
     assert 'id="btn_apply"' in html
     assert "document.getElementById('btn_apply').addEventListener('click', updateCharts);" in html

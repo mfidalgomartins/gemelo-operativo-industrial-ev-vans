@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pandas as pd
+
+from ..utils import write_json_utf8, write_text_utf8
 
 REQUIRED_COLUMNS: dict[str, list[str]] = {
     "ordenes": [
         "orden_id",
         "fecha_programada",
         "fecha_real",
+        "fecha_turno_operativo",
         "turno",
         "secuencia_planeada",
         "secuencia_real",
@@ -206,6 +208,14 @@ def validate_synthetic_data(
             "detail": f"duplicados={int(vehiculos['vehiculo_id'].duplicated().sum())}",
         }
     )
+    sequence_collisions = int(ordenes.duplicated(subset=["fecha_turno_operativo", "turno", "secuencia_planeada"]).sum())
+    checks.append(
+        {
+            "check": "unicidad_secuencia_turno",
+            "status": "PASS" if sequence_collisions == 0 else "FAIL",
+            "detail": f"colisiones={sequence_collisions}",
+        }
+    )
 
     missing_vehicle_orders = int((~ordenes["vehiculo_id"].isin(vehiculos["vehiculo_id"])).sum())
     checks.append(
@@ -274,12 +284,29 @@ def validate_synthetic_data(
             "detail": f"delay_mean={delay_mean:.1f}",
         }
     )
+    departed_without_readiness = int(
+        (logistica["fecha_salida_real"].notna() & logistica["readiness_salida_flag"].eq(0)).sum()
+    )
+    checks.append(
+        {
+            "check": "salida_requiere_readiness",
+            "status": "PASS" if departed_without_readiness == 0 else "FAIL",
+            "detail": f"salidas_sin_readiness={departed_without_readiness}",
+        }
+    )
+    departed = logistica.loc[logistica["fecha_salida_real"].notna()]
+    material_delay_rate = float((departed["retraso_min"] > 120).mean()) if not departed.empty else 0.0
+    checks.append(
+        {
+            "check": "ratio_retraso_material_plausible",
+            "status": "PASS" if 0.05 <= material_delay_rate <= 0.85 else "WARN",
+            "detail": f"ratio_retraso_material={material_delay_rate:.3f}",
+        }
+    )
 
     status_global = "PASS" if all(c["status"] != "FAIL" for c in checks) else "FAIL"
 
-    cardinalidades = {
-        name: int(df.shape[0]) for name, df in tables.items()
-    }
+    cardinalidades = {name: int(df.shape[0]) for name, df in tables.items()}
 
     summary = {
         "status_global": status_global,
@@ -292,9 +319,7 @@ def validate_synthetic_data(
         "cardinalidades": cardinalidades,
     }
 
-    (report_dir / "synthetic_data_validation.json").write_text(
-        json.dumps(summary, indent=2, default=str), encoding="utf-8"
-    )
+    write_json_utf8(report_dir / "synthetic_data_validation.json", summary, default=str)
 
     lines = [
         "# Validaciones de Plausibilidad - Datos Sintéticos Industriales",
@@ -313,7 +338,7 @@ def validate_synthetic_data(
     lines.extend(["", "## Cardinalidades"])
     lines.extend([f"- `{name}`: {count}" for name, count in cardinalidades.items()])
 
-    (report_dir / "synthetic_data_plausibility.md").write_text("\n".join(lines), encoding="utf-8")
+    write_text_utf8(report_dir / "synthetic_data_plausibility.md", "\n".join(lines))
 
     summary_lines = [
         "# Resumen de Dimensiones, Periodos y Cardinalidades",
@@ -326,6 +351,6 @@ def validate_synthetic_data(
     ]
     summary_lines.extend([f"- `{name}`: {count}" for name, count in cardinalidades.items()])
 
-    (report_dir / "synthetic_data_summary.md").write_text("\n".join(summary_lines), encoding="utf-8")
+    write_text_utf8(report_dir / "synthetic_data_summary.md", "\n".join(summary_lines))
 
     return summary

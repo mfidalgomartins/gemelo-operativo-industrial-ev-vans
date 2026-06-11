@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
+from pathlib import Path
 
-from .config import EV_DATA_RAW_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
-from .create_notebooks import create_notebooks
+from .config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
 from .ev_build_dashboard import run_ev_build_dashboard
 from .ev_diagnostic_analysis import run_ev_diagnostic_analysis
 from .ev_feature_engineering import run_ev_feature_engineering
@@ -15,6 +14,7 @@ from .ev_sql_layer import run_ev_sql_layer
 from .ev_validate_project import run_ev_validation
 from .explore_data_audit import run_explore_data_audit
 from .synthetic_data_gen import SyntheticGenerationConfig, generate_synthetic_factory_data
+from .utils import write_json_utf8
 
 
 @dataclass
@@ -26,39 +26,11 @@ class PipelineRunResult:
     release_reason: str
     explore_report: str
     validation_status: str
-    curated_removed_files: int
 
 
-def _curate_outputs() -> int:
-    """Elimina artefactos de señal baja o redundantes; conserva solo los de alto valor para portfolio."""
-    remove_candidates = [
-        OUTPUT_REPORTS_DIR / "dashboard_legacy_deprecated.md",
-        OUTPUT_REPORTS_DIR / "data_quality_audit.json",
-        OUTPUT_REPORTS_DIR / "data_quality_audit.md",
-        OUTPUT_REPORTS_DIR / "explore_data_audit.html",
-        OUTPUT_REPORTS_DIR / "explore_data_column_classification.csv",
-        OUTPUT_REPORTS_DIR / "explore_data_table_summary.csv",
-        OUTPUT_REPORTS_DIR / "final_assembly_report.md",
-        OUTPUT_REPORTS_DIR / "kpi_summary.csv",
-        OUTPUT_REPORTS_DIR / "synthetic_data_plausibility.md",
-        OUTPUT_REPORTS_DIR / "synthetic_data_validation.json",
-        OUTPUT_REPORTS_DIR / "synthetic_generation_run.json",
-        OUTPUT_REPORTS_DIR / "bottleneck_matrix.csv",
-    ]
-    removed = 0
-    for path in remove_candidates:
-        if path.exists():
-            path.unlink()
-            removed += 1
-
-    # Limpia dashboards legacy archivados.
-    legacy_dir = OUTPUT_DASHBOARD_DIR / "legacy"
-    if legacy_dir.exists():
-        for p in legacy_dir.glob("*.html"):
-            p.unlink()
-            removed += 1
-
-    return removed
+def _relative(path: str) -> str:
+    value = Path(path)
+    return str(value.resolve().relative_to(PROJECT_ROOT)) if value.is_absolute() else value.as_posix()
 
 
 def run_pipeline(generate_data: bool = False, seed: int = 20260328, months: int = 12) -> PipelineRunResult:
@@ -82,24 +54,18 @@ def run_pipeline(generate_data: bool = False, seed: int = 20260328, months: int 
     dashboard_result = run_ev_build_dashboard()
     validation_result = run_ev_validation()
     release_result = run_release_gate()
-    curated_removed_files = _curate_outputs()
-    create_notebooks()
 
     result = PipelineRunResult(
         generation_enabled=generate_data,
-        dashboard_path=dashboard_result.path,
+        dashboard_path=_relative(dashboard_result.path),
         release_grade=validation_result.release_grade,
         release_approved=release_result.approved,
         release_reason=release_result.reason,
-        explore_report=str(OUTPUT_REPORTS_DIR / "explore_data_audit.md"),
+        explore_report=str((OUTPUT_REPORTS_DIR / "explore_data_audit.md").relative_to(PROJECT_ROOT)),
         validation_status=validation_result.status,
-        curated_removed_files=curated_removed_files,
     )
 
-    (OUTPUT_REPORTS_DIR / "pipeline_run_summary.json").write_text(
-        json.dumps(asdict(result), indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    write_json_utf8(OUTPUT_REPORTS_DIR / "pipeline_run_summary.json", asdict(result))
     return result
 
 

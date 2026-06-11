@@ -35,9 +35,9 @@ charging AS (
 ),
 dispatch AS (
     SELECT
-        AVG(CASE WHEN delayed_flag THEN 1.0 ELSE 0.0 END) AS ratio_salida_retrasada,
+        AVG(CASE WHEN departed_flag THEN CASE WHEN delayed_flag THEN 1.0 ELSE 0.0 END ELSE NULL END) AS ratio_salida_retrasada,
         SUM(CASE WHEN readiness_final_flag THEN 0 ELSE 1 END) AS vehiculos_no_ready,
-        AVG(dispatch_readiness_risk_score) AS score_readiness_global
+        AVG(CASE WHEN readiness_final_flag THEN 1.0 ELSE 0.0 END) * 100.0 AS score_readiness_global
     FROM vw_dispatch_readiness
 ),
 -- Determinismo: ante empates, MAX_BY puede devolver valores arbitrarios.

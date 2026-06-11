@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.utils import read_ev_csv, to_markdown_safe
+from src.utils import read_ev_csv, to_markdown_safe, write_json_utf8, write_text_utf8
 
 
 def test_read_ev_csv_missing_file_raises(tmp_path: Path) -> None:
@@ -44,3 +44,16 @@ def test_to_markdown_safe_newlines_in_values() -> None:
     df = pd.DataFrame({"text": ["line1\nline2"]})
     result = to_markdown_safe(df)
     assert "\n\n" not in result.split("|")[1]
+
+
+def test_write_text_utf8_adds_final_newline(tmp_path: Path) -> None:
+    output = tmp_path / "nested" / "report.md"
+    write_text_utf8(output, "contenido")
+    assert output.read_bytes() == b"contenido\n"
+
+
+def test_write_json_utf8_is_readable_and_ends_with_newline(tmp_path: Path) -> None:
+    output = tmp_path / "report.json"
+    write_json_utf8(output, {"estado": "PASS"})
+    assert output.read_text(encoding="utf-8").endswith("\n")
+    assert '"estado": "PASS"' in output.read_text(encoding="utf-8")

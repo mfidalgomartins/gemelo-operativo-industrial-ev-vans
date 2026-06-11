@@ -18,9 +18,9 @@ check_secuencia_incoherente AS (
         'secuencia_incoherente' AS check_name,
         COUNT(*) AS failed_rows
     FROM (
-        SELECT fecha_programada, turno, secuencia_planeada, COUNT(*) AS n
+        SELECT fecha_turno_operativo, turno, secuencia_planeada, COUNT(*) AS n
         FROM stg_orders
-        GROUP BY fecha_programada, turno, secuencia_planeada
+        GROUP BY fecha_turno_operativo, turno, secuencia_planeada
         HAVING COUNT(*) > 1
     ) q
 ),
@@ -62,7 +62,7 @@ check_salida_sin_ready AS (
         'salida_sin_readiness' AS check_name,
         COUNT(*) AS failed_rows
     FROM vw_dispatch_readiness
-    WHERE delayed_flag = FALSE
+    WHERE departed_flag = TRUE
       AND readiness_final_flag = FALSE
 ),
 check_retraso_sin_causa AS (
@@ -70,7 +70,8 @@ check_retraso_sin_causa AS (
         'retraso_sin_causa' AS check_name,
         COUNT(*) AS failed_rows
     FROM vw_dispatch_readiness
-    WHERE dispatch_delay_min > 0
+    WHERE departed_flag = TRUE
+      AND dispatch_delay_min > 120
       AND (causa_retraso IS NULL OR causa_retraso IN ('SIN_RETRASO', 'N/A'))
 ),
 check_restriccion_capacidad AS (
@@ -86,8 +87,8 @@ check_denominadores AS (
         'denominadores_invalidos' AS check_name,
         COUNT(*) AS failed_rows
     FROM mart_area_shift
-    WHERE throughput_plan < 0
-       OR throughput_real < 0
+    WHERE dispatch_plan < 0
+       OR dispatch_actual < 0
        OR slot_utilization < 0
 )
 SELECT

@@ -44,7 +44,7 @@ def run_release_gate() -> ReleaseGateResult:
     if not dashboard_checks_ok:
         return ReleaseGateResult(False, release_grade, "Dashboard manifest con checks en WARN")
 
-    return ReleaseGateResult(True, release_grade, "Release apto para publicación de portfolio")
+    return ReleaseGateResult(True, release_grade, "Release apto para publicación")
 
 
 if __name__ == "__main__":

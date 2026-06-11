@@ -19,7 +19,6 @@ def test_ev_pipeline_official_path_end_to_end_without_regeneration() -> None:
         "screening-grade only",
         "decision-support only",
         "not committee-grade",
-        "committee-grade candidate",
     }
 
     manifest = Path("outputs/reports/dashboard_build_manifest.json")
@@ -34,3 +33,5 @@ def test_ev_pipeline_official_path_end_to_end_without_regeneration() -> None:
 
     payload = json.loads(pipeline_summary.read_text(encoding="utf-8"))
     assert payload["dashboard_path"] == result.dashboard_path
+    assert not Path(payload["dashboard_path"]).is_absolute()
+    assert not Path(payload["explore_report"]).is_absolute()

@@ -20,6 +20,12 @@ class OperationalOutputs:
     slots_carga_actualizados: pd.DataFrame
 
 
+def _deduplicate_patio_points(
+    points: list[tuple[pd.Timestamp, str, str]],
+) -> list[tuple[pd.Timestamp, str, str]]:
+    return sorted(set(points), key=lambda point: (point[0], point[1], point[2]))
+
+
 def _select_version(
     rng: np.random.Generator,
     versiones: pd.DataFrame,
@@ -165,9 +171,7 @@ def generate_operational_tables(
                 version["tiempo_medio_produccion"] * 1.55,
             )
             ts_fin_linea = fecha_real + pd.Timedelta(minutes=int(tiempo_prod))
-            ts_entrada_patio = ts_fin_linea + pd.Timedelta(
-                minutes=int(max(5, rng.normal(22 + 35 * patio_impact, 10)))
-            )
+            ts_entrada_patio = ts_fin_linea + pd.Timedelta(minutes=int(max(5, rng.normal(22 + 35 * patio_impact, 10))))
 
             readiness_inicial = clamp(
                 76
@@ -184,6 +188,7 @@ def generate_operational_tables(
                     "orden_id": order_id,
                     "fecha_programada": fecha_programada,
                     "fecha_real": fecha_real,
+                    "fecha_turno_operativo": shift_row.fecha,
                     "turno": shift_row.turno,
                     "secuencia_planeada": seq,
                     "vehiculo_id": vehiculo_id,
@@ -231,7 +236,9 @@ def generate_operational_tables(
         how="left",
     )
 
-    active_slots = slots_carga[(slots_carga["disponibilidad_flag"] == 1) & (slots_carga["mantenimiento_flag"] == 0)].copy()
+    active_slots = slots_carga[
+        (slots_carga["disponibilidad_flag"] == 1) & (slots_carga["mantenimiento_flag"] == 0)
+    ].copy()
     if active_slots.empty:
         active_slots = slots_carga.copy()
 
@@ -284,7 +291,9 @@ def generate_operational_tables(
 
         duracion = int(max(22, (energia_objetivo / effective_power) * 60 + rng.normal(10, 6)))
 
-        p_interrupt = clamp(0.03 + 0.16 * charge_impact + 0.08 * scn["presion_patio"] + 0.06 * (1 - scn["slots"]), 0.01, 0.50)
+        p_interrupt = clamp(
+            0.03 + 0.16 * charge_impact + 0.08 * scn["presion_patio"] + 0.06 * (1 - scn["slots"]), 0.01, 0.50
+        )
         interrupted = int(rng.random() < p_interrupt)
         cause = "SIN_INTERRUPCION"
         energia_entregada = energia_objetivo
@@ -337,7 +346,9 @@ def generate_operational_tables(
                     "soc_pct": round(bateria, 2),
                     "target_soc_pct": round(target_soc, 2),
                     "battery_temp_proxy": round(float(rng.normal(28 + 8 * progress, 2.8)), 2),
-                    "charging_status": "CARGANDO" if s < checkpoints else ("INTERRUMPIDA" if interrupted else "COMPLETADA"),
+                    "charging_status": "CARGANDO"
+                    if s < checkpoints
+                    else ("INTERRUMPIDA" if interrupted else "COMPLETADA"),
                     "energia_cargada_kwh": round(float(energy_loaded), 3),
                     "tiempo_en_carga_min": int(progress * duracion),
                 }
@@ -384,7 +395,9 @@ def generate_operational_tables(
         patio_impact = impact_lookup.get((v_date, "PATIO"), 0.0)
 
         low_h, high_h = planned_hours_market[str(veh.mercado_destino)]
-        fecha_planificada = pd.Timestamp(veh.fecha_programada) + pd.Timedelta(hours=int(rng.integers(low_h, high_h + 1)))
+        fecha_planificada = pd.Timestamp(veh.fecha_programada) + pd.Timedelta(
+            hours=int(rng.integers(low_h, high_h + 1))
+        )
 
         is_ev_charge_flow = pd.notna(veh.timestamp_fin_carga)
 
@@ -419,8 +432,8 @@ def generate_operational_tables(
         if fecha_real_salida > last_reference_ts and rng.random() < 0.60:
             fecha_real_salida = pd.NaT
 
-        # Si no alcanza readiness, la mayoría de unidades deben quedar retenidas (no salir en falso).
-        if readiness_flag == 0 and rng.random() < (0.80 if is_ev_charge_flow else 0.92):
+        # Un vehículo sin readiness queda retenido; no se simulan salidas en falso.
+        if readiness_flag == 0:
             fecha_real_salida = pd.NaT
 
         if pd.isna(fecha_real_salida):
@@ -439,8 +452,10 @@ def generate_operational_tables(
         else:
             causa = "VARIABILIDAD_OPERATIVA"
 
-        modo = "CAMION" if veh.mercado_destino in {"Iberia", "Francia", "Italia"} else str(
-            rng.choice(["CAMION", "TREN"], p=[0.58, 0.42])
+        modo = (
+            "CAMION"
+            if veh.mercado_destino in {"Iberia", "Francia", "Italia"}
+            else str(rng.choice(["CAMION", "TREN"], p=[0.58, 0.42]))
         )
 
         logistics_rows.append(
@@ -474,19 +489,24 @@ def generate_operational_tables(
         patio_points: list[tuple[pd.Timestamp, str, str]] = [(ts_entry, zone_entry, "INGRESO_PATIO")]
 
         if pd.notna(veh.timestamp_inicio_carga):
-            ts_wait = max(ts_entry + pd.Timedelta(minutes=8), pd.Timestamp(veh.timestamp_inicio_carga) - pd.Timedelta(minutes=int(rng.integers(4, 45))))
+            ts_wait = max(
+                ts_entry + pd.Timedelta(minutes=8),
+                pd.Timestamp(veh.timestamp_inicio_carga) - pd.Timedelta(minutes=int(rng.integers(4, 45))),
+            )
             patio_points.append((ts_wait, "BUFFER_CARGA", "ESPERA_CARGA"))
             patio_points.append((pd.Timestamp(veh.timestamp_fin_carga), "BUFFER_CARGA", "POST_CARGA"))
 
         if pd.notna(fecha_real_salida):
-            ts_preout = max(ts_entry, pd.Timestamp(fecha_real_salida) - pd.Timedelta(minutes=int(rng.integers(15, 210))))
+            ts_preout = max(
+                ts_entry, pd.Timestamp(fecha_real_salida) - pd.Timedelta(minutes=int(rng.integers(15, 210)))
+            )
             patio_points.append((ts_preout, "PRE_SALIDA", "LISTO_EXPEDICION"))
             patio_points.append((pd.Timestamp(fecha_real_salida), "PRE_SALIDA", "SALIDA"))
         else:
             ts_block = ts_entry + pd.Timedelta(minutes=int(rng.integers(240, 980)))
             patio_points.append((ts_block, str(rng.choice(zone_list)), "EN_ESPERA_SALIDA"))
 
-        patio_points = sorted({(a, b, c) for a, b, c in patio_points}, key=lambda x: x[0])
+        patio_points = _deduplicate_patio_points(patio_points)
 
         for ts, zone, state in patio_points:
             dwell = int(max(0, (ts - ts_entry).total_seconds() // 60))
@@ -579,6 +599,7 @@ def generate_operational_tables(
             "orden_id",
             "fecha_programada",
             "fecha_real",
+            "fecha_turno_operativo",
             "turno",
             "secuencia_planeada",
             "secuencia_real",
@@ -612,7 +633,9 @@ def generate_operational_tables(
     patio_df = pd.DataFrame(patio_rows).sort_values(["timestamp", "vehiculo_id"])
     movimientos_df = pd.DataFrame(move_rows).sort_values("timestamp_inicio")
 
-    last_ts = vehiculos_out[["timestamp_salida", "timestamp_fin_carga", "timestamp_entrada_patio"]].stack().dropna().max()
+    last_ts = (
+        vehiculos_out[["timestamp_salida", "timestamp_fin_carga", "timestamp_entrada_patio"]].stack().dropna().max()
+    )
     active_last_slots = set()
     if not sesiones_df.empty:
         active_last_slots = set(

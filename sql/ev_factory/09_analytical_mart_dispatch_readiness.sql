@@ -4,8 +4,13 @@
 CREATE OR REPLACE VIEW vw_dispatch_readiness AS
 WITH base AS (
     SELECT
-        vft.fecha_real AS fecha,
-        vft.turno,
+        CAST(vft.fecha_salida_planificada AS DATE) AS fecha,
+        CASE
+            WHEN EXTRACT('hour' FROM vft.fecha_salida_planificada) BETWEEN 6 AND 13 THEN 'A'
+            WHEN EXTRACT('hour' FROM vft.fecha_salida_planificada) BETWEEN 14 AND 21 THEN 'B'
+            ELSE 'C'
+        END AS turno,
+        vft.turno AS turno_produccion,
         vft.orden_id,
         vft.vehiculo_id,
         vft.version_id,
@@ -13,6 +18,7 @@ WITH base AS (
         vft.tipo_propulsion,
         vft.mercado_destino,
         vft.readiness_final_flag,
+        vft.fecha_salida_real IS NOT NULL AS departed_flag,
         vft.dispatch_delay_min,
         vft.causa_retraso,
         vft.soc_salida_pct,
@@ -23,7 +29,7 @@ WITH base AS (
         vft.yard_wait_time_min,
         vft.blocking_exposure,
         vft.non_productive_moves_count,
-        CASE WHEN vft.dispatch_delay_min > 0 THEN TRUE ELSE FALSE END AS delayed_flag,
+        CASE WHEN vft.fecha_salida_real IS NOT NULL AND vft.dispatch_delay_min > 120 THEN TRUE ELSE FALSE END AS delayed_flag,
         CASE
             WHEN vft.requires_charge_but_missing THEN 'FALTA_CARGA'
             WHEN vft.soc_gap_before_dispatch > 10 THEN 'SOC_INSUFICIENTE'
@@ -36,6 +42,7 @@ WITH base AS (
 SELECT
     fecha,
     turno,
+    turno_produccion,
     orden_id,
     vehiculo_id,
     version_id,
@@ -43,6 +50,7 @@ SELECT
     tipo_propulsion,
     mercado_destino,
     readiness_final_flag,
+    departed_flag,
     delayed_flag,
     dispatch_delay_min,
     causa_retraso,
@@ -71,8 +79,9 @@ SELECT
     tipo_propulsion,
     version_id,
     COUNT(vehiculo_id) AS total_vehiculos,
+    SUM(CASE WHEN departed_flag THEN 1 ELSE 0 END) AS total_despachados,
     AVG(CASE WHEN readiness_final_flag THEN 1.0 ELSE 0.0 END) AS readiness_rate,
-    AVG(CASE WHEN delayed_flag THEN 1.0 ELSE 0.0 END) AS delay_rate,
+    AVG(CASE WHEN departed_flag THEN CASE WHEN delayed_flag THEN 1.0 ELSE 0.0 END ELSE NULL END) AS delay_rate,
     AVG(dispatch_delay_min) AS avg_dispatch_delay_min,
     AVG(soc_gap_before_dispatch) AS avg_soc_gap_before_dispatch,
     AVG(dispatch_readiness_risk_score) AS avg_dispatch_readiness_risk_score,

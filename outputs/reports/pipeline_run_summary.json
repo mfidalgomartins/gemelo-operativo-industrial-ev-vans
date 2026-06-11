@@ -1,10 +1,9 @@
 {
   "generation_enabled": false,
-  "dashboard_path": "/Users/miguelfidalgo/Documents/gemelo-operativo-transicion-vans-electricas/outputs/dashboard/industrial-ev-operating-command-center.html",
+  "dashboard_path": "outputs/dashboard/industrial-ev-operating-command-center.html",
   "release_grade": "decision-support only",
   "release_approved": true,
-  "release_reason": "Release apto para publicación de portfolio",
-  "explore_report": "/Users/miguelfidalgo/Documents/gemelo-operativo-transicion-vans-electricas/outputs/reports/explore_data_audit.md",
-  "validation_status": "PASS",
-  "curated_removed_files": 0
+  "release_reason": "Release apto para publicación",
+  "explore_report": "outputs/reports/explore_data_audit.md",
+  "validation_status": "PASS"
 }

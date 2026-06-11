@@ -15,10 +15,24 @@ def test_github_pages_dashboard_contracts() -> None:
 
     # Contratos críticos de interacción
     for fid in [
-        "f_date_from", "f_date_to", "f_turno", "f_prop", "f_version",
-        "f_area", "f_yard", "f_charge", "f_severity", "btn_apply", "btn_reset",
-        "btn_toggle_filters", "filters_shell",
-        "table_search", "btn_export", "scenario_select", "theme_toggle", "btn_print"
+        "f_date_from",
+        "f_date_to",
+        "f_turno",
+        "f_prop",
+        "f_version",
+        "f_area",
+        "f_yard",
+        "f_charge",
+        "f_severity",
+        "btn_apply",
+        "btn_reset",
+        "btn_toggle_filters",
+        "filters_shell",
+        "table_search",
+        "btn_export",
+        "scenario_select",
+        "theme_toggle",
+        "btn_print",
     ]:
         assert f'id="{fid}"' in html
 
@@ -26,10 +40,11 @@ def test_github_pages_dashboard_contracts() -> None:
     assert html.count("<canvas id=") == 17
     assert html.count("makeChart('ch_") == 17
 
-    # Debe ser autocontenido para despliegue estático
+    # No debe contener rutas locales; las dependencias visuales de CDN son explícitas.
     assert "file:///" not in html
     assert "C:\\" not in html
     assert "__PAYLOAD__" not in html
+    assert "cdn.jsdelivr.net/npm/chart.js" in html
 
 
 def test_github_pages_entry_is_in_sync_with_official_dashboard_size() -> None:

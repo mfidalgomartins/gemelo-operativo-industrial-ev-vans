@@ -15,9 +15,9 @@ WITH turnos_base AS (
 ),
 areas AS (
     SELECT DISTINCT UPPER(area) AS area FROM stg_bottlenecks
-    UNION ALL SELECT 'PATIO' AS area
-    UNION ALL SELECT 'CARGA' AS area
-    UNION ALL SELECT 'EXPEDICION' AS area
+    UNION SELECT 'PATIO' AS area
+    UNION SELECT 'CARGA' AS area
+    UNION SELECT 'EXPEDICION' AS area
 ),
 base AS (
     SELECT
@@ -34,11 +34,21 @@ base AS (
 ),
 planned AS (
     SELECT
-        o.fecha_programada AS fecha,
-        o.turno,
-        COUNT(o.orden_id) AS throughput_plan
-    FROM stg_orders o
-    GROUP BY o.fecha_programada, o.turno
+        CAST(d.fecha_salida_planificada AS DATE) AS fecha,
+        CASE
+            WHEN EXTRACT('hour' FROM d.fecha_salida_planificada) BETWEEN 6 AND 13 THEN 'A'
+            WHEN EXTRACT('hour' FROM d.fecha_salida_planificada) BETWEEN 14 AND 21 THEN 'B'
+            ELSE 'C'
+        END AS turno,
+        COUNT(d.salida_id) AS dispatch_plan
+    FROM stg_dispatch d
+    GROUP BY
+        CAST(d.fecha_salida_planificada AS DATE),
+        CASE
+            WHEN EXTRACT('hour' FROM d.fecha_salida_planificada) BETWEEN 6 AND 13 THEN 'A'
+            WHEN EXTRACT('hour' FROM d.fecha_salida_planificada) BETWEEN 14 AND 21 THEN 'B'
+            ELSE 'C'
+        END
 ),
 actual AS (
     SELECT
@@ -48,7 +58,7 @@ actual AS (
             WHEN EXTRACT('hour' FROM d.fecha_salida_real) BETWEEN 14 AND 21 THEN 'B'
             ELSE 'C'
         END AS turno,
-        COUNT(d.salida_id) AS throughput_real
+        COUNT(d.salida_id) AS dispatch_actual
     FROM stg_dispatch d
     WHERE d.fecha_salida_real IS NOT NULL
         GROUP BY
@@ -120,7 +130,8 @@ bneck_shift AS (
         AVG(bs.severidad_media) AS severidad_media,
         AVG(bs.impacto_throughput_medio) AS impacto_throughput_medio,
         AVG(bs.impacto_salida_medio) AS impacto_salida_medio,
-        AVG(bs.area_stress_score) AS bottleneck_density
+        AVG(bs.area_stress_score) AS bottleneck_density,
+        SUM(bs.impacto_throughput_total) AS area_throughput_loss_proxy
     FROM vw_shift_bottleneck_summary bs
     GROUP BY bs.fecha, bs.turno, UPPER(bs.area)
 )
@@ -128,9 +139,10 @@ SELECT
     b.fecha,
     b.turno,
     b.area,
-    COALESCE(p.throughput_plan, 0) AS throughput_plan,
-    COALESCE(a.throughput_real, 0) AS throughput_real,
-    COALESCE(a.throughput_real, 0) - COALESCE(p.throughput_plan, 0) AS throughput_gap,
+    COALESCE(p.dispatch_plan, 0) AS dispatch_plan,
+    COALESCE(a.dispatch_actual, 0) AS dispatch_actual,
+    COALESCE(a.dispatch_actual, 0) - COALESCE(p.dispatch_plan, 0) AS dispatch_gap,
+    COALESCE(bs.area_throughput_loss_proxy, 0.0) AS area_throughput_loss_proxy,
     CASE WHEN b.area = 'PATIO' THEN COALESCE(y.congestion_index, 0.0) ELSE COALESCE(bs.bottleneck_density, 0.0) END AS congestion_index,
     CASE WHEN b.area = 'PATIO' THEN COALESCE(y.avg_wait_time, 0.0)
          WHEN b.area = 'CARGA' THEN COALESCE(c.avg_wait_to_charge, 0.0)
@@ -159,7 +171,7 @@ SELECT
         ELSE 0.0
     END AS dispatch_risk_density,
     (
-        0.25 * LEAST(1.0, ABS(COALESCE(a.throughput_real, 0) - COALESCE(p.throughput_plan, 0)) / 25.0)
+        0.25 * LEAST(1.0, COALESCE(bs.area_throughput_loss_proxy, 0.0) / 5.0)
         + 0.20 * LEAST(
             1.0,
             CASE

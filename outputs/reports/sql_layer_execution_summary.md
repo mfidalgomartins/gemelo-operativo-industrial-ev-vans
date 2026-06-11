@@ -1,7 +1,7 @@
 # SQL Layer Execution Summary (DuckDB)
 
-- Base de datos: `/Users/miguelfidalgo/Documents/gemelo-operativo-transicion-vans-electricas/data/processed/gemelo_operativo_ev.duckdb`
-- Raw source EV (preferente): `/Users/miguelfidalgo/Documents/gemelo-operativo-transicion-vans-electricas/data/raw/ev_factory`
+- Base de datos: `data/processed/gemelo_operativo_ev.duckdb`
+- Fuente raw EV: `data/raw/ev_factory`
 - Scripts ejecutados: 11
 
 ## Orden de ejecución
@@ -18,14 +18,14 @@
 - 11_validation_queries.sql
 
 ## Filas exportadas
-- vw_vehicle_flow_timeline: 43903
-- vw_charging_utilization: 14712
-- vw_yard_congestion: 34232
-- vw_dispatch_readiness: 43903
-- vw_shift_bottleneck_summary: 1028
-- mart_vehicle_day: 43903
-- mart_area_shift: 6552
-- mart_dispatch_readiness: 6165
+- vw_vehicle_flow_timeline: 58697
+- vw_charging_utilization: 18980
+- vw_yard_congestion: 46155
+- vw_dispatch_readiness: 58697
+- vw_shift_bottleneck_summary: 1331
+- mart_vehicle_day: 58697
+- mart_area_shift: 6570
+- mart_dispatch_readiness: 8302
 - kpi_operativos: 1
 - kpi_readiness_shift_version: 24
 - validation_checks: 10

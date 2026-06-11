@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, DATA_RAW_DIR, EV_DATA_RAW_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
-from .utils import to_markdown_safe
+from .utils import to_markdown_safe, write_json_utf8, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
@@ -42,15 +42,27 @@ def run_ev_validation() -> ValidationResult:
 
     # Base raw
     ordenes = _read_csv(_resolve_ev_raw("ordenes"), parse_dates=["fecha_programada", "fecha_real"])
-    vehiculos = _read_csv(_resolve_ev_raw("vehiculos"), parse_dates=["timestamp_fin_linea", "timestamp_entrada_patio", "timestamp_inicio_carga", "timestamp_fin_carga", "timestamp_salida"])
+    vehiculos = _read_csv(
+        _resolve_ev_raw("vehiculos"),
+        parse_dates=[
+            "timestamp_fin_linea",
+            "timestamp_entrada_patio",
+            "timestamp_inicio_carga",
+            "timestamp_fin_carga",
+            "timestamp_salida",
+        ],
+    )
     bateria = _read_csv(_resolve_ev_raw("estado_bateria"), parse_dates=["timestamp"])
     sesiones = _read_csv(_resolve_ev_raw("sesiones_carga"), parse_dates=["inicio_sesion", "fin_sesion"])
-    patio = _read_csv(_resolve_ev_raw("patio"), parse_dates=["timestamp"])
-    logistica = _read_csv(_resolve_ev_raw("logistica_salida"), parse_dates=["fecha_salida_planificada", "fecha_salida_real"])
+    logistica = _read_csv(
+        _resolve_ev_raw("logistica_salida"), parse_dates=["fecha_salida_planificada", "fecha_salida_real"]
+    )
     versiones = _read_csv(_resolve_ev_raw("versiones_vehiculo"))
 
     # Capa analítica
     vehicle_flow = _read_csv(EV_DIR / "vw_vehicle_flow_timeline.csv")
+    yard_congestion = _read_csv(EV_DIR / "vw_yard_congestion.csv")
+    dispatch_readiness = _read_csv(EV_DIR / "vw_dispatch_readiness.csv")
     validation_checks = _read_csv(EV_DIR / "validation_checks.csv")
     area_shift_features = _read_csv(EV_DIR / "area_shift_features.csv")
     scenarios = _read_csv(EV_DIR / "scenario_table.csv")
@@ -65,9 +77,7 @@ def run_ev_validation() -> ValidationResult:
     dashboard_ok = dashboard_path.exists() and dashboard_path.stat().st_size > 100_000
     dashboard_manifest_path = OUTPUT_REPORTS_DIR / "dashboard_build_manifest.json"
     dashboard_manifest = (
-        json.loads(dashboard_manifest_path.read_text(encoding="utf-8"))
-        if dashboard_manifest_path.exists()
-        else {}
+        json.loads(dashboard_manifest_path.read_text(encoding="utf-8")) if dashboard_manifest_path.exists() else {}
     )
 
     issues: list[dict[str, object]] = []
@@ -106,35 +116,60 @@ def run_ev_validation() -> ValidationResult:
 
     # Nulls problemáticos
     null_vehiculo = int(ordenes["vehiculo_id"].isna().sum())
-    add_issue("null_vehiculo_id_ordenes", "critical", null_vehiculo, "Ordenes sin vehiculo_id", "Imponer NOT NULL en staging")
+    add_issue(
+        "null_vehiculo_id_ordenes", "critical", null_vehiculo, "Ordenes sin vehiculo_id", "Imponer NOT NULL en staging"
+    )
 
     # Timestamps imposibles
     ts_issues = int(
         (
-            (vehiculos["timestamp_entrada_patio"] < vehiculos["timestamp_fin_linea"]) |
-            (vehiculos["timestamp_inicio_carga"].notna() & (vehiculos["timestamp_inicio_carga"] < vehiculos["timestamp_entrada_patio"])) |
-            (vehiculos["timestamp_fin_carga"].notna() & vehiculos["timestamp_inicio_carga"].notna() & (vehiculos["timestamp_fin_carga"] < vehiculos["timestamp_inicio_carga"]))
+            (vehiculos["timestamp_entrada_patio"] < vehiculos["timestamp_fin_linea"])
+            | (
+                vehiculos["timestamp_inicio_carga"].notna()
+                & (vehiculos["timestamp_inicio_carga"] < vehiculos["timestamp_entrada_patio"])
+            )
+            | (
+                vehiculos["timestamp_fin_carga"].notna()
+                & vehiculos["timestamp_inicio_carga"].notna()
+                & (vehiculos["timestamp_fin_carga"] < vehiculos["timestamp_inicio_carga"])
+            )
         ).sum()
     )
-    add_issue("timestamps_imposibles", "critical", ts_issues, "Secuencia temporal inválida", "Regla de saneamiento en staging")
+    add_issue(
+        "timestamps_imposibles", "critical", ts_issues, "Secuencia temporal inválida", "Regla de saneamiento en staging"
+    )
 
     # Secuencias incoherentes
-    seq_dup = int(ordenes.duplicated(subset=["fecha_programada", "turno", "secuencia_planeada"]).sum())
-    add_issue("secuencias_incoherentes", "high", seq_dup, "Colisión secuencia plan por fecha-turno", "Resolver ties por prioridad y timestamp")
+    seq_dup = int(ordenes.duplicated(subset=["fecha_turno_operativo", "turno", "secuencia_planeada"]).sum())
+    add_issue(
+        "secuencias_incoherentes",
+        "high",
+        seq_dup,
+        "Colisión secuencia plan por fecha-turno",
+        "Resolver ties por prioridad y timestamp",
+    )
 
     # Patio capacidad
-    patio_cap = patio.groupby([patio["timestamp"].dt.floor("h"), "zona_patio"])["vehiculo_id"].nunique().reset_index(name="occ")
-    cap_limit = patio_cap.groupby("zona_patio")["occ"].quantile(0.98) * 1.2
-    patio_over = int(
-        patio_cap.merge(cap_limit.rename("cap"), on="zona_patio", how="left")
-        .query("occ > cap")
-        .shape[0]
+    patio_over = int((yard_congestion["yard_occupancy_rate"] > 1.0).sum())
+    add_issue(
+        "ocupacion_patio_vs_capacidad",
+        "medium",
+        patio_over,
+        "Ocupaciones por encima de la capacidad gobernada",
+        "Revisar capacidad de zona o lógica de asignación",
     )
-    add_issue("ocupacion_patio_vs_capacidad", "medium", patio_over, "Ocupaciones por encima de capacidad estimada", "Ajustar buffers y zonas dinámicas")
 
     # Sesiones carga coherentes
-    sess_bad = int(((sesiones["fin_sesion"] < sesiones["inicio_sesion"]) | (sesiones["energia_entregada_kwh"] <= 0)).sum())
-    add_issue("sesiones_carga_incoherentes", "critical", sess_bad, "Sesiones con duración negativa o energía <=0", "Constraint en generador y staging")
+    sess_bad = int(
+        ((sesiones["fin_sesion"] < sesiones["inicio_sesion"]) | (sesiones["energia_entregada_kwh"] <= 0)).sum()
+    )
+    add_issue(
+        "sesiones_carga_incoherentes",
+        "critical",
+        sess_bad,
+        "Sesiones con duración negativa o energía <=0",
+        "Constraint en generador y staging",
+    )
 
     # SOC en rango
     soc_bad = int((~bateria["soc_pct"].between(0, 100) | ~bateria["target_soc_pct"].between(0, 100)).sum())
@@ -145,27 +180,30 @@ def run_ev_validation() -> ValidationResult:
     ev_veh = set(vehiculos.loc[vehiculos["version_id"].isin(ev_versions), "vehiculo_id"])
     veh_with_session = set(sesiones["vehiculo_id"])
     ev_without_charge = len(ev_veh - veh_with_session)
-    add_issue("ev_sin_carga_consistente", "high", ev_without_charge, "EV que requiere carga sin sesión", "Forzar sesión mínima o excepción explícita")
+    add_issue(
+        "ev_sin_carga_consistente",
+        "high",
+        ev_without_charge,
+        "EV que requiere carga sin sesión",
+        "Forzar sesión mínima o excepción explícita",
+    )
 
     # Readiness y salida consistentes
     salidas_reales = int(logistica["fecha_salida_real"].notna().sum())
-    out_without_ready = int(((logistica["fecha_salida_real"].notna()) & (logistica["readiness_salida_flag"] == 0)).sum())
+    out_without_ready = int(
+        ((logistica["fecha_salida_real"].notna()) & (logistica["readiness_salida_flag"] == 0)).sum()
+    )
     out_without_ready_rate = (out_without_ready / salidas_reales) if salidas_reales else 0.0
     add_issue(
         "salida_sin_readiness",
-        "high" if out_without_ready_rate > 0.20 else "medium",
+        "critical",
         out_without_ready,
         f"Salidas reales sin readiness (rate={out_without_ready_rate:.2%})",
         "Bloqueo en lógica de expedición o excepción trazable por causa",
     )
 
     # Métricas agregadas y denominadores
-    denom_bad = int(
-        (
-            (scoring["operational_priority_index"] < 0) |
-            (scoring["operational_priority_index"] > 100)
-        ).sum()
-    )
+    denom_bad = int(((scoring["operational_priority_index"] < 0) | (scoring["operational_priority_index"] > 100)).sum())
     add_issue("score_fuera_rango", "medium", denom_bad, "OPI fuera de 0-100", "Normalización de scores")
 
     # Integridad analítica: evitar falso sentido de precisión
@@ -195,20 +233,18 @@ def run_ev_validation() -> ValidationResult:
     )
 
     flat_area_metrics = int(
-        
-            area_shift_features.groupby("area", as_index=False)
-            .agg(
-                congestion_index=("congestion_index", "mean"),
-                avg_wait_time=("avg_wait_time", "mean"),
-                slot_utilization=("slot_utilization", "mean"),
-                dispatch_risk_density=("dispatch_risk_density", "mean"),
-                bottleneck_density=("bottleneck_density", "mean"),
-            )[["congestion_index", "avg_wait_time", "slot_utilization", "dispatch_risk_density", "bottleneck_density"]]
-            .std()
-            .fillna(0)
-            .eq(0)
-            .sum()
-        
+        area_shift_features.groupby("area", as_index=False)
+        .agg(
+            congestion_index=("congestion_index", "mean"),
+            avg_wait_time=("avg_wait_time", "mean"),
+            slot_utilization=("slot_utilization", "mean"),
+            dispatch_risk_density=("dispatch_risk_density", "mean"),
+            bottleneck_density=("bottleneck_density", "mean"),
+        )[["congestion_index", "avg_wait_time", "slot_utilization", "dispatch_risk_density", "bottleneck_density"]]
+        .std()
+        .fillna(0)
+        .eq(0)
+        .sum()
     )
     add_issue(
         "metrics_area_planas",
@@ -233,13 +269,46 @@ def run_ev_validation() -> ValidationResult:
 
     share_ev_flow = float((vehicle_flow["tipo_propulsion"] == "EV").mean()) if not vehicle_flow.empty else np.nan
     share_ev_kpi = float(kpi["share_ev"].iloc[0]) if not kpi.empty else np.nan
-    share_ev_gap = abs(share_ev_flow - share_ev_kpi) if np.isfinite(share_ev_flow) and np.isfinite(share_ev_kpi) else 1.0
+    share_ev_gap = (
+        abs(share_ev_flow - share_ev_kpi) if np.isfinite(share_ev_flow) and np.isfinite(share_ev_kpi) else 1.0
+    )
     add_issue(
         "kpi_share_ev_inconsistente",
         "high",
         int(share_ev_gap > 0.02),
         f"share_ev KPI vs flow no consistente (gap={share_ev_gap:.4f})",
         "Recalcular KPI desde mart gobernado",
+    )
+    readiness_flow = float(vehicle_flow["readiness_final_flag"].mean() * 100) if not vehicle_flow.empty else np.nan
+    readiness_kpi = float(kpi["score_readiness_global"].iloc[0]) if not kpi.empty else np.nan
+    readiness_gap = (
+        abs(readiness_flow - readiness_kpi) if np.isfinite(readiness_flow) and np.isfinite(readiness_kpi) else 100.0
+    )
+    add_issue(
+        "kpi_readiness_inconsistente",
+        "high",
+        int(readiness_gap > 1e-9),
+        f"score_readiness_global KPI vs flow no consistente (gap={readiness_gap:.6f})",
+        "Recalcular KPI desde readiness_final_flag",
+    )
+
+    departed_dispatch = dispatch_readiness.loc[dispatch_readiness["departed_flag"].astype(bool)]
+    delay_rate_detail = float(departed_dispatch["delayed_flag"].mean()) if not departed_dispatch.empty else 0.0
+    delay_rate_kpi = float(kpi["ratio_salida_retrasada"].iloc[0]) if not kpi.empty else np.nan
+    delay_rate_gap = abs(delay_rate_detail - delay_rate_kpi) if np.isfinite(delay_rate_kpi) else 1.0
+    add_issue(
+        "kpi_delay_rate_inconsistente",
+        "high",
+        int(delay_rate_gap > 1e-9),
+        f"ratio_salida_retrasada KPI vs detalle no consistente (gap={delay_rate_gap:.6f})",
+        "Recalcular KPI sobre vehículos despachados",
+    )
+    add_issue(
+        "ratio_salida_retrasada_implausible",
+        "medium",
+        int(delay_rate_kpi > 0.85),
+        f"ratio_salida_retrasada excesivo ({delay_rate_kpi:.2%})",
+        "Revisar umbral de atraso material o calibración del generador",
     )
 
     throughput_plan_flow = int(len(vehicle_flow))
@@ -267,7 +336,9 @@ def run_ev_validation() -> ValidationResult:
             observed_daily = float(legacy_kpi_summary["throughput_diario_unidades"].iloc[0])
             expected_readiness = float(kpi["score_readiness_global"].iloc[0])
             observed_readiness = float(legacy_kpi_summary["score_readiness_operativa"].iloc[0])
-            legacy_mismatch = int(abs(observed_daily - expected_daily) > 0.5 or abs(observed_readiness - expected_readiness) > 1.0)
+            legacy_mismatch = int(
+                abs(observed_daily - expected_daily) > 0.5 or abs(observed_readiness - expected_readiness) > 1.0
+            )
         else:
             legacy_mismatch = 1
 
@@ -291,7 +362,13 @@ def run_ev_validation() -> ValidationResult:
     if dashboard_ok:
         html = dashboard_path.read_text(encoding="utf-8", errors="ignore")
         placeholders_left = int(any(tok in html for tok in ["__SEQ__", "__FILTERS__", "__CHARTJS__"]))
-    add_issue("dashboard_inconsistente", "high", placeholders_left, "Placeholder sin resolver en dashboard", "Rebuild dashboard")
+    add_issue(
+        "dashboard_inconsistente",
+        "high",
+        placeholders_left,
+        "Placeholder sin resolver en dashboard",
+        "Rebuild dashboard",
+    )
     add_issue(
         "dashboard_manifest_missing",
         "high",
@@ -311,7 +388,13 @@ def run_ev_validation() -> ValidationResult:
 
     # Escenarios
     if len(scenarios) != 8:
-        add_issue("scenario_count", "high", abs(len(scenarios) - 8), "No se generaron los 8 escenarios obligatorios", "Reejecutar scenario twin")
+        add_issue(
+            "scenario_count",
+            "high",
+            abs(len(scenarios) - 8),
+            "No se generaron los 8 escenarios obligatorios",
+            "Reejecutar scenario twin",
+        )
     scenario_base = scenarios.loc[scenarios["escenario"] == "1_ramp_up_ev_base", "share_ev_estimado"]
     scenario_acc = scenarios.loc[scenarios["escenario"] == "2_ramp_up_ev_acelerado", "share_ev_estimado"]
     if not scenario_base.empty and not scenario_acc.empty:
@@ -322,7 +405,9 @@ def run_ev_validation() -> ValidationResult:
             "Escenario acelerado no incrementa share EV respecto al base",
             "Revisar motor de escenarios y parámetros",
         )
-    scenario_spread = float(scenarios["decision_score"].max() - scenarios["decision_score"].min()) if not scenarios.empty else 0.0
+    scenario_spread = (
+        float(scenarios["decision_score"].max() - scenarios["decision_score"].min()) if not scenarios.empty else 0.0
+    )
     add_issue(
         "scenario_decision_spread_bajo",
         "medium",
@@ -343,19 +428,23 @@ def run_ev_validation() -> ValidationResult:
     severity_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3}
     if not issues_df.empty:
         issues_df["severity_rank"] = issues_df["severity"].map(severity_rank).fillna(99)
-        issues_df = issues_df.sort_values(["severity_rank", "failed_rows"], ascending=[True, False]).drop(columns=["severity_rank"])
+        issues_df = issues_df.sort_values(["severity_rank", "failed_rows"], ascending=[True, False]).drop(
+            columns=["severity_rank"]
+        )
 
     severity_weight = {"critical": 4, "high": 3, "medium": 2, "low": 1}
-    risk_points = int(sum(severity_weight.get(s, 1) for s in issues_df.get("severity", []))) if not issues_df.empty else 0
+    risk_points = (
+        int(sum(severity_weight.get(s, 1) for s in issues_df.get("severity", []))) if not issues_df.empty else 0
+    )
 
     critical_issues = int((issues_df["severity"] == "critical").sum()) if not issues_df.empty else 0
     high_issues = int((issues_df["severity"] == "high").sum()) if not issues_df.empty else 0
     medium_issues = int((issues_df["severity"] == "medium").sum()) if not issues_df.empty else 0
 
-    if risk_points <= 6 and critical_issues == 0:
+    if issues_df.empty:
         status = "PASS"
         confidence = "ALTA"
-    elif risk_points <= 15:
+    elif critical_issues == 0 and high_issues == 0 and risk_points <= 6:
         status = "WARN"
         confidence = "MEDIA"
     else:
@@ -367,30 +456,24 @@ def run_ev_validation() -> ValidationResult:
     sql_checks_total = int(len(validation_checks))
     sql_warn_ratio = float(sql_warn / sql_checks_total) if sql_checks_total else 1.0
 
-    technically_valid = (
-        critical_issues == 0
-        and dashboard_ok
-        and sql_warn_ratio <= 0.25
-        and len(ordenes) >= 1000
-    )
+    technically_valid = critical_issues == 0 and dashboard_ok and sql_warn == 0 and len(ordenes) >= 1000
     analytically_acceptable = (
         technically_valid
         and opi_unique >= 3
         and driver_unique >= 2
         and flat_area_metrics <= 2
         and share_ev_gap <= 0.02
+        and readiness_gap <= 1e-9
+        and delay_rate_gap <= 1e-9
+        and delay_rate_kpi <= 0.85
         and scenario_spread >= 2.0
     )
     decision_support_only = analytically_acceptable and high_issues <= 2
     screening_grade_only = technically_valid and not analytically_acceptable
-    committee_grade = decision_support_only and medium_issues <= 3 and sql_warn_ratio <= 0.10
-
     if not technically_valid:
         release_grade = "publish-blocked"
     elif not analytically_acceptable:
         release_grade = "screening-grade only"
-    elif committee_grade:
-        release_grade = "committee-grade candidate"
     elif decision_support_only:
         release_grade = "decision-support only"
     else:
@@ -413,7 +496,7 @@ def run_ev_validation() -> ValidationResult:
         f"- analytically acceptable: **{'YES' if analytically_acceptable else 'NO'}**",
         f"- decision-support only: **{'YES' if decision_support_only else 'NO'}**",
         f"- screening-grade only: **{'YES' if screening_grade_only else 'NO'}**",
-        f"- not committee-grade: **{'YES' if technically_valid and not committee_grade else 'NO'}**",
+        f"- not committee-grade: **{'YES' if technically_valid else 'NO'}**",
         f"- publish-blocked: **{'YES' if release_grade == 'publish-blocked' else 'NO'}**",
         "",
         "## Checklist de validación",
@@ -426,13 +509,15 @@ def run_ev_validation() -> ValidationResult:
         f"- sesiones carga coherentes: {'OK' if sess_bad == 0 else 'WARN'}",
         f"- SOC dentro de rango: {'OK' if soc_bad == 0 else 'WARN'}",
         f"- EV con carga consistente: {'OK' if ev_without_charge == 0 else 'WARN'}",
-        f"- readiness y salida consistentes: {'OK' if out_without_ready_rate <= 0.20 else 'WARN'}",
+        f"- readiness y salida consistentes: {'OK' if out_without_ready == 0 else 'WARN'}",
         f"- métricas agregadas y denominadores: {'OK' if denom_bad == 0 else 'WARN'}",
         f"- consistencia outputs-dashboard: {'OK' if placeholders_left == 0 and dashboard_ok else 'WARN'}",
         f"- discriminación de scoring: {'OK' if opi_unique >= 3 else 'WARN'}",
         f"- diversidad de driver de riesgo: {'OK' if driver_unique >= 2 else 'WARN'}",
         f"- variabilidad área-turno: {'OK' if flat_area_metrics <= 2 else 'WARN'}",
         f"- consistencia KPI share_ev: {'OK' if share_ev_gap <= 0.02 else 'WARN'}",
+        f"- consistencia KPI readiness: {'OK' if readiness_gap <= 1e-9 else 'WARN'}",
+        f"- consistencia KPI delay rate: {'OK' if delay_rate_gap <= 1e-9 else 'WARN'}",
         f"- single source of truth KPI: {'OK' if legacy_kpi_present == 0 else 'WARN'}",
         f"- spread de escenarios: {'OK' if scenario_spread >= 2.0 else 'WARN'}",
         "- riesgo de sobreinterpretación explicitado: OK",
@@ -457,16 +542,18 @@ def run_ev_validation() -> ValidationResult:
         [
             "",
             "## Overall Confidence Assessment",
-            f"Confianza **{confidence}** para uso de portfolio y discusión técnica/operativa. Para uso real de planta se requiere calibración con datos productivos y validación de negocio adicional.",
+            f"Confianza **{confidence}** para demostración técnica y apoyo a discusión operativa. Para uso real de planta se requiere calibración con datos productivos y validación de negocio adicional.",
         ]
     )
 
     report_path = OUTPUT_REPORTS_DIR / "validation_report.md"
-    report_path.write_text("\n".join(lines), encoding="utf-8")
+    write_text_utf8(report_path, "\n".join(lines))
 
     issues_path = OUTPUT_REPORTS_DIR / "validation_issues_found.csv"
     if issues_df.empty:
-        pd.DataFrame(columns=["check", "severity", "failed_rows", "detail", "recommended_fix"]).to_csv(issues_path, index=False)
+        pd.DataFrame(columns=["check", "severity", "failed_rows", "detail", "recommended_fix"]).to_csv(
+            issues_path, index=False
+        )
     else:
         issues_df.to_csv(issues_path, index=False)
 
@@ -478,7 +565,6 @@ def run_ev_validation() -> ValidationResult:
         "analytically_acceptable": analytically_acceptable,
         "decision_support_only": decision_support_only,
         "screening_grade_only": screening_grade_only,
-        "committee_grade_candidate": committee_grade,
         "publish_blocked": release_grade == "publish-blocked",
         "issues_total": int(len(issues_df)),
         "critical_issues": critical_issues,
@@ -487,10 +573,7 @@ def run_ev_validation() -> ValidationResult:
         "sql_warn_ratio": sql_warn_ratio,
         "kpi_single_source_of_truth": legacy_kpi_present == 0 and legacy_mismatch == 0,
     }
-    (OUTPUT_REPORTS_DIR / "release_readiness.json").write_text(
-        json.dumps(release_json, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    write_json_utf8(OUTPUT_REPORTS_DIR / "release_readiness.json", release_json)
 
     return ValidationResult(
         status=status,

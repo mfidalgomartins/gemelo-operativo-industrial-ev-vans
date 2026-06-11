@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
-from .utils import read_ev_csv
+from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
+from .utils import read_ev_csv, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
@@ -45,22 +45,18 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
 
     # Scores a nivel vehículo
     vehicle_diag = vehicle.copy()
-    vehicle_diag["sequence_disruption_score"] = (
-        0.6 * _score_to_100(vehicle_diag["planned_to_actual_sequence_gap"].abs(), upper=20)
-        + 0.4 * _score_to_100(vehicle_diag["version_complexity_score"], upper=5)
-    )
-    vehicle_diag["yard_congestion_score"] = (
-        0.55 * _score_to_100(vehicle_diag["yard_wait_time"], upper=240)
-        + 0.45 * _score_to_100(vehicle_diag["blocking_exposure"], upper=1)
-    )
-    vehicle_diag["charging_pressure_score"] = (
-        0.55 * _score_to_100(vehicle_diag["charging_wait_time"], upper=240)
-        + 0.45 * _score_to_100(vehicle_diag["soc_gap_before_dispatch"].clip(lower=0), upper=40)
-    )
-    vehicle_diag["dispatch_delay_risk_score"] = (
-        0.7 * _score_to_100(vehicle_diag["dispatch_delay_min"].clip(lower=0), upper=300)
-        + 0.3 * _score_to_100(vehicle_diag["soc_gap_before_dispatch"].clip(lower=0), upper=40)
-    )
+    vehicle_diag["sequence_disruption_score"] = 0.6 * _score_to_100(
+        vehicle_diag["planned_to_actual_sequence_gap"].abs(), upper=20
+    ) + 0.4 * _score_to_100(vehicle_diag["version_complexity_score"], upper=5)
+    vehicle_diag["yard_congestion_score"] = 0.55 * _score_to_100(
+        vehicle_diag["yard_wait_time"], upper=240
+    ) + 0.45 * _score_to_100(vehicle_diag["blocking_exposure"], upper=1)
+    vehicle_diag["charging_pressure_score"] = 0.55 * _score_to_100(
+        vehicle_diag["charging_wait_time"], upper=240
+    ) + 0.45 * _score_to_100(vehicle_diag["soc_gap_before_dispatch"].clip(lower=0), upper=40)
+    vehicle_diag["dispatch_delay_risk_score"] = 0.7 * _score_to_100(
+        vehicle_diag["dispatch_delay_min"].clip(lower=0), upper=300
+    ) + 0.3 * _score_to_100(vehicle_diag["soc_gap_before_dispatch"].clip(lower=0), upper=40)
     vehicle_diag["launch_transition_stress_score"] = (
         0.25 * vehicle_diag["sequence_disruption_score"]
         + 0.25 * vehicle_diag["yard_congestion_score"]
@@ -73,7 +69,7 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
     # Área crítica y driver principal
     area_diag = area.copy()
     area_diag["area_criticality_score"] = (
-        0.25 * _score_to_100(area_diag["throughput_gap"].abs(), upper=25)
+        0.25 * _score_to_100(area_diag["area_throughput_loss_proxy"], upper=5)
         + 0.20 * area_diag["congestion_index"].clip(0, 100)
         + 0.20 * _score_to_100(area_diag["avg_wait_time"], upper=240)
         + 0.15 * _score_to_100(area_diag["slot_utilization"], upper=1.2)
@@ -118,26 +114,20 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
     )
 
     # Comparación EV vs no EV
-    ev_compare = (
-        vehicle_diag.groupby("tipo_propulsion", as_index=False)
-        .agg(
-            sequence_disruption_score=("sequence_disruption_score", "mean"),
-            yard_congestion_score=("yard_congestion_score", "mean"),
-            charging_pressure_score=("charging_pressure_score", "mean"),
-            dispatch_delay_risk_score=("dispatch_delay_risk_score", "mean"),
-            launch_transition_stress_score=("launch_transition_stress_score", "mean"),
-        )
+    ev_compare = vehicle_diag.groupby("tipo_propulsion", as_index=False).agg(
+        sequence_disruption_score=("sequence_disruption_score", "mean"),
+        yard_congestion_score=("yard_congestion_score", "mean"),
+        charging_pressure_score=("charging_pressure_score", "mean"),
+        dispatch_delay_risk_score=("dispatch_delay_risk_score", "mean"),
+        launch_transition_stress_score=("launch_transition_stress_score", "mean"),
     )
 
-    shift_compare = (
-        vehicle_diag.groupby("turno", as_index=False)
-        .agg(
-            sequence_disruption_score=("sequence_disruption_score", "mean"),
-            yard_congestion_score=("yard_congestion_score", "mean"),
-            charging_pressure_score=("charging_pressure_score", "mean"),
-            dispatch_delay_risk_score=("dispatch_delay_risk_score", "mean"),
-            launch_transition_stress_score=("launch_transition_stress_score", "mean"),
-        )
+    shift_compare = vehicle_diag.groupby("turno", as_index=False).agg(
+        sequence_disruption_score=("sequence_disruption_score", "mean"),
+        yard_congestion_score=("yard_congestion_score", "mean"),
+        charging_pressure_score=("charging_pressure_score", "mean"),
+        dispatch_delay_risk_score=("dispatch_delay_risk_score", "mean"),
+        launch_transition_stress_score=("launch_transition_stress_score", "mean"),
     )
 
     # Ranking de áreas
@@ -145,10 +135,17 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
         area_diag.groupby("area", as_index=False)
         .agg(
             area_criticality_score=("area_criticality_score", "mean"),
-            throughput_gap=("throughput_gap", "mean"),
+            dispatch_gap=("dispatch_gap", "mean"),
+            area_throughput_loss_proxy=("area_throughput_loss_proxy", "mean"),
             avg_wait_time=("avg_wait_time", "mean"),
-            main_bottleneck_driver=("main_bottleneck_driver", lambda s: s.mode().iat[0] if not s.mode().empty else "N/A"),
-            recommended_action_initial=("recommended_action_initial", lambda s: s.mode().iat[0] if not s.mode().empty else "N/A"),
+            main_bottleneck_driver=(
+                "main_bottleneck_driver",
+                lambda s: s.mode().iat[0] if not s.mode().empty else "N/A",
+            ),
+            recommended_action_initial=(
+                "recommended_action_initial",
+                lambda s: s.mode().iat[0] if not s.mode().empty else "N/A",
+            ),
         )
         .sort_values("area_criticality_score", ascending=False)
     )
@@ -174,48 +171,6 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
         df.to_csv(EV_DIR / f"{name}.csv", index=False)
         out_counts[name] = int(df.shape[0])
 
-    # Documento metodológico
-    doc = PROJECT_ROOT / "docs" / "diagnostic_framework.md"
-    doc.write_text(
-        """# Diagnostic Framework - Gemelo Operativo EV
-
-## Objetivo
-Identificar dónde se rompe el flujo y priorizar acciones operativas interpretables en secuenciación, patio, carga y expedición.
-
-## Capas de análisis
-1. Secuenciación: desviación plan-real y complejidad de versión.
-2. Patio: espera, bloqueo y no productividad de movimientos.
-3. Carga: colas, presión de slot e incumplimiento de SOC objetivo.
-4. Expedición: retrasos y gap de readiness.
-5. Área-turno: estrés operacional y criticidad por impacto en throughput.
-
-## Scores principales
-- `sequence_disruption_score`
-- `yard_congestion_score`
-- `charging_pressure_score`
-- `dispatch_delay_risk_score`
-- `launch_transition_stress_score`
-- `area_criticality_score`
-
-## Lógica de persistencia
-- `ESTRUCTURAL`: share de periodos críticos >= 30%.
-- `PICO_OCASIONAL`: share crítico bajo, pero p95 de criticality muy alto.
-- `ESTABLE`: sin evidencia de tensión sostenida.
-
-## Salidas
-- `diagnostic_vehicle_scores.csv`
-- `diagnostic_area_scores.csv`
-- `diagnostic_area_persistence.csv`
-- `diagnostic_ev_vs_non_ev.csv`
-- `diagnostic_shift_comparison.csv`
-- `diagnostic_area_ranking.csv`
-
-## Uso operativo
-El framework conecta síntomas con acción inicial recomendada para facilitar priorización diaria y planificación semanal durante la transición EV.
-""",
-        encoding="utf-8",
-    )
-
     # Resumen hallazgos
     top_areas_ranked = area_ranking.head(8)
     lines = [
@@ -232,11 +187,11 @@ El framework conecta síntomas con acción inicial recomendada para facilitar pr
         [
             "",
             "## Lecturas clave",
-            f"- Diferencia EV vs no EV (stress): {ev_compare.loc[ev_compare['tipo_propulsion']=='EV','launch_transition_stress_score'].mean() - ev_compare.loc[ev_compare['tipo_propulsion']!='EV','launch_transition_stress_score'].mean():.2f} puntos.",
-            f"- Áreas clasificadas como estructurales: {int((area_persistence['tipo_cuello']=='ESTRUCTURAL').sum())}.",
+            f"- Diferencia EV vs no EV (stress): {ev_compare.loc[ev_compare['tipo_propulsion'] == 'EV', 'launch_transition_stress_score'].mean() - ev_compare.loc[ev_compare['tipo_propulsion'] != 'EV', 'launch_transition_stress_score'].mean():.2f} puntos.",
+            f"- Áreas clasificadas como estructurales: {int((area_persistence['tipo_cuello'] == 'ESTRUCTURAL').sum())}.",
         ]
     )
-    (OUTPUT_REPORTS_DIR / "diagnostic_findings.md").write_text("\n".join(lines), encoding="utf-8")
+    write_text_utf8(OUTPUT_REPORTS_DIR / "diagnostic_findings.md", "\n".join(lines))
 
     return DiagnosticResult(outputs=out_counts)
 

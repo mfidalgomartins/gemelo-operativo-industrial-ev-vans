@@ -2,7 +2,7 @@
 
 ## Dialecto elegido
 - **DuckDB SQL**.
-- Motivo: ejecución local reproducible, rápido sobre CSV/parquet, ideal para portfolio técnico con capa SQL visible.
+- Motivo: ejecución local reproducible y rápida sobre CSV, con una capa SQL visible y auditable.
 
 ## Capas
 1. **Staging** (`01` a `04`): tipado, normalización de timestamps, flags booleanos y estructura canónica.

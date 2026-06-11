@@ -3,13 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
+from .utils import write_json_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 OFFICIAL_DASHBOARD_NAME = "industrial-ev-operating-command-center.html"
@@ -47,27 +47,23 @@ def _records(df: pd.DataFrame) -> list[dict[str, object]]:
     return rows
 
 
-def _archive_non_official_dashboards(output_dir: Path, official_name: str) -> list[str]:
+def _remove_non_official_dashboards(output_dir: Path, official_name: str) -> list[str]:
     output_dir.mkdir(parents=True, exist_ok=True)
-    legacy_dir = output_dir / "legacy"
-    legacy_dir.mkdir(parents=True, exist_ok=True)
 
-    moved: list[str] = []
+    removed: list[str] = []
     for html_file in output_dir.glob("*.html"):
         if html_file.name == official_name:
             continue
-        if not html_file.exists():
-            continue
-        target = legacy_dir / html_file.name
-        html_file.replace(target)
-        moved.append(str(target.relative_to(PROJECT_ROOT)))
-    return moved
+        removed.append(str(html_file.relative_to(PROJECT_ROOT)))
+        html_file.unlink()
+    return removed
 
 
 def _build_meta(
     flow: pd.DataFrame,
     yard: pd.DataFrame,
     charging: pd.DataFrame,
+    dispatch: pd.DataFrame,
     priorities: pd.DataFrame,
     scenarios: pd.DataFrame,
     kpi: pd.DataFrame,
@@ -82,12 +78,17 @@ def _build_meta(
     throughput_plan_calc = int(flow["orden_id"].nunique())
     throughput_real_calc = int(flow["vehiculo_id"].nunique())
     share_ev_calc = float((flow["tipo_propulsion"] == "EV").mean()) if len(flow) else 0.0
+    readiness_calc = float(flow["readiness_final_flag"].mean() * 100) if len(flow) else 0.0
+    departed = dispatch.loc[dispatch["departed_flag"].astype(bool)]
+    delay_rate_calc = float(departed["delayed_flag"].mean()) if not departed.empty else 0.0
     kpi_validation = {
         "throughput_planificado_matches_flow": int(kpi_row.get("throughput_planificado", -1)) == throughput_plan_calc,
         "throughput_real_matches_flow": int(kpi_row.get("throughput_real", -1)) == throughput_real_calc,
         "throughput_gap_matches_components": int(kpi_row.get("throughput_gap", 0))
         == int(kpi_row.get("throughput_real", 0)) - int(kpi_row.get("throughput_planificado", 0)),
         "share_ev_matches_flow": abs(float(kpi_row.get("share_ev", 0.0)) - share_ev_calc) <= 0.02,
+        "readiness_matches_flow": abs(float(kpi_row.get("score_readiness_global", 0.0)) - readiness_calc) <= 1e-9,
+        "delay_rate_matches_dispatch": abs(float(kpi_row.get("ratio_salida_retrasada", 0.0)) - delay_rate_calc) <= 1e-9,
         "proportions_in_range": all(
             0 <= float(kpi_row.get(col, 0.0)) <= 1
             for col in [
@@ -102,12 +103,13 @@ def _build_meta(
     }
 
     return {
-        "coverage": f"{coverage_min.date()} a {coverage_max.date()}" if pd.notna(coverage_min) and pd.notna(coverage_max) else "N/A",
+        "coverage": f"{coverage_min.date()} a {coverage_max.date()}"
+        if pd.notna(coverage_min) and pd.notna(coverage_max)
+        else "N/A",
         "orders": int(flow["orden_id"].nunique()),
         "vehicles": int(flow["vehiculo_id"].nunique()),
         "yard_zones": int(yard["zona_patio"].nunique()),
         "charge_zones": int(charging["zona_carga"].nunique()),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "kpi_official": kpi_row,
         "kpi_validation": kpi_validation,
         "executive_snapshot": {
@@ -157,12 +159,9 @@ def _prepare_datasets(
         .sort_values("week")
     )
 
-    seq_gap = (
-        f.groupby([f["fecha_real"].dt.date.rename("fecha"), "turno", "tipo_propulsion"], as_index=False)
-        .agg(
-            sequence_gap=("planned_to_actual_sequence_gap", "mean"),
-            lead_time=("total_internal_lead_time_min", "mean"),
-        )
+    seq_gap = f.groupby([f["fecha_real"].dt.date.rename("fecha"), "turno", "tipo_propulsion"], as_index=False).agg(
+        sequence_gap=("planned_to_actual_sequence_gap", "mean"),
+        lead_time=("total_internal_lead_time_min", "mean"),
     )
     seq_gap["fecha"] = pd.to_datetime(seq_gap["fecha"])
 
@@ -179,15 +178,14 @@ def _prepare_datasets(
         .head(14)
     )
 
-    flow_prop_daily = (
-        f.groupby([f["fecha_real"].dt.date.rename("fecha"), "turno", "tipo_propulsion"], as_index=False)
-        .agg(
-            lead_time=("total_internal_lead_time_min", "mean"),
-            yard_wait=("yard_wait_time_min", "mean"),
-            charge_wait=("charging_wait_time_min", "mean"),
-            delay=("dispatch_delay_min", "mean"),
-            throughput=("vehiculo_id", "count"),
-        )
+    flow_prop_daily = f.groupby(
+        [f["fecha_real"].dt.date.rename("fecha"), "turno", "tipo_propulsion"], as_index=False
+    ).agg(
+        lead_time=("total_internal_lead_time_min", "mean"),
+        yard_wait=("yard_wait_time_min", "mean"),
+        charge_wait=("charging_wait_time_min", "mean"),
+        delay=("dispatch_delay_min", "mean"),
+        throughput=("vehiculo_id", "count"),
     )
     flow_prop_daily["fecha"] = pd.to_datetime(flow_prop_daily["fecha"])
 
@@ -195,15 +193,12 @@ def _prepare_datasets(
     y["timestamp"] = pd.to_datetime(y["timestamp"], errors="coerce")
     y["fecha"] = y["timestamp"].dt.date
 
-    yard_daily = (
-        y.groupby(["fecha", "zona_patio"], as_index=False)
-        .agg(
-            occupancy=("yard_occupancy_rate", "mean"),
-            dwell=("avg_dwell_time", "mean"),
-            dwell_p95=("p95_dwell_time", "mean"),
-            blocking=("blocking_rate", "mean"),
-            non_productive=("non_productive_move_rate", "mean"),
-        )
+    yard_daily = y.groupby(["fecha", "zona_patio"], as_index=False).agg(
+        occupancy=("yard_occupancy_rate", "mean"),
+        dwell=("avg_dwell_time", "mean"),
+        dwell_p95=("p95_dwell_time", "mean"),
+        blocking=("blocking_rate", "mean"),
+        non_productive=("non_productive_move_rate", "mean"),
     )
     yard_daily["fecha"] = pd.to_datetime(yard_daily["fecha"])
 
@@ -211,36 +206,37 @@ def _prepare_datasets(
     ch["fecha"] = pd.to_datetime(ch["fecha"], errors="coerce")
     ch["slot_utilization"] = np.clip(ch["charger_pressure_score"] / 100, 0, 1.5)
 
-    charge_daily = (
-        ch.groupby([ch["fecha"].dt.date.rename("fecha"), "turno", "zona_carga"], as_index=False)
-        .agg(
-            wait=("avg_wait_to_charge", "mean"),
-            utilization=("slot_utilization", "mean"),
-            interruption=("interruption_rate", "mean"),
-            target_miss=("target_soc_miss_rate", "mean"),
-            sessions=("sessions_per_shift", "sum"),
-        )
+    charge_daily = ch.groupby([ch["fecha"].dt.date.rename("fecha"), "turno", "zona_carga"], as_index=False).agg(
+        wait=("avg_wait_to_charge", "mean"),
+        utilization=("slot_utilization", "mean"),
+        interruption=("interruption_rate", "mean"),
+        target_miss=("target_soc_miss_rate", "mean"),
+        sessions=("sessions_per_shift", "sum"),
     )
     charge_daily["fecha"] = pd.to_datetime(charge_daily["fecha"])
 
     d = dispatch.copy()
     d["fecha"] = pd.to_datetime(d["fecha"], errors="coerce")
+    d["departed_flag"] = d["departed_flag"].astype(bool)
+    d["delayed_departed"] = d["delayed_flag"].astype(bool) & d["departed_flag"]
 
-    dispatch_base = (
-        d.groupby([d["fecha"].dt.date.rename("fecha"), "turno", "tipo_propulsion"], as_index=False)
-        .agg(
-            vehicles=("vehiculo_id", "count"),
-            delay_rate=("delayed_flag", "mean"),
-            readiness_rate=("readiness_final_flag", "mean"),
-            delay_min=("dispatch_delay_min", "mean"),
-            soc_real=("soc_salida_pct", "mean"),
-            soc_target=("target_soc_salida_pct", "mean"),
-        )
+    dispatch_base = d.groupby([d["fecha"].dt.date.rename("fecha"), "turno", "tipo_propulsion"], as_index=False).agg(
+        vehicles=("vehiculo_id", "count"),
+        departed_vehicles=("departed_flag", "sum"),
+        delayed_vehicles=("delayed_departed", "sum"),
+        readiness_rate=("readiness_final_flag", "mean"),
+        delay_min=("dispatch_delay_min", "mean"),
+        soc_real=("soc_salida_pct", "mean"),
+        soc_target=("target_soc_salida_pct", "mean"),
     )
+    dispatch_base["delay_rate"] = (
+        dispatch_base["delayed_vehicles"] / dispatch_base["departed_vehicles"].replace(0, np.nan)
+    ).fillna(0.0)
     dispatch_base["fecha"] = pd.to_datetime(dispatch_base["fecha"])
 
     dispatch_cause = (
-        d.groupby(["turno", "tipo_propulsion", "causa_retraso"], as_index=False)
+        d.loc[d["departed_flag"]]
+        .groupby(["turno", "tipo_propulsion", "causa_retraso"], as_index=False)
         .agg(
             delay_min=("dispatch_delay_min", "mean"),
             vehicles=("vehiculo_id", "count"),
@@ -256,14 +252,11 @@ def _prepare_datasets(
         np.where(b["severidad_media"] >= 3.0, "media", "baja"),
     )
 
-    b_detail = (
-        b.groupby([b["fecha"].dt.date.rename("fecha"), "turno", "area", "severidad"], as_index=False)
-        .agg(
-            throughput_impact=("impacto_throughput_total", "sum"),
-            output_impact=("impacto_salida_total", "sum"),
-            stress=("area_stress_score", "mean"),
-            eventos=("eventos_cuello", "sum"),
-        )
+    b_detail = b.groupby([b["fecha"].dt.date.rename("fecha"), "turno", "area", "severidad"], as_index=False).agg(
+        throughput_impact=("impacto_throughput_total", "sum"),
+        output_impact=("impacto_salida_total", "sum"),
+        stress=("area_stress_score", "mean"),
+        eventos=("eventos_cuello", "sum"),
     )
     b_detail["fecha"] = pd.to_datetime(b_detail["fecha"])
 
@@ -1504,8 +1497,9 @@ function calculateVisibleKpis(ctx) {{
   const throughputPlan = ctx.fThrough.reduce((a, r) => a + n(r.throughput_plan), 0);
   const throughputReal = ctx.fThrough.reduce((a, r) => a + n(r.throughput_real), 0);
   const dispatchVehicles = ctx.fDispatchBase.reduce((a, r) => a + Math.max(1, n(r.vehicles)), 0);
-  const delayRate = dispatchVehicles
-    ? ctx.fDispatchBase.reduce((a, r) => a + n(r.delay_rate) * Math.max(1, n(r.vehicles)), 0) / dispatchVehicles
+  const departedVehicles = ctx.fDispatchBase.reduce((a, r) => a + n(r.departed_vehicles), 0);
+  const delayRate = departedVehicles
+    ? ctx.fDispatchBase.reduce((a, r) => a + n(r.delay_rate) * n(r.departed_vehicles), 0) / departedVehicles
     : n(official.ratio_salida_retrasada);
   const readinessRate = dispatchVehicles
     ? ctx.fDispatchBase.reduce((a, r) => a + n(r.readiness_rate) * Math.max(1, n(r.vehicles)), 0) / dispatchVehicles
@@ -1878,8 +1872,9 @@ function updateCharts() {{
     const rows = fDispatchBase.filter(r => String(r.turno) === String(t));
     if (!rows.length) return {{ d:0, r:0 }};
     const w = rows.reduce((a,r)=>a+Math.max(1,n(r.vehicles)),0);
+    const departed = rows.reduce((a,r)=>a+n(r.departed_vehicles),0);
     return {{
-      d: rows.reduce((a,r)=>a+n(r.delay_rate)*Math.max(1,n(r.vehicles)),0) / w,
+      d: departed ? rows.reduce((a,r)=>a+n(r.delay_rate)*n(r.departed_vehicles),0) / departed : 0,
       r: rows.reduce((a,r)=>a+n(r.readiness_rate)*Math.max(1,n(r.vehicles)),0) / w,
     }};
   }});
@@ -2076,46 +2071,11 @@ init();
 """
 
 
-def _write_dashboard_docs(official_path: Path, version: str) -> None:
-    (PROJECT_ROOT / "docs" / "dashboard_architecture.md").write_text(
-        """# Arquitectura del Dashboard EV (Official)
-
-## Build Path oficial
-- `python -m src.ev_build_dashboard`
-- `python -m src.run_pipeline`
-- Output oficial único: `outputs/dashboard/industrial-ev-operating-command-center.html`
-
-## Principios técnicos
-- KPI críticos consumidos desde dataset gobernado (`kpi_operativos.csv`).
-- Sin lógica de scoring crítica en frontend.
-- Payload agregado para rendimiento y legibilidad.
-- Filtros aplicados por contrato de dataset.
-- QA de build con manifest técnico.
-""",
-        encoding="utf-8",
-    )
-
-    (PROJECT_ROOT / "docs" / "dashboard_usage.md").write_text(
-        """# Uso del Dashboard Ejecutivo
-
-1. Ejecutar pipeline oficial EV: `python -m src.run_pipeline`
-2. Abrir `outputs/dashboard/industrial-ev-operating-command-center.html`
-3. Aplicar filtros por fecha, turno, propulsión, versión y áreas
-4. Revisar tabla de priorización y bloque de decisión ejecutiva
-
-## Trazabilidad
-- Manifest técnico de build: `outputs/reports/dashboard_build_manifest.json`
-- Estado de release: `outputs/reports/release_readiness.json`
-""",
-        encoding="utf-8",
-    )
-
-
 def _write_manifest_and_qc(
     payload: dict[str, object],
     output_path: Path,
     version: str,
-    archived: list[str],
+    removed: list[str],
 ) -> None:
     OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -2146,16 +2106,15 @@ def _write_manifest_and_qc(
 
     manifest = {
         "dashboard_version": version,
-        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "official_dashboard": str(output_path.relative_to(PROJECT_ROOT)),
         "html_size_bytes": html_size,
         "datasets_rows": row_counts,
-        "archived_dashboards": archived,
+        "removed_non_official_dashboards": removed,
         "kpi_validation": payload["meta"].get("kpi_validation", {}),
         "checks": {
             "placeholder_free": all(tok not in html for tok in ["__PAYLOAD__", "__FILTERS__", "__CHARTJS__"]),
             "single_official_dashboard": len(list(output_path.parent.glob("*.html"))) == 1,
-            "chart_js_external": "cdn.jsdelivr.net/npm/chart.js" in html,
+            "chart_js_cdn_declared": "cdn.jsdelivr.net/npm/chart.js" in html,
             "kpi_payload_bound": "kpi_official" in html and "const META = PAYLOAD.meta;" in html,
             "html_size_under_6mb": html_size < 6_000_000,
             "canvas_count_expected": canvas_count == 17,
@@ -2166,10 +2125,7 @@ def _write_manifest_and_qc(
         },
     }
 
-    (OUTPUT_REPORTS_DIR / "dashboard_build_manifest.json").write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    write_json_utf8(OUTPUT_REPORTS_DIR / "dashboard_build_manifest.json", manifest)
 
 
 def run_ev_build_dashboard() -> DashboardResult:
@@ -2188,24 +2144,23 @@ def run_ev_build_dashboard() -> DashboardResult:
     kpi = _read_csv(EV_DIR / "kpi_operativos.csv")
     kpi_readiness = _read_csv(EV_DIR / "kpi_readiness_shift_version.csv")
 
-    meta = _build_meta(flow, yard, charging, priorities, scenarios, kpi)
+    meta = _build_meta(flow, yard, charging, dispatch, priorities, scenarios, kpi)
     datasets = _prepare_datasets(flow, yard, charging, dispatch, bneck, priorities, scenarios, kpi_readiness)
     payload = _build_payload(meta, datasets)
 
     payload_hash = hashlib.sha1(json.dumps(payload, ensure_ascii=False).encode("utf-8")).hexdigest()[:10]
-    version = f"ev-official-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{payload_hash}"
+    version = f"ev-{payload_hash}"
 
-    archived = _archive_non_official_dashboards(OUTPUT_DASHBOARD_DIR, OFFICIAL_DASHBOARD_NAME)
+    removed = _remove_non_official_dashboards(OUTPUT_DASHBOARD_DIR, OFFICIAL_DASHBOARD_NAME)
 
     html = _build_html(payload, version)
     output_path = OUTPUT_DASHBOARD_DIR / OFFICIAL_DASHBOARD_NAME
     output_path.write_text(html, encoding="utf-8")
 
-    _write_dashboard_docs(output_path, version)
-    _write_manifest_and_qc(payload, output_path, version, archived)
+    _write_manifest_and_qc(payload, output_path, version, removed)
 
     return DashboardResult(
-        path=str(output_path),
+        path=str(output_path.relative_to(PROJECT_ROOT)),
         version=version,
         payload_size_bytes=len(json.dumps(payload, ensure_ascii=False).encode("utf-8")),
     )

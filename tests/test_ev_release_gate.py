@@ -25,7 +25,6 @@ def test_ev_release_gate_uses_generated_governance_outputs() -> None:
         "screening-grade only",
         "decision-support only",
         "not committee-grade",
-        "committee-grade candidate",
     }
     if result.approved:
         assert result.reason.startswith("Release apto")

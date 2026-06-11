@@ -3,9 +3,9 @@
 - Estado global: **PASS**
 - Confianza global: **ALTA**
 - Release grade: **decision-support only**
-- Issues detectados: **2**
-- Checks SQL en WARN: **2**
-- Ratio WARN SQL: **20.00%**
+- Issues detectados: **0**
+- Checks SQL en WARN: **0**
+- Ratio WARN SQL: **0.00%**
 - Dashboard presente y materializado: **SI**
 
 ## Estados de gobernanza
@@ -22,7 +22,7 @@
 - nulls problemáticos: OK
 - timestamps imposibles: OK
 - secuencias incoherentes: OK
-- ocupación patio compatible: WARN
+- ocupación patio compatible: OK
 - sesiones carga coherentes: OK
 - SOC dentro de rango: OK
 - EV con carga consistente: OK
@@ -33,15 +33,14 @@
 - diversidad de driver de riesgo: OK
 - variabilidad área-turno: OK
 - consistencia KPI share_ev: OK
+- consistencia KPI readiness: OK
+- consistencia KPI delay rate: OK
 - single source of truth KPI: OK
 - spread de escenarios: OK
 - riesgo de sobreinterpretación explicitado: OK
 
 ## Issues Found
-| check | severity | failed_rows | detail | recommended_fix |
-| --- | --- | --- | --- | --- |
-| salida_sin_readiness | medium | 2208 | Salidas reales sin readiness (rate=6.48%) | Bloqueo en lógica de expedición o excepción trazable por causa |
-| ocupacion_patio_vs_capacidad | medium | 99 | Ocupaciones por encima de capacidad estimada | Ajustar buffers y zonas dinámicas |
+No se detectaron issues materiales en esta ejecución.
 
 ## Caveats Obligatorios
 - Dato sintético: útil para arquitectura y lógica, no para benchmark real de planta.
@@ -50,4 +49,4 @@
 - No incorpora variabilidad externa real (suministro, clima, huelgas, etc.).
 
 ## Overall Confidence Assessment
-Confianza **ALTA** para uso de portfolio y discusión técnica/operativa. Para uso real de planta se requiere calibración con datos productivos y validación de negocio adicional.
+Confianza **ALTA** para demostración técnica y apoyo a discusión operativa. Para uso real de planta se requiere calibración con datos productivos y validación de negocio adicional.

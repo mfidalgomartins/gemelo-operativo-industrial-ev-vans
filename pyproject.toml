@@ -1,19 +1,59 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "gemelo-operativo-ev"
 version = "1.0.0"
-description = "Operational digital twin for EV van manufacturing transition — sequencing, yard, charging and dispatch analytics"
+description = "Operational digital twin for EV van manufacturing transition"
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.10"
+authors = [
+    { name = "Miguel Fidalgo" },
+]
+keywords = [
+    "analytics",
+    "digital-twin",
+    "duckdb",
+    "electric-vehicles",
+    "manufacturing",
+    "operations-research",
+    "supply-chain",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
 dependencies = [
     "pandas>=2.0.0,<4.0.0",
     "numpy>=1.24.0,<3.0.0",
     "duckdb>=1.1.0,<2.0.0",
-    "plotly>=5.20.0,<7.0.0",
-    "nbformat>=5.9.0,<6.0.0",
     "matplotlib>=3.8.0,<4.0.0",
+    "reportlab>=4.0.0,<5.0.0",
+]
+
+[project.urls]
+Dashboard = "https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/"
+Repository = "https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0,<10.0.0",
+    "ruff>=0.15.0,<1.0.0",
 ]
 
 [project.scripts]
 generate-data = "generate_synthetic_data:main"
+
+[tool.setuptools]
+packages = ["src", "src.synthetic_data_gen"]
+py-modules = ["generate_synthetic_data"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -21,7 +61,7 @@ python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = ["-m", "not integration"]
 markers = [
-    "integration: full-pipeline tests that write to the data directory — run with pytest -m integration",
+    "integration: full-pipeline tests that write to the data directory; run with pytest -m integration",
 ]
 
 [tool.ruff]

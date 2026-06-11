@@ -1,74 +1,89 @@
-# Gemelo Operativo Industrial para la Transición a Vans Eléctricas
+# Gemelo Operativo para la Transición a Vans Eléctricas
 
-Este proyecto construye un sistema de apoyo a decisiones para una planta de furgonetas en transición EV. El foco no está en “mostrar gráficos”, sino en entender dónde se rompe el flujo (secuenciación, patio, carga y expedición), cuantificar el impacto operativo y priorizar acciones con criterio de capacidad.
+Gemelo operativo reproducible para diagnosticar presión de capacidad y comparar decisiones de secuenciación, patio, carga y expedición durante un ramp-up EV.
 
-## Contexto operativo
-En un ramp-up EV, el throughput deja de depender solo de la línea. La presión migra al patio, a los cargadores y a la salida: aumentan esperas internas, crecen bloqueos y sube el riesgo de expedición fuera de readiness. Si no se orquesta el flujo completo, el plan de producción pierde estabilidad.
+**[Abrir dashboard público](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/)** · **[Leer informe analítico](outputs/reports/ev_transition_operating_twin_report.pdf)** · **[Revisar release gate](outputs/reports/release_readiness.json)**
 
-## Qué hace realmente el sistema
-- Genera datos sintéticos industriales con fases de pre-serie, ramp-up y estabilización.
-- Modela el timeline completo del vehículo: orden, fin de línea, patio, carga, readiness y salida.
-- Consolida una capa SQL en DuckDB con marts y KPIs operativos trazables.
-- Construye features y scores interpretables para diagnóstico, priorización y riesgo.
-- Ejecuta escenarios de transición EV para comparar palancas y trade-offs.
-- Publica un dashboard ejecutivo único, trazable y listo para abrir.
+![Comparación del escenario base y el paquete de medidas correctivas](outputs/graphs/19_before_after.png)
 
-## Decisiones que habilita
-- Cuándo ajustar reglas de secuenciación por mezcla EV/ICE y complejidad de versión.
-- Dónde ampliar o reservar capacidad de carga antes de que aparezca congestión estructural.
-- Qué zonas de patio intervenir primero para reducir dwell time, blocking y movimientos no productivos.
-- Qué áreas requieren intervención inmediata y cuáles deben pasar a monitorización reforzada.
+## Alcance analítico
 
-## Arquitectura, en una vista
-`generate_synthetic_data.py` crea la base operativa. `src/run_pipeline.py` orquesta la ruta oficial: SQL (`src/ev_sql_layer.py`), feature engineering (`src/ev_feature_engineering.py`), diagnóstico (`src/ev_diagnostic_analysis.py`), gemelo de escenarios (`src/ev_scenario_twin.py`), scoring (`src/ev_scoring_framework.py`), dashboard (`src/ev_build_dashboard.py`) y validación/release gate (`src/ev_validate_project.py`). Helpers compartidos centralizados en `src/utils.py`.
+El snapshot publicado cubre **58.697 vehículos**, **14 tablas operativas** y **13 meses**, desde el **1 de enero de 2025** hasta el **1 de enero de 2026**. Los datos sintéticos modelan tres fases de transición, desde pre-serie hasta estabilización, y conectan cada orden con su recorrido por producción, patio, carga, readiness y salida.
 
-## Estructura principal
-```text
-src/                          # Código ejecutable del pipeline
-  utils.py                    # Helpers compartidos
-  config.py                   # Rutas y ensure_directories
-  run_pipeline.py             # Orquestador
-  ev_sql_layer.py             # DuckDB SQL layer
-  ev_feature_engineering.py   # Feature building
-  ev_diagnostic_analysis.py   # Scoring y diagnóstico
-  ev_scenario_twin.py         # Simulación de escenarios
-  ev_scoring_framework.py     # OPI, sensibilidad, Monte Carlo
-  ev_build_dashboard.py       # Dashboard ejecutivo
-  ev_validate_project.py      # Validación y release grade
-  ev_release_gate.py          # Gate de publicación
-  synthetic_data_gen/         # Generador sintético industrial
-data/raw/ev_factory/          # 14 tablas CSV base
-data/processed/ev_factory/    # Tablas gobernadas exportadas
-sql/ev_factory/               # 11 scripts DuckDB en orden
-scripts/                      # Utilidades de portfolio
-  generate_chart_pack.py      # 6 gráficos PNG de análisis ejecutivo
-docs/                         # Documentación técnica y gobierno
-tests/                        # Tests unitarios e integración
-outputs/dashboard/            # Dashboard final
-outputs/graphs/               # Pack de gráficos PNG
-```
+| Pregunta de decisión | Salida principal |
+|---|---|
+| ¿Dónde se rompe el flujo? | Diagnóstico por área, turno, versión y vehículo |
+| ¿Qué presión introduce el mix EV? | Comparación EV/ICE y tendencia de transición |
+| ¿Qué intervención priorizar? | Operational Priority Index, sensibilidad y Monte Carlo |
+| ¿Qué capacidad o regla cambiar? | Comparador paramétrico de escenarios |
+| ¿Se puede publicar el resultado? | Release gate con contratos de datos, KPI y dashboard |
 
-## Entregables clave
-- Dashboard final: `outputs/dashboard/industrial-ev-operating-command-center.html`
+## Resultados publicados
 
-## Live dashboard
-[Industrial EV Operating Command Center · Live](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/dashboard/industrial-ev-operating-command-center.html)
+- El throughput se mantiene cerca del plan, pero readiness y expedición concentran el riesgo operativo.
+- `LOGISTICA` y `PATIO` lideran la priorización OPI; el ranking top-1 es estable en **77,33%** de las simulaciones Monte Carlo.
+- El paquete correctivo combina secuenciación, carga y gestión de patio para mejorar throughput, estabilidad y tiempo interno.
+- El release actual está en **PASS**, sin issues materiales, y limitado explícitamente a **decision-support only**.
 
-## Por qué esta pieza destaca
-Combina modelado operativo, gobierno de métricas, diagnóstico interpretable y simulación de decisiones en una sola ruta reproducible. Es un proyecto pensado para conversación de operaciones y capacidad, no solo para visualización.
+## Metodología
+
+1. Un generador determinista crea órdenes, activos, restricciones y eventos operativos sintéticos.
+2. Once scripts DuckDB construyen staging, vistas integradas, marts, KPI y checks de negocio.
+3. Python calcula features, diagnóstico, escenarios paramétricos y el Operational Priority Index.
+4. Sensibilidad de pesos y Monte Carlo prueban la estabilidad del ranking.
+5. El release gate valida integridad, consistencia de métricas y contratos del dashboard.
+
+Los KPI oficiales provienen de `data/processed/ev_factory/kpi_operativos.csv`. `area_throughput_loss_proxy` atribuye impacto a eventos de bottleneck, pero no representa una estimación causal.
 
 ## Ejecución local
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-python generate_synthetic_data.py --seed 20260328 --start-date 2025-01-01 --months 12
+python -m pip install -e ".[dev]"
+
+generate-data --seed 20260328 --start-date 2025-01-01 --months 12
 python -m src.run_pipeline
+python scripts/generate_chart_pack.py
+python scripts/generate_report.py
+python -m src.ev_release_gate
 ```
 
-## Alcance y límites
-- El dato es sintético; la implantación real exige calibración con telemetría de planta.
-- Los escenarios son paramétricos e interpretables; no sustituyen inferencia causal.
-- Los umbrales/pesos de scoring deben ajustarse con criterio operativo local.
+El repositorio incluye un snapshot canónico de los CSV raw, marts y la base DuckDB. Los comandos anteriores regeneran los datos y artefactos de forma determinista.
 
-Herramientas: Python, SQL, DuckDB, pandas, NumPy, matplotlib, Chart.js, pytest.
+## Verificación
+
+```bash
+ruff check .
+ruff format --check .
+pytest -q
+pytest -q -m integration
+python -m src.ev_release_gate
+```
+
+## Estructura
+
+```text
+data/raw/ev_factory/          14 tablas sintéticas de origen
+data/processed/ev_factory/    marts, features, scores y KPI gobernados
+sql/ev_factory/               11 transformaciones DuckDB ordenadas
+src/                          pipeline, diagnóstico, escenarios y release gate
+scripts/                      generación de 19 gráficos y del informe PDF
+tests/                        tests unitarios, integración y contratos públicos
+docs/                         arquitectura, métricas, metodología y gobernanza
+outputs/dashboard/            dashboard HTML publicado en GitHub Pages
+outputs/graphs/               gráficos analíticos curados
+outputs/reports/              informe, manifests y validaciones
+```
+
+## Límites de uso
+
+- Los datos son sintéticos y no representan una planta real.
+- Las elasticidades de escenarios son supuestos paramétricos, no estimaciones causales.
+- Pesos, umbrales, restricciones y capacidad requieren calibración antes de uso operacional.
+- El sistema sirve para arquitectura analítica, diagnóstico y apoyo a decisión; no para compromisos de inversión sin validación independiente.
+- El dashboard es estático, pero carga Chart.js y fuentes web desde CDN.
+
+Detalles técnicos: [arquitectura SQL](docs/sql_architecture.md), [definiciones de métricas](docs/sql_metric_definitions.md), [scoring](docs/scoring_framework.md), [gobernanza de KPI](docs/governance/kpi_governance_contract.md) y [release gates](docs/governance/release_gates.md).
+
+Licencia: [MIT](LICENSE).

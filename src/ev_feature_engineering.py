@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
-from .utils import read_ev_csv
+from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
+from .utils import read_ev_csv, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
@@ -68,7 +67,8 @@ def _build_area_shift_features(area_shift: pd.DataFrame) -> pd.DataFrame:
         "fecha",
         "turno",
         "area",
-        "throughput_gap",
+        "dispatch_gap",
+        "area_throughput_loss_proxy",
         "congestion_index",
         "avg_wait_time",
         "queue_pressure_score",
@@ -92,32 +92,26 @@ def _build_charging_features(ch: pd.DataFrame) -> pd.DataFrame:
         + 0.15 * ch2["target_soc_miss_rate"].clip(lower=0, upper=1)
     ) * 100
 
-    out = (
-        ch2.groupby(["fecha", "turno", "zona_carga", "slot_id"], as_index=False)
-        .agg(
-            sessions_per_shift=("sessions_count", "sum"),
-            avg_wait_to_charge=("avg_wait_time_min", "mean"),
-            avg_energy_delivered=("energy_delivered_kwh", "mean"),
-            interruption_rate=("interruption_rate", "mean"),
-            target_soc_miss_rate=("target_soc_miss_rate", "mean"),
-            charger_pressure_score=("charger_pressure_score", "mean"),
-        )
+    out = ch2.groupby(["fecha", "turno", "zona_carga", "slot_id"], as_index=False).agg(
+        sessions_per_shift=("sessions_count", "sum"),
+        avg_wait_to_charge=("avg_wait_time_min", "mean"),
+        avg_energy_delivered=("energy_delivered_kwh", "mean"),
+        interruption_rate=("interruption_rate", "mean"),
+        target_soc_miss_rate=("target_soc_miss_rate", "mean"),
+        charger_pressure_score=("charger_pressure_score", "mean"),
     )
     return out
 
 
 def _build_yard_features(yard: pd.DataFrame) -> pd.DataFrame:
-    out = (
-        yard.groupby(["ts_hour", "zona_patio"], as_index=False)
-        .agg(
-            avg_dwell_time=("avg_dwell_time_min", "mean"),
-            p95_dwell_time=("p95_dwell_time_min", "mean"),
-            blocking_rate=("blocking_rate", "mean"),
-            movement_density=("movement_density", "mean"),
-            non_productive_move_rate=("non_productive_move_rate", "mean"),
-            yard_saturation_score=("operational_risk_score", "mean"),
-            yard_occupancy_rate=("yard_occupancy_rate", "mean"),
-        )
+    out = yard.groupby(["ts_hour", "zona_patio"], as_index=False).agg(
+        avg_dwell_time=("avg_dwell_time_min", "mean"),
+        p95_dwell_time=("p95_dwell_time_min", "mean"),
+        blocking_rate=("blocking_rate", "mean"),
+        movement_density=("movement_density", "mean"),
+        non_productive_move_rate=("non_productive_move_rate", "mean"),
+        yard_saturation_score=("operational_risk_score", "mean"),
+        yard_occupancy_rate=("yard_occupancy_rate", "mean"),
     )
     out = out.rename(columns={"ts_hour": "timestamp"})
     return out
@@ -193,65 +187,6 @@ def _build_launch_transition_features(
     return weekly[cols]
 
 
-def _write_feature_dictionary(path: Path) -> None:
-    path.write_text(
-        """# Feature Dictionary - Gemelo Operativo EV
-
-## vehicle_readiness_features
-- `planned_to_actual_sequence_gap` (derivada): desviación de secuencia real vs plan.
-- `total_internal_lead_time` (observada/derivada): tiempo desde fin de línea a salida.
-- `yard_wait_time` (observada): dwell medio en patio por vehículo.
-- `charging_wait_time` (observada): espera media previa a carga.
-- `charging_duration` (observada): duración de carga consolidada.
-- `soc_gap_before_dispatch` (derivada): SOC objetivo menos SOC real de salida.
-- `dispatch_delay_min` (observada): retraso operativo de salida.
-- `non_productive_moves_count` (derivada): movimientos de patio no productivos.
-- `blocking_exposure` (derivada): exposición a bloqueo en snapshots de patio.
-- `version_complexity_score` (observada): complejidad de montaje de la versión.
-- `readiness_risk_score_input` (derivada): score interpretable de riesgo previo al scoring final.
-
-## area_shift_features
-- `throughput_gap` (derivada): diferencia plan vs real por área-turno.
-- `congestion_index` (derivada): presión de flujo en área.
-- `avg_wait_time` (derivada): espera media operativa por área-turno.
-- `queue_pressure_score` (derivada): presión de cola de carga.
-- `slot_utilization` (derivada): utilización media de slots en turno.
-- `yard_occupancy_rate` (derivada): ocupación del patio sobre capacidad estimada.
-- `bottleneck_density` (derivada): intensidad de cuellos por área-turno.
-- `dispatch_risk_density` (derivada): densidad de riesgo de expedición.
-- `operational_stress_score` (derivada): score compuesto de estrés operativo.
-
-## charging_features
-- `sessions_per_shift` (observada agregada): volumen de sesiones por turno-slot.
-- `avg_wait_to_charge` (derivada): espera media antes de carga.
-- `avg_energy_delivered` (observada agregada): energía media entregada.
-- `interruption_rate` (derivada): ratio de sesiones interrumpidas.
-- `target_soc_miss_rate` (derivada): tasa de incumplimiento de objetivo SOC.
-- `charger_pressure_score` (derivada): score compuesto de presión de carga.
-
-## yard_features
-- `avg_dwell_time` (observada agregada): dwell promedio por zona.
-- `p95_dwell_time` (derivada): percentil 95 de dwell.
-- `blocking_rate` (derivada): ratio de vehículos bloqueados.
-- `movement_density` (observada agregada): intensidad de movimientos.
-- `non_productive_move_rate` (derivada): peso de movimientos no productivos.
-- `yard_saturation_score` (derivada): score de saturación operativa del patio.
-
-## launch_transition_features
-- `share_ev` (observada agregada): participación EV semanal.
-- `ev_operational_load_index` (derivada): carga operativa asociada a EV.
-- `readiness_gap_trend` (derivada): tendencia semanal del gap de readiness.
-- `charging_capacity_gap` (derivada): gap presión/capacidad de carga.
-- `yard_transition_stress_index` (derivada): estrés de transición en patio.
-- `dispatch_stability_index` (derivada): estabilidad de expedición (100-riesgo).
-
-## Valor operativo
-Estas señales están diseñadas para decisiones interpretables de secuenciación, patio, carga y expedición durante un ramp-up EV sin depender de modelos de caja negra.
-""",
-        encoding="utf-8",
-    )
-
-
 def run_ev_feature_engineering() -> FeatureBuildResult:
     EV_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -297,8 +232,6 @@ def run_ev_feature_engineering() -> FeatureBuildResult:
         df.to_csv(out_path, index=False)
         counts[name] = int(df.shape[0])
 
-    _write_feature_dictionary(PROJECT_ROOT / "docs" / "feature_dictionary.md")
-
     summary_lines = [
         "# Feature Engineering Summary",
         "",
@@ -319,7 +252,7 @@ def run_ev_feature_engineering() -> FeatureBuildResult:
         ]
     )
 
-    (OUTPUT_REPORTS_DIR / "feature_engineering_summary.md").write_text("\n".join(summary_lines), encoding="utf-8")
+    write_text_utf8(OUTPUT_REPORTS_DIR / "feature_engineering_summary.md", "\n".join(summary_lines))
 
     return FeatureBuildResult(tables=counts)
 

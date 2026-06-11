@@ -49,7 +49,8 @@ def _make_area_shift() -> pd.DataFrame:
             "fecha": pd.date_range("2025-01-01", periods=n, freq="D"),
             "turno": rng.choice(["A", "B", "C"], n),
             "area": rng.choice(["SECUENCIACION", "PATIO", "CARGA", "EXPEDICION"], n),
-            "throughput_gap": rng.normal(0, 3, n),
+            "dispatch_gap": rng.normal(0, 3, n),
+            "area_throughput_loss_proxy": rng.uniform(0, 5, n),
             "congestion_index": rng.uniform(0, 100, n),
             "avg_wait_time": rng.uniform(5, 120, n),
             "queue_pressure_score": rng.uniform(0, 100, n),
@@ -115,11 +116,23 @@ def test_build_vehicle_readiness_features_expected_columns() -> None:
     result = _build_vehicle_readiness_features(vf)
 
     expected = {
-        "orden_id", "vehiculo_id", "version_id", "tipo_propulsion", "turno",
-        "fecha_real", "planned_to_actual_sequence_gap", "total_internal_lead_time",
-        "yard_wait_time", "charging_wait_time", "charging_duration",
-        "soc_gap_before_dispatch", "dispatch_delay_min", "non_productive_moves_count",
-        "blocking_exposure", "version_complexity_score", "readiness_risk_score_input",
+        "orden_id",
+        "vehiculo_id",
+        "version_id",
+        "tipo_propulsion",
+        "turno",
+        "fecha_real",
+        "planned_to_actual_sequence_gap",
+        "total_internal_lead_time",
+        "yard_wait_time",
+        "charging_wait_time",
+        "charging_duration",
+        "soc_gap_before_dispatch",
+        "dispatch_delay_min",
+        "non_productive_moves_count",
+        "blocking_exposure",
+        "version_complexity_score",
+        "readiness_risk_score_input",
     }
     assert expected.issubset(set(result.columns))
     assert "total_internal_lead_time_min" not in result.columns
@@ -131,7 +144,8 @@ def test_build_area_shift_features_passthrough() -> None:
 
     assert len(result) == len(area)
     assert "operational_stress_score" in result.columns
-    assert "throughput_gap" in result.columns
+    assert "dispatch_gap" in result.columns
+    assert "area_throughput_loss_proxy" in result.columns
 
 
 def test_build_charging_features_score_range() -> None:

@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
-from .utils import read_ev_csv
+from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
+from .utils import read_ev_csv, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
@@ -64,7 +64,8 @@ def run_ev_scoring_framework() -> ScoringResult:
     launch = _read("launch_transition_features")
 
     base = area.groupby("area", as_index=False).agg(
-        throughput_gap=("throughput_gap", "mean"),
+        dispatch_gap=("dispatch_gap", "mean"),
+        area_throughput_loss_proxy=("area_throughput_loss_proxy", "mean"),
         congestion_index=("congestion_index", "mean"),
         avg_wait_time=("avg_wait_time", "mean"),
         queue_pressure_score=("queue_pressure_score", "mean"),
@@ -79,41 +80,29 @@ def run_ev_scoring_framework() -> ScoringResult:
     n_congestion = _normalize_percentile(base["congestion_index"].clip(lower=0), 0.95)
     n_slot = _normalize_percentile(base["slot_utilization"].clip(lower=0), 0.95)
     n_dispatch = _normalize_percentile(base["dispatch_risk_density"].clip(lower=0), 0.95)
-    n_throughput_loss = _normalize_percentile(base["throughput_gap"].abs(), 0.95)
+    n_throughput_loss = _normalize_percentile(base["area_throughput_loss_proxy"].clip(lower=0), 0.95)
     n_bneck = _normalize_percentile(base["bottleneck_density"].clip(lower=0), 0.95)
     n_stress = _normalize_percentile(base["operational_stress_score"].clip(lower=0), 0.95)
     n_queue = _normalize_percentile(base["queue_pressure_score"].clip(lower=0), 0.95)
 
     # Scoring por área
     base["readiness_score"] = 100 - np.clip(
-        0.35 * n_wait
-        + 0.35 * n_dispatch
-        + 0.20 * n_queue
-        + 0.10 * n_bneck,
+        0.35 * n_wait + 0.35 * n_dispatch + 0.20 * n_queue + 0.10 * n_bneck,
         0,
         100,
     )
     base["yard_risk_score"] = np.clip(
-        0.45 * n_congestion
-        + 0.30 * n_wait
-        + 0.15 * n_stress
-        + 0.10 * n_bneck,
+        0.45 * n_congestion + 0.30 * n_wait + 0.15 * n_stress + 0.10 * n_bneck,
         0,
         100,
     )
     base["charging_risk_score"] = np.clip(
-        0.40 * n_slot
-        + 0.30 * n_wait
-        + 0.20 * n_queue
-        + 0.10 * n_stress,
+        0.40 * n_slot + 0.30 * n_wait + 0.20 * n_queue + 0.10 * n_stress,
         0,
         100,
     )
     base["dispatch_risk_score"] = np.clip(
-        0.45 * n_dispatch
-        + 0.25 * n_wait
-        + 0.20 * n_bneck
-        + 0.10 * n_stress,
+        0.45 * n_dispatch + 0.25 * n_wait + 0.20 * n_bneck + 0.10 * n_stress,
         0,
         100,
     )
@@ -167,22 +156,24 @@ def run_ev_scoring_framework() -> ScoringResult:
 
     # Find the driver with highest weighted OPI contribution.
     # readiness_score is a quality score (high = good), so its contribution is inverted.
-    opi_contribs = pd.DataFrame({
-        "yard_risk_score": weights["yard_risk_score"] * base["yard_risk_score"],
-        "charging_risk_score": weights["charging_risk_score"] * base["charging_risk_score"],
-        "dispatch_risk_score": weights["dispatch_risk_score"] * base["dispatch_risk_score"],
-        "throughput_loss_score": weights["throughput_loss_score"] * base["throughput_loss_score"],
-        "launch_transition_risk_score": weights["launch_transition_risk_score"] * base["launch_transition_risk_score"],
-        "readiness_score": weights["readiness_score"] * (100 - base["readiness_score"]),
-    })
+    opi_contribs = pd.DataFrame(
+        {
+            "yard_risk_score": weights["yard_risk_score"] * base["yard_risk_score"],
+            "charging_risk_score": weights["charging_risk_score"] * base["charging_risk_score"],
+            "dispatch_risk_score": weights["dispatch_risk_score"] * base["dispatch_risk_score"],
+            "throughput_loss_score": weights["throughput_loss_score"] * base["throughput_loss_score"],
+            "launch_transition_risk_score": weights["launch_transition_risk_score"]
+            * base["launch_transition_risk_score"],
+            "readiness_score": weights["readiness_score"] * (100 - base["readiness_score"]),
+        }
+    )
     base["main_risk_driver"] = opi_contribs.idxmax(axis=1)
     base["recommended_action"] = base["main_risk_driver"].map(_map_action)
     base["area_priority_tier"] = base["operational_priority_index"].apply(_map_tier)
 
     # Añade lectura diagnóstica (modo de bottleneck driver)
-    diag_driver = (
-        diagnostic.groupby("area", as_index=False)
-        .agg(main_bottleneck_driver=("main_bottleneck_driver", lambda s: s.mode().iat[0] if not s.mode().empty else "N/A"))
+    diag_driver = diagnostic.groupby("area", as_index=False).agg(
+        main_bottleneck_driver=("main_bottleneck_driver", lambda s: s.mode().iat[0] if not s.mode().empty else "N/A")
     )
     out = base.merge(diag_driver, on="area", how="left")
     out = out.sort_values("operational_priority_index", ascending=False)
@@ -258,9 +249,7 @@ def run_ev_scoring_framework() -> ScoringResult:
 
     top1_df = pd.DataFrame(top1_rows)
     rank_stability = (
-        top1_df.groupby("top1_area", as_index=False)
-        .agg(freq=("draw_id", "count"))
-        .sort_values("freq", ascending=False)
+        top1_df.groupby("top1_area", as_index=False).agg(freq=("draw_id", "count")).sort_values("freq", ascending=False)
     )
     rank_stability["freq_share"] = rank_stability["freq"] / draws
     rank_stability.to_csv(EV_DIR / "scoring_rank_stability.csv", index=False)
@@ -300,7 +289,9 @@ def run_ev_scoring_framework() -> ScoringResult:
             "metric": "max_top1_share_montecarlo",
             "value": float(rank_stability["freq_share"].max()) if not rank_stability.empty else 0.0,
             "threshold": 0.45,
-            "status": "PASS" if (not rank_stability.empty and float(rank_stability["freq_share"].max()) >= 0.45) else "WARN",
+            "status": "PASS"
+            if (not rank_stability.empty and float(rank_stability["freq_share"].max()) >= 0.45)
+            else "WARN",
         },
     ]
     governance_df = pd.DataFrame(governance_checks)
@@ -317,43 +308,6 @@ def run_ev_scoring_framework() -> ScoringResult:
     )
     top_areas.to_csv(OUTPUT_REPORTS_DIR / "top_areas_criticas.csv", index=False)
     top_actions.to_csv(OUTPUT_REPORTS_DIR / "top_acciones_recomendadas.csv", index=False)
-
-    # Documento framework
-    doc = PROJECT_ROOT / "docs" / "scoring_framework.md"
-    doc.write_text(
-        """# Scoring Framework - Priorización Operativa EV
-
-## Objetivo
-Priorizar acciones de secuenciación, patio, carga, expedición y capacidad para sostener el ramp-up EV.
-
-## Scores mínimos
-- `readiness_score`
-- `yard_risk_score`
-- `charging_risk_score`
-- `dispatch_risk_score`
-- `throughput_loss_score`
-- `launch_transition_risk_score`
-- `operational_priority_index`
-- `area_priority_tier`
-- `main_risk_driver`
-- `recommended_action`
-
-## Regla de tier
-- >=80: intervenir ahora
-- 65-79: estabilizar en la siguiente ola
-- 50-64: monitorizar muy de cerca
-- 35-49: mantener bajo observación
-- <35: sin prioridad inmediata
-
-## Lógica de decisión
-El `operational_priority_index` combina riesgo de patio, carga, expedición, pérdida de throughput y tensión de transición EV.
-
-## Sensibilidad
-Se aplica perturbación de pesos (+/-20%) para verificar estabilidad del ranking de áreas críticas.
-Se añade test Monte Carlo de estabilidad de top-1 bajo ruido de pesos.
-""",
-        encoding="utf-8",
-    )
 
     summary_lines = [
         "# Scoring y Priorización - Resumen",
@@ -387,7 +341,7 @@ Se añade test Monte Carlo de estabilidad de top-1 bajo ruido de pesos.
             ]
         )
 
-    (OUTPUT_REPORTS_DIR / "scoring_summary.md").write_text("\n".join(summary_lines), encoding="utf-8")
+    write_text_utf8(OUTPUT_REPORTS_DIR / "scoring_summary.md", "\n".join(summary_lines))
 
     return ScoringResult(areas=int(out.shape[0]), top_area=str(out.iloc[0]["area"]))
 

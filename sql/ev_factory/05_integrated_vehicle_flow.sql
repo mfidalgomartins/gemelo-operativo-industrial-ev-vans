@@ -50,6 +50,7 @@ SELECT
     o.turno,
     o.fecha_programada,
     o.fecha_real,
+    o.fecha_turno_operativo,
     o.secuencia_planeada,
     o.secuencia_real,
     (o.secuencia_real - o.secuencia_planeada) AS planned_to_actual_sequence_gap,

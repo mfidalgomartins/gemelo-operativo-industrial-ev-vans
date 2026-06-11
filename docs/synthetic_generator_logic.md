@@ -17,11 +17,13 @@ El generador opera por dominios:
 - Evolución diaria de share EV con fases: pre-lanzamiento, pre-serie, ramp-up y estable.
 - Variación de headcount, absentismo y productividad por turno A/B/C.
 - Secuencias real vs plan con desviaciones por presión operativa.
+- Fecha operativa de turno separada de la fecha calendario para turnos nocturnos.
 - Tiempo de producción sensible a complejidad de versión y restricciones.
 - Colas de carga EV por disponibilidad de slots, potencia efectiva y saturación.
 - Interrupciones de sesión de carga por incidencias operativas.
 - Dwell en patio, bloqueos y movimientos no productivos.
 - Retrasos de salida por readiness, congestión y restricciones logísticas.
+- Retención obligatoria de cualquier vehículo sin readiness final.
 - Eventos de cuello de botella detectados por señales operativas observadas.
 
 ## Reproducibilidad

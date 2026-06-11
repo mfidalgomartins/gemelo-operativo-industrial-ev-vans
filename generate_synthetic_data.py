@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 from src.synthetic_data_gen import SyntheticGenerationConfig, generate_synthetic_factory_data
+from src.utils import write_json_utf8
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,8 +43,7 @@ def main() -> None:
     summary = generate_synthetic_factory_data(cfg)
 
     run_path = cfg.output_report_dir / "synthetic_generation_run.json"
-    run_path.parent.mkdir(parents=True, exist_ok=True)
-    run_path.write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
+    write_json_utf8(run_path, summary, default=str)
 
     print("Generación completada")
     print(f"- output raw: {cfg.output_raw_dir}")

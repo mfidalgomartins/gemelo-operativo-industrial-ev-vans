@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
-from .utils import read_ev_csv
+from .utils import read_ev_csv, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 
@@ -35,7 +35,8 @@ def _base_metrics() -> dict[str, float]:
     wait_charge = charging["avg_wait_to_charge"].mean()
     low_ready_risk = (dispatch["dispatch_readiness_risk_score"] > 70).mean()
     congestion_risk = (yard["yard_saturation_score"] > 70).mean()
-    delayed_vehicles = (dispatch["dispatch_delay_min"] > 0).mean()
+    departed = dispatch.loc[dispatch["departed_flag"].astype(bool)]
+    delayed_vehicles = departed["delayed_flag"].mean() if not departed.empty else 0.0
     stability = float(np.clip(100 - (40 * low_ready_risk + 35 * congestion_risk + 25 * delayed_vehicles), 0, 100))
     share_ev = launch["share_ev"].mean() if not launch.empty else 0.45
 
@@ -82,22 +83,14 @@ def _simulate(base: dict[str, float], params: dict[str, float]) -> dict[str, flo
     )
 
     espera_carga = base["espera_carga"] * (
-        ev_factor
-        * (1 - 0.30 * charge_gain)
-        * (1 - 0.05 * seq_gain)
-        * (1 + 0.05 * shift_loss)
+        ev_factor * (1 - 0.30 * charge_gain) * (1 - 0.05 * seq_gain) * (1 + 0.05 * shift_loss)
     )
 
     ocupacion_media_patio = base["ocupacion_media_patio"] * (
-        (1 + 0.14 * max(ev_delta, 0))
-        * (1 - 0.20 * yard_gain)
-        * (1 - 0.08 * seq_gain)
-        * (1 + 0.12 * dispatch_pressure)
+        (1 + 0.14 * max(ev_delta, 0)) * (1 - 0.20 * yard_gain) * (1 - 0.08 * seq_gain) * (1 + 0.12 * dispatch_pressure)
     )
     ocupacion_pico_patio = base["ocupacion_pico_patio"] * (
-        (1 + 0.18 * max(ev_delta, 0))
-        * (1 - 0.22 * yard_gain)
-        * (1 + 0.12 * dispatch_pressure)
+        (1 + 0.18 * max(ev_delta, 0)) * (1 - 0.22 * yard_gain) * (1 + 0.12 * dispatch_pressure)
     )
 
     riesgo_salida = np.clip(
@@ -289,28 +282,34 @@ def run_ev_scenario_twin() -> ScenarioTwinResult:
                 "vehiculos_retrasados",
                 "estabilidad_operativa",
             ],
-            "base": [base_row[m] for m in [
-                "throughput",
-                "tiempo_total_interno",
-                "ocupacion_media_patio",
-                "ocupacion_pico_patio",
-                "espera_carga",
-                "riesgo_salida_baja_readiness",
-                "riesgo_congestion",
-                "vehiculos_retrasados",
-                "estabilidad_operativa",
-            ]],
-            "mejorado": [improved_row[m] for m in [
-                "throughput",
-                "tiempo_total_interno",
-                "ocupacion_media_patio",
-                "ocupacion_pico_patio",
-                "espera_carga",
-                "riesgo_salida_baja_readiness",
-                "riesgo_congestion",
-                "vehiculos_retrasados",
-                "estabilidad_operativa",
-            ]],
+            "base": [
+                base_row[m]
+                for m in [
+                    "throughput",
+                    "tiempo_total_interno",
+                    "ocupacion_media_patio",
+                    "ocupacion_pico_patio",
+                    "espera_carga",
+                    "riesgo_salida_baja_readiness",
+                    "riesgo_congestion",
+                    "vehiculos_retrasados",
+                    "estabilidad_operativa",
+                ]
+            ],
+            "mejorado": [
+                improved_row[m]
+                for m in [
+                    "throughput",
+                    "tiempo_total_interno",
+                    "ocupacion_media_patio",
+                    "ocupacion_pico_patio",
+                    "espera_carga",
+                    "riesgo_salida_baja_readiness",
+                    "riesgo_congestion",
+                    "vehiculos_retrasados",
+                    "estabilidad_operativa",
+                ]
+            ],
         }
     )
     comparison["delta_abs"] = comparison["mejorado"] - comparison["base"]
@@ -381,7 +380,7 @@ def run_ev_scenario_twin() -> ScenarioTwinResult:
     for row in levers.itertuples(index=False):
         narrative_lines.append(f"- {row.palanca}: impacto esperado {row.impacto_esperado:.2f}")
 
-    (OUTPUT_REPORTS_DIR / "scenario_tradeoffs.md").write_text("\n".join(narrative_lines), encoding="utf-8")
+    write_text_utf8(OUTPUT_REPORTS_DIR / "scenario_tradeoffs.md", "\n".join(narrative_lines))
 
     return ScenarioTwinResult(
         scenarios=len(scenario_df),

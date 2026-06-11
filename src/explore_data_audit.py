@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from .config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR
-from .utils import to_markdown_safe
+from .utils import to_markdown_safe, write_text_utf8
 
 RAW_DIR = EV_DATA_RAW_DIR
 REPORT_DIR = OUTPUT_REPORTS_DIR
@@ -21,16 +21,46 @@ class TableSpec:
 
 
 TABLE_SPECS = [
-    TableSpec("ordenes", "1 fila por orden de producción", ["orden_id"], {"vehiculo_id": "vehiculos.vehiculo_id", "version_id": "versiones_vehiculo.version_id"}),
+    TableSpec(
+        "ordenes",
+        "1 fila por orden de producción",
+        ["orden_id"],
+        {"vehiculo_id": "vehiculos.vehiculo_id", "version_id": "versiones_vehiculo.version_id"},
+    ),
     TableSpec("versiones_vehiculo", "1 fila por versión de vehículo", ["version_id"], {}),
     TableSpec("vehiculos", "1 fila por vehículo", ["vehiculo_id"], {"version_id": "versiones_vehiculo.version_id"}),
-    TableSpec("estado_bateria", "1 fila por lectura temporal de batería por vehículo", ["timestamp", "vehiculo_id"], {"vehiculo_id": "vehiculos.vehiculo_id"}),
+    TableSpec(
+        "estado_bateria",
+        "1 fila por lectura temporal de batería por vehículo",
+        ["timestamp", "vehiculo_id"],
+        {"vehiculo_id": "vehiculos.vehiculo_id"},
+    ),
     TableSpec("slots_carga", "1 fila por slot de carga", ["slot_id"], {}),
-    TableSpec("sesiones_carga", "1 fila por sesión de carga", ["sesion_id"], {"vehiculo_id": "vehiculos.vehiculo_id", "slot_id": "slots_carga.slot_id"}),
-    TableSpec("patio", "1 fila por estado temporal en patio por vehículo", ["timestamp", "vehiculo_id", "zona_patio"], {"vehiculo_id": "vehiculos.vehiculo_id"}),
-    TableSpec("movimientos_patio", "1 fila por movimiento de patio", ["movimiento_id"], {"vehiculo_id": "vehiculos.vehiculo_id"}),
+    TableSpec(
+        "sesiones_carga",
+        "1 fila por sesión de carga",
+        ["sesion_id"],
+        {"vehiculo_id": "vehiculos.vehiculo_id", "slot_id": "slots_carga.slot_id"},
+    ),
+    TableSpec(
+        "patio",
+        "1 fila por estado temporal en patio por vehículo",
+        ["timestamp", "vehiculo_id", "zona_patio"],
+        {"vehiculo_id": "vehiculos.vehiculo_id"},
+    ),
+    TableSpec(
+        "movimientos_patio",
+        "1 fila por movimiento de patio",
+        ["movimiento_id"],
+        {"vehiculo_id": "vehiculos.vehiculo_id"},
+    ),
     TableSpec("turnos", "1 fila por fecha-turno", ["fecha", "turno"], {}),
-    TableSpec("logistica_salida", "1 fila por evento de salida por vehículo", ["salida_id"], {"vehiculo_id": "vehiculos.vehiculo_id"}),
+    TableSpec(
+        "logistica_salida",
+        "1 fila por evento de salida por vehículo",
+        ["salida_id"],
+        {"vehiculo_id": "vehiculos.vehiculo_id"},
+    ),
     TableSpec("cuellos_botella", "1 fila por evento de cuello de botella", ["evento_id"], {}),
     TableSpec("recursos_operativos", "1 fila por recurso operativo", ["recurso_id"], {}),
     TableSpec("restricciones_operativas", "1 fila por restricción operativa", ["restriccion_id"], {}),
@@ -87,7 +117,11 @@ def _classify_column(series: pd.Series, col_name: str) -> str:
 
 
 def _table_temporal_coverage(df: pd.DataFrame) -> str:
-    time_cols = [c for c in df.columns if ("fecha" in c.lower() or "timestamp" in c.lower()) and pd.api.types.is_datetime64_any_dtype(df[c])]
+    time_cols = [
+        c
+        for c in df.columns
+        if ("fecha" in c.lower() or "timestamp" in c.lower()) and pd.api.types.is_datetime64_any_dtype(df[c])
+    ]
     if not time_cols:
         return "N/A"
     mins = []
@@ -121,7 +155,9 @@ def _profile_tables(tables: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, pd.D
                 "tabla": spec.name,
                 "grain": spec.grain,
                 "key_candidates": "; ".join(spec.key_candidates),
-                "foreign_keys_esperadas": "; ".join([f"{k}->{v}" for k, v in spec.expected_fks.items()]) if spec.expected_fks else "N/A",
+                "foreign_keys_esperadas": "; ".join([f"{k}->{v}" for k, v in spec.expected_fks.items()])
+                if spec.expected_fks
+                else "N/A",
                 "n_filas": int(df.shape[0]),
                 "n_columnas": int(df.shape[1]),
                 "cobertura_temporal": _table_temporal_coverage(df),
@@ -136,7 +172,9 @@ def _profile_tables(tables: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, pd.D
             classification = _classify_column(series, col)
             distinct = int(series.nunique(dropna=True))
             top_values = series.value_counts(dropna=True).head(3)
-            top_repr = " | ".join([f"{idx}:{int(val)}" for idx, val in top_values.items()]) if not top_values.empty else "N/A"
+            top_repr = (
+                " | ".join([f"{idx}:{int(val)}" for idx, val in top_values.items()]) if not top_values.empty else "N/A"
+            )
 
             col_row = {
                 "tabla": spec.name,
@@ -146,7 +184,9 @@ def _profile_tables(tables: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, pd.D
                 "null_rate_pct": round(float(series.isna().mean() * 100), 3),
                 "cardinalidad": distinct,
                 "top_values": top_repr,
-                "utilidad_analitica": "alta" if classification in {"metricas", "temporales", "identificadores"} else "media",
+                "utilidad_analitica": "alta"
+                if classification in {"metricas", "temporales", "identificadores"}
+                else "media",
             }
 
             if pd.api.types.is_numeric_dtype(series):
@@ -201,8 +241,8 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "Aplicar de-duplicación por orden_id y timestamp de ingesta más reciente.",
     )
 
-    seq_dup_planned = int(ordenes.duplicated(subset=["fecha_programada", "turno", "secuencia_planeada"]).sum())
-    seq_dup_real = int(ordenes.duplicated(subset=["fecha_real", "turno", "secuencia_real"]).sum())
+    seq_dup_planned = int(ordenes.duplicated(subset=["fecha_turno_operativo", "turno", "secuencia_planeada"]).sum())
+    seq_dup_real = int(ordenes.duplicated(subset=["fecha_turno_operativo", "turno", "secuencia_real"]).sum())
     add_issue(
         "secuencias_incoherentes",
         "high",
@@ -213,10 +253,20 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
     ts_order_issues = int(
         (
-            (vehiculos["timestamp_entrada_patio"] < vehiculos["timestamp_fin_linea"]) |
-            (vehiculos["timestamp_inicio_carga"].notna() & (vehiculos["timestamp_inicio_carga"] < vehiculos["timestamp_entrada_patio"])) |
-            (vehiculos["timestamp_fin_carga"].notna() & (vehiculos["timestamp_inicio_carga"].notna()) & (vehiculos["timestamp_fin_carga"] < vehiculos["timestamp_inicio_carga"])) |
-            (vehiculos["timestamp_salida"].notna() & (vehiculos["timestamp_salida"] < vehiculos["timestamp_entrada_patio"]))
+            (vehiculos["timestamp_entrada_patio"] < vehiculos["timestamp_fin_linea"])
+            | (
+                vehiculos["timestamp_inicio_carga"].notna()
+                & (vehiculos["timestamp_inicio_carga"] < vehiculos["timestamp_entrada_patio"])
+            )
+            | (
+                vehiculos["timestamp_fin_carga"].notna()
+                & (vehiculos["timestamp_inicio_carga"].notna())
+                & (vehiculos["timestamp_fin_carga"] < vehiculos["timestamp_inicio_carga"])
+            )
+            | (
+                vehiculos["timestamp_salida"].notna()
+                & (vehiculos["timestamp_salida"] < vehiculos["timestamp_entrada_patio"])
+            )
         ).sum()
     )
     add_issue(
@@ -238,9 +288,9 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
     impossible_sessions = int(
         (
-            (sesiones["fin_sesion"] < sesiones["inicio_sesion"]) |
-            (sesiones["energia_entregada_kwh"] <= 0) |
-            (sesiones["tiempo_espera_previo_min"] < 0)
+            (sesiones["fin_sesion"] < sesiones["inicio_sesion"])
+            | (sesiones["energia_entregada_kwh"] <= 0)
+            | (sesiones["tiempo_espera_previo_min"] < 0)
         ).sum()
     )
     add_issue(
@@ -280,7 +330,9 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "Forzar sesión mínima o marcar excepción operativa documentada.",
     )
 
-    delay_no_cause = int(((logistica["retraso_min"] > 0) & (logistica["causa_retraso"].fillna("SIN_DATO") == "SIN_RETRASO")).sum())
+    delay_no_cause = int(
+        ((logistica["retraso_min"] > 0) & (logistica["causa_retraso"].fillna("SIN_DATO") == "SIN_RETRASO")).sum()
+    )
     add_issue(
         "retrasos_sin_causa",
         "medium",
@@ -289,7 +341,9 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "Imponer catálogo de causas y fallback AUTOMATIC_CLASSIFICATION.",
     )
 
-    bottleneck_no_impact = int(((cuellos["impacto_throughput_proxy"] <= 0) | (cuellos["impacto_salida_proxy"] <= 0)).sum())
+    bottleneck_no_impact = int(
+        ((cuellos["impacto_throughput_proxy"] <= 0) | (cuellos["impacto_salida_proxy"] <= 0)).sum()
+    )
     add_issue(
         "cuellos_sin_impacto",
         "high",
@@ -299,8 +353,12 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     )
 
     latest_restriction_area = set(restricciones["area"].unique())
-    recursos_sin_flag = recursos[(recursos["area"].isin(latest_restriction_area)) & (recursos["restriccion_actual_flag"] == 0)]
-    inconsistent_capacity = int((recursos_sin_flag["capacidad_disponible"] < recursos_sin_flag["capacidad_nominal"] * 0.85).sum())
+    recursos_sin_flag = recursos[
+        (recursos["area"].isin(latest_restriction_area)) & (recursos["restriccion_actual_flag"] == 0)
+    ]
+    inconsistent_capacity = int(
+        (recursos_sin_flag["capacidad_disponible"] < recursos_sin_flag["capacidad_nominal"] * 0.85).sum()
+    )
     add_issue(
         "restriccion_inconsistente_capacidad",
         "medium",
@@ -309,8 +367,10 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "Sincronizar estado de recursos con restricciones activas por corte temporal.",
     )
 
-    return pd.DataFrame(issues).sort_values(["severity", "affected_rows"], ascending=[True, False]) if issues else pd.DataFrame(
-        columns=["issue", "severity", "affected_rows", "rule", "recommended_fix"]
+    return (
+        pd.DataFrame(issues).sort_values(["severity", "affected_rows"], ascending=[True, False])
+        if issues
+        else pd.DataFrame(columns=["issue", "severity", "affected_rows", "rule", "recommended_fix"])
     )
 
 
@@ -387,8 +447,7 @@ def run_explore_data_audit() -> dict[str, object]:
     lines.append("")
     lines.append(_build_recommendations_md(issues_df))
 
-    md_text = "\n".join(lines)
-    md_path.write_text(md_text, encoding="utf-8")
+    write_text_utf8(md_path, "\n".join(lines))
 
     return {
         "issues_path": str(issues_path),
