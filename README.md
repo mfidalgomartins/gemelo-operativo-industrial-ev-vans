@@ -1,8 +1,11 @@
 # Gemelo Operativo para la Transición a Vans Eléctricas
 
-Gemelo operativo reproducible para diagnosticar presión de capacidad y comparar decisiones de secuenciación, patio, carga y expedición durante un ramp-up EV.
+Gemelo operativo reproducible que identifica dónde se rompe el flujo durante un ramp-up EV, cuánto cuesta y qué levers lo recuperan.
 
-**[Abrir dashboard público](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/)** · **[Leer informe analítico](outputs/reports/ev_transition_operating_twin_report.pdf)** · **[Revisar release gate](outputs/reports/release_readiness.json)**
+| | |
+|---|---|
+| **Dashboard interactivo** | [Abrir dashboard](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/) |
+| **Informe analítico (PDF)** | [Descargar informe](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/reports/ev_transition_operating_twin_report.pdf) |
 
 ![Comparación del escenario base y el paquete de medidas correctivas](outputs/graphs/19_before_after.png)
 

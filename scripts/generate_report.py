@@ -265,7 +265,7 @@ class Report(BaseDocTemplate):
         canvas.line(MARGIN, MARGIN - 4 * mm, PAGE_W - MARGIN, MARGIN - 4 * mm)
         canvas.setFont("Helvetica", 7.5)
         canvas.setFillColor(SUBTLE)
-        canvas.drawString(MARGIN, MARGIN - 9 * mm, "Synthetic factory data · for methodology demonstration")
+        canvas.drawString(MARGIN, MARGIN - 9 * mm, "Synthetic factory data")
         canvas.drawRightString(PAGE_W - MARGIN, MARGIN - 9 * mm, f"{doc.page}")
         canvas.restoreState()
 
@@ -448,7 +448,7 @@ def cover() -> list:
             [
                 Paragraph("<b>Data</b>", S["cover_meta"]),
                 Paragraph(
-                    "Synthetic, deterministic seed. Built to demonstrate the analytical method, not a real plant.",
+                    "Synthetic, deterministic seed. Patterns are internally consistent; absolute numbers are not measurements from a real plant.",
                     S["cover_meta"],
                 ),
             ],
@@ -470,8 +470,7 @@ def cover() -> list:
     st.append(hr(LINE, 0.8, 6))
     st.append(
         Paragraph(
-            "Prepared as a publication-grade analytical deliverable. Figures are generated directly "
-            "from the processed marts and match the live operating dashboard.",
+            "Figures are generated directly from the processed marts and match the live operating dashboard.",
             S["caption"],
         )
     )
@@ -1367,16 +1366,6 @@ def build_story() -> list:
     ]
     rows = [[figs[i], figs[i + 1] if i + 1 < len(figs) else ""] for i in range(0, len(figs), 2)]
     st += data_table(["Figure", "Figure"], rows, [CONTENT_W * 0.5, CONTENT_W * 0.5], highlight_first_col=False)
-    st.append(h2("E. Reproducibility"))
-    st.append(
-        p(
-            "The documented release workflow regenerates this report end to end. Generate the synthetic data with the seeded generator, "
-            "run the pipeline to rebuild the DuckDB marts and diagnostics, run the chart pack script to produce the 19 figures, and run "
-            "the report script to assemble this document. The release gate validates integrity and metric contracts before publication. "
-            "Every number in this report traces to a processed mart under data/processed/ev_factory, and the same marts feed the "
-            "live dashboard, so the three artefacts cannot disagree."
-        )
-    )
     return st
 
 
