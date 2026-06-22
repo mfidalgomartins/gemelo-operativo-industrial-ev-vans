@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +36,14 @@ def read_ev_csv(
     return pd.read_csv(path, parse_dates=parse_dates)
 
 
+def require_columns(df: pd.DataFrame, required: Sequence[str], context: str) -> None:
+    """Validate required DataFrame columns before analytical calculations."""
+    missing = [col for col in required if col not in df.columns]
+    if missing:
+        missing_cols = ", ".join(missing)
+        raise ValueError(f"{context}: faltan columnas requeridas: {missing_cols}")
+
+
 def to_markdown_safe(df: pd.DataFrame) -> str:
     """Render a DataFrame as markdown without requiring tabulate."""
     try:
@@ -46,8 +54,8 @@ def to_markdown_safe(df: pd.DataFrame) -> str:
         cols = [str(c) for c in df.columns]
         header = "| " + " | ".join(cols) + " |"
         sep = "| " + " | ".join(["---"] * len(cols)) + " |"
-        rows = []
-        for _, row in df.iterrows():
-            vals = [str(row[c]).replace("\n", " ") for c in df.columns]
-            rows.append("| " + " | ".join(vals) + " |")
+        rows = [
+            "| " + " | ".join(str(value).replace("\n", " ") for value in values) + " |"
+            for values in df.itertuples(index=False, name=None)
+        ]
         return "\n".join([header, sep] + rows)

@@ -9,10 +9,84 @@ import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT
-from .utils import write_json_utf8
+from .utils import require_columns, write_json_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
 OFFICIAL_DASHBOARD_NAME = "industrial-ev-operating-command-center.html"
+
+FLOW_REQUIRED_COLUMNS = [
+    "fecha_programada",
+    "fecha_real",
+    "turno",
+    "orden_id",
+    "vehiculo_id",
+    "tipo_propulsion",
+    "version_id",
+    "planned_to_actual_sequence_gap",
+    "total_internal_lead_time_min",
+    "yard_wait_time_min",
+    "charging_wait_time_min",
+    "dispatch_delay_min",
+    "readiness_final_flag",
+]
+
+YARD_REQUIRED_COLUMNS = [
+    "timestamp",
+    "zona_patio",
+    "yard_occupancy_rate",
+    "avg_dwell_time",
+    "p95_dwell_time",
+    "blocking_rate",
+    "non_productive_move_rate",
+]
+
+CHARGING_REQUIRED_COLUMNS = [
+    "fecha",
+    "turno",
+    "zona_carga",
+    "charger_pressure_score",
+    "avg_wait_to_charge",
+    "interruption_rate",
+    "target_soc_miss_rate",
+    "sessions_per_shift",
+]
+
+DISPATCH_REQUIRED_COLUMNS = [
+    "fecha",
+    "turno",
+    "tipo_propulsion",
+    "vehiculo_id",
+    "departed_flag",
+    "delayed_flag",
+    "readiness_final_flag",
+    "dispatch_delay_min",
+    "soc_salida_pct",
+    "target_soc_salida_pct",
+    "causa_retraso",
+]
+
+BNECK_REQUIRED_COLUMNS = [
+    "fecha",
+    "turno",
+    "area",
+    "severidad_media",
+    "impacto_throughput_total",
+    "impacto_salida_total",
+    "area_stress_score",
+    "eventos_cuello",
+]
+
+PRIORITIES_REQUIRED_COLUMNS = ["area", "operational_priority_index", "recommended_action"]
+
+SCENARIO_REQUIRED_COLUMNS = [
+    "escenario",
+    "throughput",
+    "espera_carga",
+    "ocupacion_pico_patio",
+    "riesgo_salida_baja_readiness",
+    "estabilidad_operativa",
+    "decision_score",
+]
 
 
 @dataclass
@@ -68,6 +142,13 @@ def _build_meta(
     scenarios: pd.DataFrame,
     kpi: pd.DataFrame,
 ) -> dict[str, object]:
+    require_columns(flow, FLOW_REQUIRED_COLUMNS, "vw_vehicle_flow_timeline")
+    require_columns(yard, YARD_REQUIRED_COLUMNS, "yard_features")
+    require_columns(charging, CHARGING_REQUIRED_COLUMNS, "charging_features")
+    require_columns(dispatch, DISPATCH_REQUIRED_COLUMNS, "vw_dispatch_readiness")
+    require_columns(priorities, PRIORITIES_REQUIRED_COLUMNS, "operational_prioritization_table")
+    require_columns(scenarios, SCENARIO_REQUIRED_COLUMNS, "scenario_table")
+
     coverage_min = pd.to_datetime(flow["fecha_real"], errors="coerce").min()
     coverage_max = pd.to_datetime(flow["fecha_real"], errors="coerce").max()
 
@@ -130,6 +211,14 @@ def _prepare_datasets(
     scenarios: pd.DataFrame,
     kpi_readiness: pd.DataFrame,
 ) -> dict[str, pd.DataFrame]:
+    require_columns(flow, FLOW_REQUIRED_COLUMNS, "vw_vehicle_flow_timeline")
+    require_columns(yard, YARD_REQUIRED_COLUMNS, "yard_features")
+    require_columns(charging, CHARGING_REQUIRED_COLUMNS, "charging_features")
+    require_columns(dispatch, DISPATCH_REQUIRED_COLUMNS, "vw_dispatch_readiness")
+    require_columns(bneck, BNECK_REQUIRED_COLUMNS, "vw_shift_bottleneck_summary")
+    require_columns(priorities, PRIORITIES_REQUIRED_COLUMNS, "operational_prioritization_table")
+    require_columns(scenarios, SCENARIO_REQUIRED_COLUMNS, "scenario_table")
+
     f = flow.copy()
     f["fecha_programada"] = pd.to_datetime(f["fecha_programada"], errors="coerce")
     f["fecha_real"] = pd.to_datetime(f["fecha_real"], errors="coerce")

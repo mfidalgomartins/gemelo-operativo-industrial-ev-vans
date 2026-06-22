@@ -6,9 +6,36 @@ import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
-from .utils import read_ev_csv, write_text_utf8
+from .utils import read_ev_csv, require_columns, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
+
+VEHICLE_REQUIRED_COLUMNS = [
+    "fecha_real",
+    "tipo_propulsion",
+    "turno",
+    "planned_to_actual_sequence_gap",
+    "version_complexity_score",
+    "yard_wait_time",
+    "blocking_exposure",
+    "charging_wait_time",
+    "soc_gap_before_dispatch",
+    "dispatch_delay_min",
+]
+
+AREA_REQUIRED_COLUMNS = [
+    "area",
+    "dispatch_gap",
+    "area_throughput_loss_proxy",
+    "congestion_index",
+    "avg_wait_time",
+    "slot_utilization",
+    "yard_occupancy_rate",
+    "dispatch_risk_density",
+    "operational_stress_score",
+]
+
+LAUNCH_REQUIRED_COLUMNS = ["week", "share_ev", "charging_capacity_gap", "yard_transition_stress_index"]
 
 
 @dataclass
@@ -21,7 +48,8 @@ def _read(name: str, parse_dates: list[str] | None = None) -> pd.DataFrame:
 
 
 def _score_to_100(series: pd.Series, upper: float) -> pd.Series:
-    return np.clip(series / upper, 0, 1) * 100
+    denominator = upper if np.isfinite(upper) and upper > 0 else 1e-9
+    return np.clip(pd.to_numeric(series, errors="coerce").fillna(0) / denominator, 0, 1) * 100
 
 
 def _initial_action(row: pd.Series) -> str:
@@ -42,6 +70,9 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
     vehicle = _read("vehicle_readiness_features", parse_dates=["fecha_real"])
     area = _read("area_shift_features", parse_dates=["fecha"])
     launch = _read("launch_transition_features", parse_dates=["week"])
+    require_columns(vehicle, VEHICLE_REQUIRED_COLUMNS, "vehicle_readiness_features")
+    require_columns(area, AREA_REQUIRED_COLUMNS, "area_shift_features")
+    require_columns(launch, LAUNCH_REQUIRED_COLUMNS, "launch_transition_features")
 
     # Scores a nivel vehículo
     vehicle_diag = vehicle.copy()
@@ -64,7 +95,21 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
         + 0.20 * vehicle_diag["dispatch_delay_risk_score"]
     )
 
-    vehicle_diag["recommended_action_initial"] = vehicle_diag.apply(_initial_action, axis=1)
+    vehicle_diag["recommended_action_initial"] = np.select(
+        [
+            vehicle_diag["charging_pressure_score"] >= 70,
+            vehicle_diag["yard_congestion_score"] >= 70,
+            vehicle_diag["sequence_disruption_score"] >= 65,
+            vehicle_diag["dispatch_delay_risk_score"] >= 65,
+        ],
+        [
+            "Reservar slots de carga EV y ampliar ventana de pre-carga",
+            "Reducir dwell y limpiar movimientos no productivos en patio",
+            "Rebalancear secuencia y limitar clúster EV en turno",
+            "Priorizar expedición selectiva por readiness",
+        ],
+        default="Monitorizar y mantener configuración actual",
+    )
 
     # Área crítica y driver principal
     area_diag = area.copy()

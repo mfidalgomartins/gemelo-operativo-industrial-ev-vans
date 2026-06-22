@@ -6,9 +6,43 @@ import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
-from .utils import read_ev_csv, write_text_utf8
+from .utils import read_ev_csv, require_columns, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
+
+BASE_METRIC_KEYS = [
+    "throughput",
+    "tiempo_total_interno",
+    "ocupacion_media_patio",
+    "ocupacion_pico_patio",
+    "espera_carga",
+    "riesgo_salida_baja_readiness",
+    "riesgo_congestion",
+    "vehiculos_retrasados",
+    "estabilidad_operativa",
+    "share_ev",
+]
+
+SCENARIO_PARAM_KEYS = [
+    "share_ev_delta",
+    "sequencing_gain",
+    "charging_gain",
+    "yard_gain",
+    "dispatch_pressure",
+    "shift_loss",
+]
+
+SCENARIO_METRICS = [
+    "throughput",
+    "tiempo_total_interno",
+    "ocupacion_media_patio",
+    "ocupacion_pico_patio",
+    "espera_carga",
+    "riesgo_salida_baja_readiness",
+    "riesgo_congestion",
+    "vehiculos_retrasados",
+    "estabilidad_operativa",
+]
 
 
 @dataclass
@@ -27,6 +61,13 @@ def _base_metrics() -> dict[str, float]:
     charging = _read("charging_features")
     dispatch = _read("vw_dispatch_readiness")
     launch = _read("launch_transition_features")
+    require_columns(vehicle, ["fecha_real", "total_internal_lead_time"], "vehicle_readiness_features")
+    require_columns(yard, ["yard_occupancy_rate", "yard_saturation_score"], "yard_features")
+    require_columns(charging, ["avg_wait_to_charge"], "charging_features")
+    require_columns(
+        dispatch, ["dispatch_readiness_risk_score", "departed_flag", "delayed_flag"], "vw_dispatch_readiness"
+    )
+    require_columns(launch, ["share_ev"], "launch_transition_features")
 
     throughput = vehicle.groupby("fecha_real").size().mean()
     total_internal = vehicle["total_internal_lead_time"].mean()
@@ -55,6 +96,11 @@ def _base_metrics() -> dict[str, float]:
 
 
 def _simulate(base: dict[str, float], params: dict[str, float]) -> dict[str, float]:
+    missing_base = [key for key in BASE_METRIC_KEYS if key not in base]
+    missing_params = [key for key in SCENARIO_PARAM_KEYS if key not in params]
+    if missing_base or missing_params:
+        raise ValueError(f"Inputs de escenario incompletos: base={missing_base}, params={missing_params}")
+
     ev_delta = params["share_ev_delta"]
     seq_gain = params["sequencing_gain"]
     charge_gain = params["charging_gain"]
@@ -271,45 +317,9 @@ def run_ev_scenario_twin() -> ScenarioTwinResult:
 
     comparison = pd.DataFrame(
         {
-            "metrica": [
-                "throughput",
-                "tiempo_total_interno",
-                "ocupacion_media_patio",
-                "ocupacion_pico_patio",
-                "espera_carga",
-                "riesgo_salida_baja_readiness",
-                "riesgo_congestion",
-                "vehiculos_retrasados",
-                "estabilidad_operativa",
-            ],
-            "base": [
-                base_row[m]
-                for m in [
-                    "throughput",
-                    "tiempo_total_interno",
-                    "ocupacion_media_patio",
-                    "ocupacion_pico_patio",
-                    "espera_carga",
-                    "riesgo_salida_baja_readiness",
-                    "riesgo_congestion",
-                    "vehiculos_retrasados",
-                    "estabilidad_operativa",
-                ]
-            ],
-            "mejorado": [
-                improved_row[m]
-                for m in [
-                    "throughput",
-                    "tiempo_total_interno",
-                    "ocupacion_media_patio",
-                    "ocupacion_pico_patio",
-                    "espera_carga",
-                    "riesgo_salida_baja_readiness",
-                    "riesgo_congestion",
-                    "vehiculos_retrasados",
-                    "estabilidad_operativa",
-                ]
-            ],
+            "metrica": SCENARIO_METRICS,
+            "base": [base_row[m] for m in SCENARIO_METRICS],
+            "mejorado": [improved_row[m] for m in SCENARIO_METRICS],
         }
     )
     comparison["delta_abs"] = comparison["mejorado"] - comparison["base"]
@@ -346,17 +356,7 @@ def run_ev_scenario_twin() -> ScenarioTwinResult:
 
     impacts = scenario_df.melt(
         id_vars=["escenario", "descripcion"],
-        value_vars=[
-            "throughput",
-            "tiempo_total_interno",
-            "ocupacion_media_patio",
-            "ocupacion_pico_patio",
-            "espera_carga",
-            "riesgo_salida_baja_readiness",
-            "riesgo_congestion",
-            "vehiculos_retrasados",
-            "estabilidad_operativa",
-        ],
+        value_vars=SCENARIO_METRICS,
         var_name="metrica",
         value_name="valor",
     )

@@ -7,10 +7,15 @@ SHIFT_START_HOUR = {"A": 6, "B": 14, "C": 22}
 
 
 def get_shift_start(fecha: pd.Timestamp, turno: str) -> pd.Timestamp:
+    if turno not in SHIFT_START_HOUR:
+        raise ValueError(f"turno inválido: {turno!r}")
     return fecha.normalize() + pd.Timedelta(hours=SHIFT_START_HOUR[turno])
 
 
 def shift_from_timestamp(ts: pd.Timestamp) -> str:
+    if pd.isna(ts):
+        raise ValueError("ts no puede ser nulo.")
+    ts = pd.Timestamp(ts)
     hour = ts.hour
     if 6 <= hour < 14:
         return "A"
@@ -20,6 +25,8 @@ def shift_from_timestamp(ts: pd.Timestamp) -> str:
 
 
 def clamp(value: float, low: float, high: float) -> float:
+    if low > high:
+        raise ValueError("low no puede ser mayor que high.")
     return float(np.clip(value, low, high))
 
 
@@ -35,6 +42,9 @@ def ordered_phase(day_idx: int, total_days: int) -> str:
 
 
 def scenario_curve(phase: str, position_in_phase: float, rng: np.random.Generator) -> dict[str, float]:
+    if not 0 <= position_in_phase <= 1:
+        raise ValueError("position_in_phase debe estar entre 0 y 1.")
+
     def jitter(s: float = 0.02) -> float:
         return float(rng.normal(0, s))
 
@@ -47,9 +57,11 @@ def scenario_curve(phase: str, position_in_phase: float, rng: np.random.Generato
     elif phase == "ramp_up":
         share_ev = 0.28 + 0.36 * position_in_phase + jitter(0.02)
         intensidad = 0.65 + 0.30 * position_in_phase + jitter(0.04)
-    else:
+    elif phase == "estable":
         share_ev = 0.64 + 0.12 * position_in_phase + jitter(0.02)
         intensidad = 0.58 + 0.10 * position_in_phase + jitter(0.03)
+    else:
+        raise ValueError(f"fase inválida: {phase!r}")
 
     disponibilidad_slots = clamp(0.95 - 0.18 * share_ev + jitter(0.02), 0.62, 0.98)
     presion_patio = clamp(0.30 + 0.75 * share_ev + 0.22 * intensidad + jitter(0.03), 0.15, 1.0)

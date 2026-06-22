@@ -28,4 +28,4 @@
 - mart_dispatch_readiness: 8302
 - kpi_operativos: 1
 - kpi_readiness_shift_version: 24
-- validation_checks: 10
+- validation_checks: 15

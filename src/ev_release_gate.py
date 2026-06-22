@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 
 from .config import OUTPUT_REPORTS_DIR
 
@@ -13,6 +14,19 @@ class ReleaseGateResult:
     reason: str
 
 
+def _read_json_object(path: Path, label: str) -> tuple[dict[str, object] | None, str | None]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None, f"{label} no es JSON válido"
+    except OSError as exc:
+        return None, f"No se pudo leer {label}: {exc}"
+
+    if not isinstance(payload, dict):
+        return None, f"{label} debe contener un objeto JSON"
+    return payload, None
+
+
 def run_release_gate() -> ReleaseGateResult:
     readiness_path = OUTPUT_REPORTS_DIR / "release_readiness.json"
     manifest_path = OUTPUT_REPORTS_DIR / "dashboard_build_manifest.json"
@@ -22,19 +36,20 @@ def run_release_gate() -> ReleaseGateResult:
     if not manifest_path.exists():
         return ReleaseGateResult(False, "unknown", "Falta dashboard_build_manifest.json")
 
-    try:
-        readiness = json.loads(readiness_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return ReleaseGateResult(False, "unknown", "release_readiness.json no es JSON válido")
+    readiness, readiness_error = _read_json_object(readiness_path, "release_readiness.json")
+    if readiness_error:
+        return ReleaseGateResult(False, "unknown", readiness_error)
 
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return ReleaseGateResult(False, "unknown", "dashboard_build_manifest.json no es JSON válido")
+    manifest, manifest_error = _read_json_object(manifest_path, "dashboard_build_manifest.json")
+    if manifest_error:
+        return ReleaseGateResult(False, "unknown", manifest_error)
 
     release_grade = str(readiness.get("release_grade", "unknown"))
     publish_blocked = bool(readiness.get("publish_blocked", True))
-    dashboard_checks_ok = all(bool(v) for v in manifest.get("checks", {}).values())
+    checks = manifest.get("checks", {})
+    if not isinstance(checks, dict):
+        return ReleaseGateResult(False, release_grade, "Dashboard manifest sin objeto checks válido")
+    dashboard_checks_ok = all(bool(v) for v in checks.values())
     kpi_ssot_ok = bool(readiness.get("kpi_single_source_of_truth", False))
 
     if publish_blocked:

@@ -161,19 +161,40 @@ def validate_synthetic_data(
     tables: dict[str, pd.DataFrame],
     report_dir: Path,
 ) -> dict[str, object]:
+    missing_tables = sorted(set(REQUIRED_COLUMNS) - set(tables))
+    if missing_tables:
+        raise ValueError(f"faltan tablas requeridas: {missing_tables}")
+    invalid_tables = [name for name, df in tables.items() if not isinstance(df, pd.DataFrame)]
+    if invalid_tables:
+        raise TypeError(f"estas tablas no son pandas DataFrame: {invalid_tables}")
+
+    report_dir = Path(report_dir)
     report_dir.mkdir(parents=True, exist_ok=True)
 
     checks: list[dict[str, object]] = []
+    failed_schema = False
 
     for table_name, required_cols in REQUIRED_COLUMNS.items():
         df = tables[table_name]
         missing = [c for c in required_cols if c not in df.columns]
+        failed_schema = failed_schema or bool(missing)
         checks.append(
             {
                 "check": f"columnas_{table_name}",
                 "status": "PASS" if not missing else "FAIL",
                 "detail": "ok" if not missing else f"faltan: {missing}",
             }
+        )
+
+    if failed_schema:
+        return _write_validation_summary(
+            report_dir=report_dir,
+            status_global="FAIL",
+            period_start=pd.NaT,
+            period_end=pd.NaT,
+            period_months=0,
+            checks=checks,
+            cardinalidades={name: int(df.shape[0]) for name, df in tables.items()},
         )
 
     period_start = pd.to_datetime(tables["ordenes"]["fecha_programada"]).min()
@@ -305,8 +326,30 @@ def validate_synthetic_data(
     )
 
     status_global = "PASS" if all(c["status"] != "FAIL" for c in checks) else "FAIL"
-
     cardinalidades = {name: int(df.shape[0]) for name, df in tables.items()}
+
+    return _write_validation_summary(
+        report_dir=report_dir,
+        status_global=status_global,
+        period_start=period_start,
+        period_end=period_end,
+        period_months=period_months,
+        checks=checks,
+        cardinalidades=cardinalidades,
+    )
+
+
+def _write_validation_summary(
+    report_dir: Path,
+    status_global: str,
+    period_start: pd.Timestamp,
+    period_end: pd.Timestamp,
+    period_months: int,
+    checks: list[dict[str, object]],
+    cardinalidades: dict[str, int],
+) -> dict[str, object]:
+    period_start_label = "N/A" if pd.isna(period_start) else str(period_start.date())
+    period_end_label = "N/A" if pd.isna(period_end) else str(period_end.date())
 
     summary = {
         "status_global": status_global,
@@ -344,8 +387,8 @@ def validate_synthetic_data(
         "# Resumen de Dimensiones, Periodos y Cardinalidades",
         "",
         f"- Horizonte: **{period_months} meses**",
-        f"- Fecha inicio: **{period_start.date()}**",
-        f"- Fecha fin: **{period_end.date()}**",
+        f"- Fecha inicio: **{period_start_label}**",
+        f"- Fecha fin: **{period_end_label}**",
         "",
         "## Filas por tabla",
     ]

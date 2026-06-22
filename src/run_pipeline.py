@@ -34,6 +34,13 @@ def _relative(path: str) -> str:
 
 
 def run_pipeline(generate_data: bool = False, seed: int = 20260328, months: int = 12) -> PipelineRunResult:
+    if not isinstance(generate_data, bool):
+        raise TypeError("generate_data debe ser booleano")
+    if not isinstance(seed, int):
+        raise TypeError("seed debe ser entero")
+    if not isinstance(months, int) or months <= 0:
+        raise ValueError("months debe ser un entero positivo")
+
     OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     if generate_data:

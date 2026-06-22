@@ -13,6 +13,46 @@ WITH check_duplicados_ordenes AS (
         HAVING COUNT(*) > 1
     ) q
 ),
+check_duplicados_vehiculos AS (
+    SELECT
+        'duplicados_vehiculos' AS check_name,
+        COUNT(*) AS failed_rows
+    FROM (
+        SELECT vehiculo_id, COUNT(*) AS n
+        FROM stg_vehicles
+        GROUP BY vehiculo_id
+        HAVING COUNT(*) > 1
+    ) q
+),
+check_dispatch_duplicado_vehiculo AS (
+    SELECT
+        'dispatch_duplicado_vehiculo' AS check_name,
+        COUNT(*) AS failed_rows
+    FROM (
+        SELECT vehiculo_id, COUNT(*) AS n
+        FROM stg_dispatch
+        GROUP BY vehiculo_id
+        HAVING COUNT(*) > 1
+    ) q
+),
+check_chaves_criticas_nulas AS (
+    SELECT
+        'chaves_criticas_nulas' AS check_name,
+        COUNT(*) AS failed_rows
+    FROM (
+        SELECT orden_id AS chave
+        FROM stg_orders
+        WHERE orden_id IS NULL OR vehiculo_id IS NULL OR version_id IS NULL
+        UNION ALL
+        SELECT vehiculo_id AS chave
+        FROM stg_vehicles
+        WHERE vehiculo_id IS NULL OR version_id IS NULL
+        UNION ALL
+        SELECT vehiculo_id AS chave
+        FROM stg_dispatch
+        WHERE vehiculo_id IS NULL
+    ) q
+),
 check_secuencia_incoherente AS (
     SELECT
         'secuencia_incoherente' AS check_name,
@@ -90,29 +130,65 @@ check_denominadores AS (
     WHERE dispatch_plan < 0
        OR dispatch_actual < 0
        OR slot_utilization < 0
+),
+check_cardinalidad_flujo AS (
+    SELECT
+        'cardinalidad_flujo_vehiculo' AS check_name,
+        COUNT(*) AS failed_rows
+    FROM (
+        SELECT vehiculo_id, COUNT(*) AS n
+        FROM vw_vehicle_flow_timeline
+        GROUP BY vehiculo_id
+        HAVING COUNT(*) > 1
+    ) q
+),
+check_scores_nulos AS (
+    SELECT
+        'scores_riesgo_nulos' AS check_name,
+        COUNT(*) AS failed_rows
+    FROM (
+        SELECT vehiculo_id AS chave
+        FROM mart_vehicle_day
+        WHERE total_internal_lead_time_min IS NOT NULL
+          AND readiness_risk_score_input IS NULL
+        UNION ALL
+        SELECT vehiculo_id AS chave
+        FROM vw_dispatch_readiness
+        WHERE dispatch_readiness_risk_score IS NULL
+    ) q
 )
 SELECT
     check_name,
     failed_rows,
     CASE WHEN failed_rows = 0 THEN 'PASS' ELSE 'WARN' END AS status
 FROM (
-    SELECT * FROM check_duplicados_ordenes
+    SELECT check_name, failed_rows FROM check_duplicados_ordenes
     UNION ALL
-    SELECT * FROM check_secuencia_incoherente
+    SELECT check_name, failed_rows FROM check_duplicados_vehiculos
     UNION ALL
-    SELECT * FROM check_timestamps
+    SELECT check_name, failed_rows FROM check_dispatch_duplicado_vehiculo
     UNION ALL
-    SELECT * FROM check_soc_range
+    SELECT check_name, failed_rows FROM check_chaves_criticas_nulas
     UNION ALL
-    SELECT * FROM check_sesion_imposible
+    SELECT check_name, failed_rows FROM check_secuencia_incoherente
     UNION ALL
-    SELECT * FROM check_ev_sin_carga
+    SELECT check_name, failed_rows FROM check_timestamps
     UNION ALL
-    SELECT * FROM check_salida_sin_ready
+    SELECT check_name, failed_rows FROM check_soc_range
     UNION ALL
-    SELECT * FROM check_retraso_sin_causa
+    SELECT check_name, failed_rows FROM check_sesion_imposible
     UNION ALL
-    SELECT * FROM check_restriccion_capacidad
+    SELECT check_name, failed_rows FROM check_ev_sin_carga
     UNION ALL
-    SELECT * FROM check_denominadores
+    SELECT check_name, failed_rows FROM check_salida_sin_ready
+    UNION ALL
+    SELECT check_name, failed_rows FROM check_retraso_sin_causa
+    UNION ALL
+    SELECT check_name, failed_rows FROM check_restriccion_capacidad
+    UNION ALL
+    SELECT check_name, failed_rows FROM check_denominadores
+    UNION ALL
+    SELECT check_name, failed_rows FROM check_cardinalidad_flujo
+    UNION ALL
+    SELECT check_name, failed_rows FROM check_scores_nulos
 ) checks;

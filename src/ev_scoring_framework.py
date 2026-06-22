@@ -6,9 +6,25 @@ import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
-from .utils import read_ev_csv, write_text_utf8
+from .utils import read_ev_csv, require_columns, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
+
+AREA_REQUIRED_COLUMNS = [
+    "area",
+    "dispatch_gap",
+    "area_throughput_loss_proxy",
+    "congestion_index",
+    "avg_wait_time",
+    "queue_pressure_score",
+    "slot_utilization",
+    "bottleneck_density",
+    "dispatch_risk_density",
+    "operational_stress_score",
+]
+
+DIAGNOSTIC_REQUIRED_COLUMNS = ["area", "main_bottleneck_driver"]
+LAUNCH_REQUIRED_COLUMNS = ["share_ev", "charging_capacity_gap", "yard_transition_stress_index"]
 
 
 @dataclass
@@ -22,14 +38,18 @@ def _read(name: str) -> pd.DataFrame:
 
 
 def _normalize_100(series: pd.Series, upper: float) -> pd.Series:
-    return np.clip(series / upper, 0, 1) * 100
+    denominator = upper if np.isfinite(upper) and upper > 0 else 1e-9
+    return np.clip(pd.to_numeric(series, errors="coerce").fillna(0) / denominator, 0, 1) * 100
 
 
 def _normalize_percentile(series: pd.Series, q_hi: float = 0.95) -> pd.Series:
-    upper = float(series.quantile(q_hi)) if len(series) else 0.0
-    if upper <= 0:
+    if not 0 < q_hi <= 1:
+        raise ValueError("q_hi debe estar en el intervalo (0, 1]")
+    numeric = pd.to_numeric(series, errors="coerce").fillna(0)
+    upper = float(numeric.quantile(q_hi)) if len(numeric) else 0.0
+    if not np.isfinite(upper) or upper <= 0:
         upper = 1.0
-    return np.clip(series / upper, 0, 1) * 100
+    return np.clip(numeric / upper, 0, 1) * 100
 
 
 def _map_action(driver: str) -> str:
@@ -62,6 +82,9 @@ def run_ev_scoring_framework() -> ScoringResult:
     area = _read("area_shift_features")
     diagnostic = _read("diagnostic_area_scores")
     launch = _read("launch_transition_features")
+    require_columns(area, AREA_REQUIRED_COLUMNS, "area_shift_features")
+    require_columns(diagnostic, DIAGNOSTIC_REQUIRED_COLUMNS, "diagnostic_area_scores")
+    require_columns(launch, LAUNCH_REQUIRED_COLUMNS, "launch_transition_features")
 
     base = area.groupby("area", as_index=False).agg(
         dispatch_gap=("dispatch_gap", "mean"),

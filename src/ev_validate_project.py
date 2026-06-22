@@ -8,9 +8,52 @@ import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, DATA_RAW_DIR, EV_DATA_RAW_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
-from .utils import to_markdown_safe, write_json_utf8, write_text_utf8
+from .utils import require_columns, to_markdown_safe, write_json_utf8, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
+
+RAW_REQUIRED_COLUMNS = {
+    "ordenes": ["orden_id", "vehiculo_id", "fecha_turno_operativo", "turno", "secuencia_planeada"],
+    "vehiculos": [
+        "vehiculo_id",
+        "version_id",
+        "timestamp_fin_linea",
+        "timestamp_entrada_patio",
+        "timestamp_inicio_carga",
+        "timestamp_fin_carga",
+    ],
+    "estado_bateria": ["vehiculo_id", "soc_pct", "target_soc_pct"],
+    "sesiones_carga": ["vehiculo_id", "inicio_sesion", "fin_sesion", "energia_entregada_kwh"],
+    "logistica_salida": ["fecha_salida_real", "readiness_salida_flag"],
+    "versiones_vehiculo": ["version_id", "requiere_carga_salida_flag"],
+}
+
+PROCESSED_REQUIRED_COLUMNS = {
+    "vw_vehicle_flow_timeline": ["orden_id", "vehiculo_id", "fecha_real", "tipo_propulsion", "readiness_final_flag"],
+    "vw_yard_congestion": ["yard_occupancy_rate"],
+    "vw_dispatch_readiness": ["departed_flag", "delayed_flag"],
+    "validation_checks": ["status"],
+    "area_shift_features": [
+        "area",
+        "congestion_index",
+        "avg_wait_time",
+        "slot_utilization",
+        "dispatch_risk_density",
+        "bottleneck_density",
+    ],
+    "scenario_table": ["escenario", "share_ev_estimado", "decision_score"],
+    "operational_prioritization_table": ["operational_priority_index", "main_risk_driver", "area_priority_tier"],
+    "scoring_sensitivity_analysis": ["top3_areas"],
+    "scoring_rank_stability": ["freq_share"],
+    "kpi_operativos": [
+        "share_ev",
+        "score_readiness_global",
+        "ratio_salida_retrasada",
+        "throughput_planificado",
+        "throughput_real",
+        "throughput_gap",
+    ],
+}
 
 
 @dataclass
@@ -25,6 +68,18 @@ def _read_csv(path: Path, parse_dates: list[str] | None = None) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(f"Falta archivo para validación: {path}")
     return pd.read_csv(path, parse_dates=parse_dates)
+
+
+def _read_dashboard_manifest(path: Path) -> dict[str, object]:
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"dashboard_build_manifest.json no es JSON válido: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("dashboard_build_manifest.json debe contener un objeto JSON")
+    return payload
 
 
 def _resolve_ev_raw(table_name: str) -> Path:
@@ -58,6 +113,16 @@ def run_ev_validation() -> ValidationResult:
         _resolve_ev_raw("logistica_salida"), parse_dates=["fecha_salida_planificada", "fecha_salida_real"]
     )
     versiones = _read_csv(_resolve_ev_raw("versiones_vehiculo"))
+    raw_tables = {
+        "ordenes": ordenes,
+        "vehiculos": vehiculos,
+        "estado_bateria": bateria,
+        "sesiones_carga": sesiones,
+        "logistica_salida": logistica,
+        "versiones_vehiculo": versiones,
+    }
+    for name, df in raw_tables.items():
+        require_columns(df, RAW_REQUIRED_COLUMNS[name], name)
 
     # Capa analítica
     vehicle_flow = _read_csv(EV_DIR / "vw_vehicle_flow_timeline.csv")
@@ -70,15 +135,28 @@ def run_ev_validation() -> ValidationResult:
     scoring_sensitivity = _read_csv(EV_DIR / "scoring_sensitivity_analysis.csv")
     scoring_rank_stability = _read_csv(EV_DIR / "scoring_rank_stability.csv")
     kpi = _read_csv(EV_DIR / "kpi_operativos.csv")
+    processed_tables = {
+        "vw_vehicle_flow_timeline": vehicle_flow,
+        "vw_yard_congestion": yard_congestion,
+        "vw_dispatch_readiness": dispatch_readiness,
+        "validation_checks": validation_checks,
+        "area_shift_features": area_shift_features,
+        "scenario_table": scenarios,
+        "operational_prioritization_table": scoring,
+        "scoring_sensitivity_analysis": scoring_sensitivity,
+        "scoring_rank_stability": scoring_rank_stability,
+        "kpi_operativos": kpi,
+    }
+    for name, df in processed_tables.items():
+        require_columns(df, PROCESSED_REQUIRED_COLUMNS[name], name)
+
     legacy_kpi_summary_path = OUTPUT_REPORTS_DIR / "kpi_summary.csv"
     legacy_kpi_summary = pd.read_csv(legacy_kpi_summary_path) if legacy_kpi_summary_path.exists() else pd.DataFrame()
 
     dashboard_path = OUTPUT_DASHBOARD_DIR / "industrial-ev-operating-command-center.html"
     dashboard_ok = dashboard_path.exists() and dashboard_path.stat().st_size > 100_000
     dashboard_manifest_path = OUTPUT_REPORTS_DIR / "dashboard_build_manifest.json"
-    dashboard_manifest = (
-        json.loads(dashboard_manifest_path.read_text(encoding="utf-8")) if dashboard_manifest_path.exists() else {}
-    )
+    dashboard_manifest = _read_dashboard_manifest(dashboard_manifest_path)
 
     issues: list[dict[str, object]] = []
 

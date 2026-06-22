@@ -93,6 +93,9 @@ def generate_versiones_vehiculo() -> pd.DataFrame:
 
 
 def generate_slots_carga(rng: np.random.Generator, n_slots: int = 32) -> pd.DataFrame:
+    if not isinstance(n_slots, int) or n_slots <= 0:
+        raise ValueError("n_slots debe ser un entero positivo.")
+
     zones = ["NORTE", "SUR", "ESTE", "OESTE"]
     charger_types = ["DC_FAST", "HPC", "DC_STANDARD"]
 
@@ -129,10 +132,26 @@ def generate_recursos_operativos(
     turnos: pd.DataFrame,
     restricciones_operativas: pd.DataFrame,
 ) -> pd.DataFrame:
+    required_turnos = {"fecha", "productividad_turno_indice"}
+    required_restricciones = {"timestamp_inicio", "area"}
+    missing_turnos = required_turnos - set(turnos.columns)
+    missing_restricciones = required_restricciones - set(restricciones_operativas.columns)
+    if missing_turnos:
+        raise ValueError(f"turnos no contiene columnas requeridas: {sorted(missing_turnos)}")
+    if missing_restricciones and not restricciones_operativas.empty:
+        raise ValueError(f"restricciones_operativas no contiene columnas requeridas: {sorted(missing_restricciones)}")
+    if missing_restricciones:
+        restricciones_operativas = pd.DataFrame(columns=sorted(required_restricciones))
+    if turnos.empty:
+        raise ValueError("turnos no puede estar vacío.")
+
     latest_date = pd.to_datetime(turnos["fecha"]).max()
-    latest_restrictions = restricciones_operativas[
-        pd.to_datetime(restricciones_operativas["timestamp_inicio"]).dt.date == latest_date.date()
-    ]
+    if restricciones_operativas.empty:
+        latest_restrictions = restricciones_operativas
+    else:
+        latest_restrictions = restricciones_operativas[
+            pd.to_datetime(restricciones_operativas["timestamp_inicio"]).dt.date == latest_date.date()
+        ]
     latest_flags: dict[str, bool] = {
         area: not latest_restrictions[latest_restrictions["area"] == area].empty
         for area in ["PRODUCCION", "PATIO", "CARGA", "LOGISTICA", "ENERGIA"]

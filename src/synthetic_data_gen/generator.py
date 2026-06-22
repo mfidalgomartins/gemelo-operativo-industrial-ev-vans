@@ -19,8 +19,11 @@ from .validation import validate_synthetic_data
 
 
 def _save_tables(tables: dict[str, pd.DataFrame], output_dir: Path) -> None:
+    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     for name, df in tables.items():
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError(f"tabla {name!r} debe ser un pandas DataFrame.")
         df.to_csv(output_dir / f"{name}.csv", index=False)
 
 
@@ -29,7 +32,7 @@ def generate_synthetic_factory_data(cfg: SyntheticGenerationConfig) -> dict[str,
     rng = np.random.default_rng(cfg.seed)
 
     escenarios = generate_escenarios_transicion(cfg.start_date, cfg.months, rng)
-    turnos = generate_turnos(escenarios, rng)
+    turnos = generate_turnos(escenarios, rng, cfg.shifts)
     restricciones = generate_restricciones_operativas(escenarios, turnos, rng)
     daily_map = build_daily_restriction_map(restricciones)
 
@@ -75,14 +78,14 @@ def generate_synthetic_factory_data(cfg: SyntheticGenerationConfig) -> dict[str,
 
     _save_tables(tables, cfg.output_raw_dir)
 
-    validation_summary = validate_synthetic_data(tables, cfg.output_report_dir)
+    validation_summary = validate_synthetic_data(tables, Path(cfg.output_report_dir))
 
     return {
         "seed": cfg.seed,
         "months": cfg.months,
         "start_date": cfg.start_date,
-        "output_raw_dir": str(cfg.output_raw_dir),
-        "output_report_dir": str(cfg.output_report_dir),
+        "output_raw_dir": str(Path(cfg.output_raw_dir)),
+        "output_report_dir": str(Path(cfg.output_report_dir)),
         "cardinalidades": {k: int(v.shape[0]) for k, v in tables.items()},
         "validation": validation_summary,
     }

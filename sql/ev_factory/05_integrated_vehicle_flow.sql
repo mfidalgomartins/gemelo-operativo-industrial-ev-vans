@@ -34,14 +34,51 @@ move_agg AS (
     FROM stg_yard_movements ym
     GROUP BY ym.vehiculo_id
 ),
+battery_ranked AS (
+    SELECT
+        b.*,
+        ROW_NUMBER() OVER (
+            PARTITION BY b.vehiculo_id
+            ORDER BY b.timestamp DESC NULLS LAST, b.soc_pct DESC NULLS LAST, b.target_soc_pct DESC NULLS LAST
+        ) AS battery_rank
+    FROM stg_battery_status b
+),
+dispatch_ranked AS (
+    -- Regla de negocio: una línea de flujo por vehículo. Si aparecen varios
+    -- registros de expedición, gana la última salida real; si no existe, la
+    -- última salida planificada. El desempate por salida_id hace el join estable.
+    SELECT
+        d.*,
+        ROW_NUMBER() OVER (
+            PARTITION BY d.vehiculo_id
+            ORDER BY d.fecha_salida_real DESC NULLS LAST, d.fecha_salida_planificada DESC NULLS LAST, d.salida_id ASC
+        ) AS dispatch_rank,
+        COUNT(*) OVER (PARTITION BY d.vehiculo_id) AS registros_dispatch_vehiculo
+    FROM stg_dispatch d
+),
 battery_last AS (
     SELECT
-        b.vehiculo_id,
-        FIRST(b.soc_pct ORDER BY b.timestamp DESC) AS soc_final_pct,
-        FIRST(b.target_soc_pct ORDER BY b.timestamp DESC) AS target_soc_final_pct,
-        FIRST(b.timestamp ORDER BY b.timestamp DESC) AS timestamp_ultimo_soc
-    FROM stg_battery_status b
-    GROUP BY b.vehiculo_id
+        vehiculo_id,
+        soc_pct AS soc_final_pct,
+        target_soc_pct AS target_soc_final_pct,
+        timestamp AS timestamp_ultimo_soc
+    FROM battery_ranked
+    WHERE battery_rank = 1
+),
+dispatch_one_row AS (
+    SELECT
+        vehiculo_id,
+        salida_id,
+        fecha_salida_planificada,
+        fecha_salida_real,
+        modo_salida,
+        transportista_proxy,
+        readiness_salida_flag,
+        retraso_min,
+        causa_retraso,
+        registros_dispatch_vehiculo
+    FROM dispatch_ranked
+    WHERE dispatch_rank = 1
 )
 SELECT
     o.orden_id,
@@ -113,7 +150,7 @@ INNER JOIN stg_vehicles v
     ON o.vehiculo_id = v.vehiculo_id
 INNER JOIN stg_versions vr
     ON o.version_id = vr.version_id
-LEFT JOIN stg_dispatch d
+LEFT JOIN dispatch_one_row d
     ON v.vehiculo_id = d.vehiculo_id
 LEFT JOIN charge_agg c
     ON v.vehiculo_id = c.vehiculo_id

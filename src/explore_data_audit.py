@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from .config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR
-from .utils import to_markdown_safe, write_text_utf8
+from .utils import require_columns, to_markdown_safe, write_text_utf8
 
 RAW_DIR = EV_DATA_RAW_DIR
 REPORT_DIR = OUTPUT_REPORTS_DIR
@@ -94,6 +94,8 @@ def _load_tables() -> dict[str, pd.DataFrame]:
         if not path.exists():
             raise FileNotFoundError(f"No existe tabla requerida: {path}")
         df = pd.read_csv(path)
+        required_cols = list(dict.fromkeys([*spec.key_candidates, *spec.expected_fks.keys()]))
+        require_columns(df, required_cols, spec.name)
         for col in DATETIME_CANDIDATES:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], errors="coerce")

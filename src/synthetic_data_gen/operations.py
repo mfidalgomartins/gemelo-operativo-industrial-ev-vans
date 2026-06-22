@@ -5,7 +5,94 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .utils import clamp, get_shift_start, shift_from_timestamp
+from .utils import SHIFT_START_HOUR, clamp, shift_from_timestamp
+
+REQUIRED_OPERATION_COLUMNS: dict[str, set[str]] = {
+    "escenarios": {
+        "fecha",
+        "share_ev",
+        "intensidad_ramp_up",
+        "disponibilidad_slots_carga",
+        "presion_patio_indice",
+        "restriccion_logistica_indice",
+        "escenario",
+    },
+    "turnos": {
+        "fecha",
+        "turno",
+        "absentismo_proxy",
+        "productividad_turno_indice",
+        "presion_operativa_indice",
+    },
+    "versiones": {
+        "version_id",
+        "tipo_propulsion",
+        "tiempo_medio_produccion",
+        "complejidad_montaje",
+        "capacidad_bateria_kwh",
+        "requiere_carga_salida_flag",
+    },
+    "slots_carga": {"slot_id", "potencia_max_kw", "disponibilidad_flag", "mantenimiento_flag"},
+}
+
+SESSION_COLUMNS = [
+    "sesion_id",
+    "vehiculo_id",
+    "slot_id",
+    "inicio_sesion",
+    "fin_sesion",
+    "energia_entregada_kwh",
+    "tiempo_espera_previo_min",
+    "carga_interrumpida_flag",
+    "causa_interrupcion",
+]
+
+BATTERY_COLUMNS = [
+    "timestamp",
+    "vehiculo_id",
+    "soc_pct",
+    "target_soc_pct",
+    "battery_temp_proxy",
+    "charging_status",
+    "energia_cargada_kwh",
+    "tiempo_en_carga_min",
+]
+
+LOGISTICS_COLUMNS = [
+    "salida_id",
+    "vehiculo_id",
+    "fecha_salida_planificada",
+    "fecha_salida_real",
+    "modo_salida",
+    "transportista_proxy",
+    "readiness_salida_flag",
+    "retraso_min",
+    "causa_retraso",
+]
+
+YARD_COLUMNS = [
+    "timestamp",
+    "vehiculo_id",
+    "zona_patio",
+    "fila",
+    "posicion",
+    "estado_en_patio",
+    "dwell_time_min",
+    "blocking_flag",
+    "requiere_movimiento_flag",
+]
+
+YARD_MOVEMENT_COLUMNS = [
+    "movimiento_id",
+    "vehiculo_id",
+    "timestamp_inicio",
+    "timestamp_fin",
+    "origen",
+    "destino",
+    "motivo_movimiento",
+    "operador_turno",
+    "movimiento_no_productivo_flag",
+]
 
 
 @dataclass
@@ -20,27 +107,63 @@ class OperationalOutputs:
     slots_carga_actualizados: pd.DataFrame
 
 
+@dataclass(frozen=True)
+class VersionCatalog:
+    ev_ids: np.ndarray
+    ev_probs: np.ndarray
+    ice_ids: np.ndarray
+    ice_probs: np.ndarray
+    version_map: dict[str, dict[str, object]]
+
+
+def _validate_required_columns(name: str, df: pd.DataFrame, required: set[str]) -> None:
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"{name} no contiene columnas requeridas: {sorted(missing)}")
+
+
 def _deduplicate_patio_points(
     points: list[tuple[pd.Timestamp, str, str]],
 ) -> list[tuple[pd.Timestamp, str, str]]:
     return sorted(set(points), key=lambda point: (point[0], point[1], point[2]))
 
 
-def _select_version(
-    rng: np.random.Generator,
-    versiones: pd.DataFrame,
-    share_ev: float,
-) -> str:
-    if rng.random() < share_ev:
-        subset = versiones[versiones["tipo_propulsion"] == "EV"]
-        probs = np.array([0.30, 0.30, 0.24, 0.16])
+def _normalise_probabilities(base_probs: np.ndarray, size: int) -> np.ndarray:
+    if size <= 0:
+        raise ValueError("size debe ser positivo.")
+    if size > len(base_probs):
+        extension = np.full(size - len(base_probs), float(base_probs.mean()))
+        probs = np.concatenate([base_probs, extension])
     else:
-        subset = versiones[versiones["tipo_propulsion"] == "ICE"]
-        probs = np.array([0.35, 0.30, 0.20, 0.15])
+        probs = base_probs[:size]
+    return probs / probs.sum()
 
-    probs = probs[: len(subset)]
-    probs = probs / probs.sum()
-    return str(rng.choice(subset["version_id"].values, p=probs))
+
+def _build_version_catalog(versiones: pd.DataFrame) -> VersionCatalog:
+    _validate_required_columns("versiones", versiones, REQUIRED_OPERATION_COLUMNS["versiones"])
+    if versiones.empty:
+        raise ValueError("versiones no puede estar vacío.")
+
+    ev_ids = versiones.loc[versiones["tipo_propulsion"].eq("EV"), "version_id"].to_numpy()
+    ice_ids = versiones.loc[versiones["tipo_propulsion"].eq("ICE"), "version_id"].to_numpy()
+    if len(ev_ids) == 0 or len(ice_ids) == 0:
+        raise ValueError("versiones debe contener al menos una versión EV y una ICE.")
+
+    return VersionCatalog(
+        ev_ids=ev_ids,
+        ev_probs=_normalise_probabilities(np.array([0.30, 0.30, 0.24, 0.16]), len(ev_ids)),
+        ice_ids=ice_ids,
+        ice_probs=_normalise_probabilities(np.array([0.35, 0.30, 0.20, 0.15]), len(ice_ids)),
+        version_map=versiones.set_index("version_id").to_dict("index"),
+    )
+
+
+def _select_version(rng: np.random.Generator, catalog: VersionCatalog, share_ev: float) -> str:
+    if not 0 <= share_ev <= 1:
+        raise ValueError("share_ev debe estar entre 0 y 1.")
+    if rng.random() < share_ev:
+        return str(rng.choice(catalog.ev_ids, p=catalog.ev_probs))
+    return str(rng.choice(catalog.ice_ids, p=catalog.ice_probs))
 
 
 def _build_impact_lookup(daily_restriction_map: pd.DataFrame) -> dict[tuple[pd.Timestamp, str], float]:
@@ -63,6 +186,16 @@ def generate_operational_tables(
     slots_carga: pd.DataFrame,
     daily_restriction_map: pd.DataFrame,
 ) -> OperationalOutputs:
+    for name, df in {
+        "escenarios": escenarios,
+        "turnos": turnos,
+        "versiones": versiones,
+        "slots_carga": slots_carga,
+    }.items():
+        _validate_required_columns(name, df, REQUIRED_OPERATION_COLUMNS[name])
+        if df.empty:
+            raise ValueError(f"{name} no puede estar vacío.")
+
     scenario_map = {
         pd.Timestamp(row.fecha).normalize(): {
             "share_ev": float(row.share_ev),
@@ -76,7 +209,8 @@ def generate_operational_tables(
     }
     impact_lookup = _build_impact_lookup(daily_restriction_map)
 
-    version_map = versiones.set_index("version_id").to_dict("index")
+    version_catalog = _build_version_catalog(versiones)
+    version_map = version_catalog.version_map
 
     market_probs = {
         "Iberia": 0.33,
@@ -102,7 +236,10 @@ def generate_operational_tables(
 
     turnos_df = turnos.copy()
     turnos_df["fecha"] = pd.to_datetime(turnos_df["fecha"]).dt.normalize()
-    turnos_df["shift_start"] = turnos_df.apply(lambda r: get_shift_start(r["fecha"], r["turno"]), axis=1)
+    invalid_turnos = set(turnos_df["turno"]) - set(SHIFT_START_HOUR)
+    if invalid_turnos:
+        raise ValueError(f"turnos contiene valores inválidos: {sorted(invalid_turnos)}")
+    turnos_df["shift_start"] = turnos_df["fecha"] + pd.to_timedelta(turnos_df["turno"].map(SHIFT_START_HOUR), unit="h")
     turnos_df = turnos_df.sort_values(["fecha", "turno"]).reset_index(drop=True)
 
     base_units_shift = {"A": 76, "B": 68, "C": 54}
@@ -131,7 +268,7 @@ def generate_operational_tables(
 
         shift_orders_tmp = []
         for seq in range(1, n_orders + 1):
-            version_id = _select_version(rng, versiones, scn["share_ev"])
+            version_id = _select_version(rng, version_catalog, scn["share_ev"])
             version = version_map[version_id]
 
             tact_minutes = clamp(float(rng.normal(7.1 + 0.4 * version["complejidad_montaje"], 1.2)), 4.2, 12.0)
@@ -574,7 +711,7 @@ def generate_operational_tables(
                     )
                     mov_counter += 1
 
-    logistica_df = pd.DataFrame(logistics_rows)
+    logistica_df = pd.DataFrame(logistics_rows, columns=LOGISTICS_COLUMNS)
 
     order_out = ordenes_df.merge(
         logistica_df[["vehiculo_id", "readiness_salida_flag", "retraso_min", "fecha_salida_real"]],
@@ -628,10 +765,10 @@ def generate_operational_tables(
         ]
     ].sort_values("vehiculo_id")
 
-    estado_bateria_df = pd.DataFrame(battery_rows).sort_values(["timestamp", "vehiculo_id"])
-    sesiones_df = pd.DataFrame(sessions_rows).sort_values("inicio_sesion")
-    patio_df = pd.DataFrame(patio_rows).sort_values(["timestamp", "vehiculo_id"])
-    movimientos_df = pd.DataFrame(move_rows).sort_values("timestamp_inicio")
+    estado_bateria_df = pd.DataFrame(battery_rows, columns=BATTERY_COLUMNS).sort_values(["timestamp", "vehiculo_id"])
+    sesiones_df = pd.DataFrame(sessions_rows, columns=SESSION_COLUMNS).sort_values("inicio_sesion")
+    patio_df = pd.DataFrame(patio_rows, columns=YARD_COLUMNS).sort_values(["timestamp", "vehiculo_id"])
+    movimientos_df = pd.DataFrame(move_rows, columns=YARD_MOVEMENT_COLUMNS).sort_values("timestamp_inicio")
 
     last_ts = (
         vehiculos_out[["timestamp_salida", "timestamp_fin_carga", "timestamp_entrada_patio"]].stack().dropna().max()

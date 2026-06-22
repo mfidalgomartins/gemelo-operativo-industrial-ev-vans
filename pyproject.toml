@@ -23,7 +23,6 @@ keywords = [
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -35,6 +34,7 @@ dependencies = [
     "numpy>=1.24.0,<3.0.0",
     "duckdb>=1.1.0,<2.0.0",
     "matplotlib>=3.8.0,<4.0.0",
+    "pillow>=12.2.0,<13.0.0",
     "reportlab>=4.0.0,<5.0.0",
 ]
 
@@ -44,8 +44,16 @@ Repository = "https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0,<10.0.0",
+    "build>=1.2.0,<2.0.0",
+    "pygments>=2.20.0,<3.0.0",
+    "pytest>=9.0.3,<10.0.0",
+    "pytest-cov>=5.0.0,<8.0.0",
     "ruff>=0.15.0,<1.0.0",
+]
+security = [
+    "bandit[toml]>=1.8.0,<2.0.0",
+    "pip-audit>=2.7.0,<3.0.0",
+    "pygments>=2.20.0,<3.0.0",
 ]
 
 [project.scripts]
@@ -59,7 +67,7 @@ py-modules = ["generate_synthetic_data"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = ["-m", "not integration"]
+addopts = ["-ra", "--strict-config", "--strict-markers", "-m", "not integration"]
 markers = [
     "integration: full-pipeline tests that write to the data directory; run with pytest -m integration",
 ]
@@ -71,3 +79,30 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/synthetic_data_gen/config.py" = ["I001"]
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+omit = [
+    "tests/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.bandit]
+# A camada DuckDB constrói SQL com identificadores internos validados por whitelist.
+# Os valores externos continuam parametrizados; B608 gera falsos positivos neste projeto.
+skips = ["B608"]
+exclude_dirs = [
+    ".venv",
+    "build",
+    "data",
+    "dist",
+    "outputs",
+    "tests",
+]

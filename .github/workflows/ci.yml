@@ -2,28 +2,138 @@ name: ci
 
 on:
   push:
+    branches: ["main"]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUTF8: "1"
 
 jobs:
-  test:
+  quality:
+    name: quality / py${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.12"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - run: python -m pip install -e ".[dev]"
-      - run: ruff check .
-      - run: ruff format --check .
-      - run: pytest -q
-      - run: generate-data --seed 20260328 --start-date 2025-01-01 --months 12
-      - run: python -m src.run_pipeline
-      - run: python scripts/generate_chart_pack.py
-      - run: python scripts/generate_report.py
-      - run: python -m src.ev_release_gate
-      - run: pytest -q -m integration
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project and dev tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Ruff lint
+        run: python -m ruff check .
+
+      - name: Ruff format check
+        run: python -m ruff format --check .
+
+      - name: Unit tests with coverage
+        run: python -m pytest -q --cov=src --cov-report=term-missing --cov-report=xml
+
+  package:
+    name: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: quality
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Build source and wheel distributions
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m build
+
+  integration:
+    name: integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: quality
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project and dev tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Generate synthetic data
+        run: generate-data --seed 20260328 --start-date 2025-01-01 --months 12
+
+      - name: Run analytical pipeline
+        run: python -m src.run_pipeline
+
+      - name: Build chart pack
+        run: python scripts/generate_chart_pack.py
+
+      - name: Build report
+        run: python scripts/generate_report.py
+
+      - name: Evaluate release gate
+        run: python -m src.ev_release_gate
+
+      - name: Integration tests
+        run: python -m pytest -q -m integration
+
+  security:
+    name: security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project and security tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ".[security]"
+
+      - name: Bandit static security scan
+        run: python -m bandit -q -r src -c pyproject.toml
+
+      - name: Dependency vulnerability audit
+        run: python -m pip_audit --strict --skip-editable

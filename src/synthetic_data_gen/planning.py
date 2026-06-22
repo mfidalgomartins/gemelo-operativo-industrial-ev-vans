@@ -3,7 +3,27 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from .utils import clamp, ordered_phase, scenario_curve
+from .utils import SHIFT_START_HOUR, clamp, ordered_phase, scenario_curve
+
+SHIFT_COLUMNS = [
+    "fecha",
+    "turno",
+    "headcount_proxy",
+    "absentismo_proxy",
+    "productividad_turno_indice",
+    "presion_operativa_indice",
+    "overtime_flag",
+]
+
+RESTRICTION_COLUMNS = [
+    "restriccion_id",
+    "timestamp_inicio",
+    "timestamp_fin",
+    "area",
+    "tipo_restriccion",
+    "severidad",
+    "impacto_capacidad_pct",
+]
 
 
 def generate_escenarios_transicion(
@@ -40,24 +60,31 @@ def generate_escenarios_transicion(
 
     escenarios = pd.DataFrame(records)
     weekend = escenarios["fecha"].dt.dayofweek >= 5
-    escenarios.loc[weekend, "presion_patio_indice"] = escenarios.loc[weekend, "presion_patio_indice"].apply(
-        lambda x: clamp(x * 0.92, 0.1, 1.0)
+    escenarios.loc[weekend, "presion_patio_indice"] = np.clip(
+        escenarios.loc[weekend, "presion_patio_indice"] * 0.92, 0.1, 1.0
     )
-    escenarios.loc[weekend, "restriccion_logistica_indice"] = escenarios.loc[
-        weekend, "restriccion_logistica_indice"
-    ].apply(lambda x: clamp(x * 0.95, 0.05, 1.0))
+    escenarios.loc[weekend, "restriccion_logistica_indice"] = np.clip(
+        escenarios.loc[weekend, "restriccion_logistica_indice"] * 0.95, 0.05, 1.0
+    )
 
     return escenarios
 
 
-def generate_turnos(escenarios: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
+def generate_turnos(
+    escenarios: pd.DataFrame,
+    rng: np.random.Generator,
+    shifts: tuple[str, ...] = ("A", "B", "C"),
+) -> pd.DataFrame:
     shift_base_headcount = {"A": 122, "B": 114, "C": 95}
     shift_efficiency = {"A": 1.00, "B": 0.96, "C": 0.86}
+    invalid_shifts = set(shifts) - set(shift_base_headcount)
+    if invalid_shifts:
+        raise ValueError(f"turnos inválidos: {sorted(invalid_shifts)}")
 
     records = []
     for row in escenarios.itertuples(index=False):
         weekend = pd.Timestamp(row.fecha).dayofweek >= 5
-        for turno in ["A", "B", "C"]:
+        for turno in shifts:
             absentismo = clamp(
                 float(rng.normal(0.052 + 0.07 * row.intensidad_ramp_up + (0.018 if weekend else 0), 0.018)),
                 0.01,
@@ -97,7 +124,7 @@ def generate_turnos(escenarios: pd.DataFrame, rng: np.random.Generator) -> pd.Da
                 }
             )
 
-    return pd.DataFrame(records)
+    return pd.DataFrame(records, columns=SHIFT_COLUMNS)
 
 
 def generate_restricciones_operativas(
@@ -143,7 +170,7 @@ def generate_restricciones_operativas(
         if n_events == 0:
             continue
 
-        shift_hour = {"A": 6, "B": 14, "C": 22}[row.turno]
+        shift_hour = SHIFT_START_HOUR[row.turno]
         shift_start = pd.Timestamp(row.fecha) + pd.Timedelta(hours=shift_hour)
 
         for _ in range(n_events):
@@ -168,7 +195,7 @@ def generate_restricciones_operativas(
             )
             rid += 1
 
-    return pd.DataFrame(records)
+    return pd.DataFrame(records, columns=RESTRICTION_COLUMNS)
 
 
 def build_daily_restriction_map(restricciones: pd.DataFrame) -> pd.DataFrame:

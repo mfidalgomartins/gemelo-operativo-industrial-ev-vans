@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -57,6 +58,21 @@ EXPORT_OBJECTS = [
     "validation_checks",
 ]
 
+EXPORT_SORT_KEYS = {
+    "vw_vehicle_flow_timeline": ["fecha_real", "turno", "orden_id", "vehiculo_id"],
+    "vw_charging_utilization": ["fecha", "turno", "zona_carga", "slot_id"],
+    "vw_yard_congestion": ["ts_hour", "zona_patio"],
+    "vw_dispatch_readiness": ["fecha", "turno", "orden_id", "vehiculo_id"],
+    "vw_shift_bottleneck_summary": ["fecha", "turno", "area"],
+    "mart_vehicle_day": ["fecha", "turno", "orden_id", "vehiculo_id"],
+    "mart_area_shift": ["fecha", "turno", "area"],
+    "mart_dispatch_readiness": ["fecha", "turno", "tipo_propulsion", "version_id"],
+    "kpi_readiness_shift_version": ["turno", "version_id", "tipo_propulsion"],
+    "validation_checks": ["check_name"],
+}
+
+_SQL_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
 
 @dataclass
 class SQLRunResult:
@@ -73,20 +89,26 @@ def _resolve_raw_csv(table: str) -> Path:
     raise FileNotFoundError(f"Falta tabla raw requerida en la ruta oficial EV: {primary}")
 
 
+def _quote_identifier(identifier: str) -> str:
+    if not _SQL_IDENTIFIER_RE.fullmatch(identifier):
+        raise ValueError(f"Identificador SQL inválido: {identifier!r}")
+    return f'"{identifier}"'
+
+
 def _load_raw_tables(con: duckdb.DuckDBPyConnection) -> None:
+    raw_paths = {table: _resolve_raw_csv(table) for table in RAW_TABLES}
     for table in RAW_TABLES:
-        csv_path = _resolve_raw_csv(table)
-        con.execute(
-            f"""
-            CREATE OR REPLACE TABLE {table} AS
-            SELECT
-                *
-            FROM read_csv_auto('{csv_path.as_posix()}', HEADER=TRUE);
-            """
-        )
+        csv_path = raw_paths[table]
+        table_identifier = _quote_identifier(table)
+        # Identificador validado por _quote_identifier; path parametrizado.
+        load_sql = f"CREATE OR REPLACE TABLE {table_identifier} AS\nSELECT\n    *\nFROM read_csv_auto(?, HEADER=TRUE);"
+        con.execute(load_sql, [csv_path.as_posix()])
 
 
 def _run_sql_files(con: duckdb.DuckDBPyConnection) -> list[str]:
+    if not SQL_LAYER_DIR.exists():
+        raise FileNotFoundError(f"No existe directorio SQL requerido: {SQL_LAYER_DIR}")
+
     executed: list[str] = []
     for file_name in SQL_FILES_IN_ORDER:
         sql_path = SQL_LAYER_DIR / file_name
@@ -97,40 +119,47 @@ def _run_sql_files(con: duckdb.DuckDBPyConnection) -> list[str]:
     return executed
 
 
-def _export_objects(con: duckdb.DuckDBPyConnection) -> dict[str, int]:
+def _export_objects(con: duckdb.DuckDBPyConnection, *, deterministic: bool = True) -> dict[str, int]:
     export_dir = DATA_PROCESSED_DIR / "ev_factory"
     export_dir.mkdir(parents=True, exist_ok=True)
 
     exported_row_counts: dict[str, int] = {}
     for obj in EXPORT_OBJECTS:
         out_csv = export_dir / f"{obj}.csv"
+        obj_identifier = _quote_identifier(obj)
         # Orden determinista: SELECT sin ORDER BY puede devolver filas en orden
         # arbitrario (paralelismo de DuckDB). Ordenamos por todas las columnas
         # para que el CSV exportado sea byte-estable entre ejecuciones.
         columns = [
             row[0]
             for row in con.execute(
-                f"SELECT column_name FROM information_schema.columns "
-                f"WHERE table_name = '{obj}' ORDER BY ordinal_position"
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = ?
+                ORDER BY ordinal_position
+                """,
+                [obj],
             ).fetchall()
         ]
-        order_clause = ", ".join(f'"{c}"' for c in columns)
-        con.execute(
-            f"""
-            COPY (
-                SELECT *
-                FROM {obj}
-                ORDER BY {order_clause}
-            )
-            TO '{out_csv.as_posix()}'
-            (HEADER, DELIMITER ',');
-            """
-        )
-        exported_row_counts[obj] = int(con.execute(f"SELECT COUNT(*) FROM {obj}").fetchone()[0])
+        if not columns:
+            raise ValueError(f"No se puede exportar objeto sin columnas o inexistente: {obj}")
+        order_columns = [col for col in EXPORT_SORT_KEYS.get(obj, columns) if col in columns]
+        order_clause = ", ".join(_quote_identifier(c) for c in order_columns)
+        order_sql = f"ORDER BY {order_clause}" if deterministic and order_clause else ""
+        # Objeto/columnas validados por _quote_identifier; destino parametrizado.
+        export_sql = f"COPY (\nSELECT *\nFROM {obj_identifier}\n{order_sql}\n) TO ?\n(HEADER, DELIMITER ',');"
+        con.execute(export_sql, [out_csv.as_posix()])
+        exported_row_counts[obj] = int(con.execute(f"SELECT COUNT(*) FROM {obj_identifier}").fetchone()[0])
     return exported_row_counts
 
 
-def run_ev_sql_layer() -> SQLRunResult:
+def run_ev_sql_layer(*, deterministic: bool = True, threads: int | None = None) -> SQLRunResult:
+    if not isinstance(deterministic, bool):
+        raise TypeError("deterministic debe ser booleano")
+    if threads is not None and (not isinstance(threads, int) or threads <= 0):
+        raise ValueError("threads debe ser un entero positivo o None")
+
     DATA_PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -139,10 +168,13 @@ def run_ev_sql_layer() -> SQLRunResult:
         # Determinismo: la reducción paralela de DuckDB introduce diferencias
         # de último dígito en las agregaciones float entre ejecuciones. Forzar
         # un único thread garantiza salidas byte-idénticas reproducibles.
-        con.execute("PRAGMA threads=1")
+        if deterministic and threads is None:
+            threads = 1
+        if threads is not None:
+            con.execute("PRAGMA threads=?", [threads])
         _load_raw_tables(con)
         executed = _run_sql_files(con)
-        exported_rows = _export_objects(con)
+        exported_rows = _export_objects(con, deterministic=deterministic)
     finally:
         con.close()
 

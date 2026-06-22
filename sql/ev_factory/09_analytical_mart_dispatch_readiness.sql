@@ -6,6 +6,7 @@ WITH base AS (
     SELECT
         CAST(vft.fecha_salida_planificada AS DATE) AS fecha,
         CASE
+            WHEN vft.fecha_salida_planificada IS NULL THEN NULL
             WHEN EXTRACT('hour' FROM vft.fecha_salida_planificada) BETWEEN 6 AND 13 THEN 'A'
             WHEN EXTRACT('hour' FROM vft.fecha_salida_planificada) BETWEEN 14 AND 21 THEN 'B'
             ELSE 'C'
@@ -64,11 +65,11 @@ SELECT
     non_productive_moves_count,
     readiness_gap_driver,
     (
-        0.30 * LEAST(1.0, GREATEST(soc_gap_before_dispatch, 0.0) / 30.0)
-        + 0.25 * LEAST(1.0, GREATEST(dispatch_delay_min, 0.0) / 240.0)
-        + 0.20 * LEAST(1.0, charging_wait_time_min / 180.0)
-        + 0.15 * LEAST(1.0, yard_wait_time_min / 240.0)
-        + 0.10 * LEAST(1.0, blocking_exposure)
+        0.30 * LEAST(1.0, GREATEST(COALESCE(soc_gap_before_dispatch, 0.0), 0.0) / 30.0)
+        + 0.25 * LEAST(1.0, GREATEST(COALESCE(dispatch_delay_min, 0.0), 0.0) / 240.0)
+        + 0.20 * LEAST(1.0, COALESCE(charging_wait_time_min, 0.0) / 180.0)
+        + 0.15 * LEAST(1.0, COALESCE(yard_wait_time_min, 0.0) / 240.0)
+        + 0.10 * LEAST(1.0, COALESCE(blocking_exposure, 0.0))
     ) * 100.0 AS dispatch_readiness_risk_score
 FROM base;
 

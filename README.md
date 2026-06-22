@@ -54,6 +54,8 @@ python -m src.ev_release_gate
 
 El repositorio incluye un snapshot canónico de los CSV raw, marts y la base DuckDB. Los comandos anteriores regeneran los datos y artefactos de forma determinista.
 
+Para una guía operativa con orden real del pipeline, comandos parciales, outputs esperados y troubleshooting: [operator_quickstart.md](docs/operator_quickstart.md).
+
 ## Verificación
 
 ```bash
@@ -79,6 +81,17 @@ outputs/graphs/               gráficos analíticos curados
 outputs/reports/              informe, manifests y validaciones
 ```
 
+## Outputs principales
+
+| Output | Ruta |
+|---|---|
+| Dashboard oficial | `outputs/dashboard/industrial-ev-operating-command-center.html` |
+| Informe PDF | `outputs/reports/ev_transition_operating_twin_report.pdf` |
+| KPI gobernados | `data/processed/ev_factory/kpi_operativos.csv` |
+| Priorización OPI | `data/processed/ev_factory/operational_prioritization_table.csv` |
+| Escenarios | `data/processed/ev_factory/scenario_table.csv` |
+| Release readiness | `outputs/reports/release_readiness.json` |
+
 ## Límites de uso
 
 - Los datos son sintéticos y no representan una planta real.
@@ -87,6 +100,6 @@ outputs/reports/              informe, manifests y validaciones
 - El sistema sirve para arquitectura analítica, diagnóstico y apoyo a decisión; no para compromisos de inversión sin validación independiente.
 - El dashboard es estático, pero carga Chart.js y fuentes web desde CDN.
 
-Detalles técnicos: [arquitectura SQL](docs/sql_architecture.md), [definiciones de métricas](docs/sql_metric_definitions.md), [scoring](docs/scoring_framework.md), [gobernanza de KPI](docs/governance/kpi_governance_contract.md) y [release gates](docs/governance/release_gates.md).
+Detalles técnicos: [quickstart operativo](docs/operator_quickstart.md), [contratos de datos y caveats](docs/data_contracts_and_caveats.md), [arquitectura SQL](docs/sql_architecture.md), [definiciones de métricas](docs/sql_metric_definitions.md), [scoring](docs/scoring_framework.md), [gobernanza de KPI](docs/governance/kpi_governance_contract.md) y [release gates](docs/governance/release_gates.md).
 
 Licencia: [MIT](LICENSE).

@@ -6,9 +6,71 @@ import numpy as np
 import pandas as pd
 
 from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
-from .utils import read_ev_csv, write_text_utf8
+from .utils import read_ev_csv, require_columns, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
+
+VEHICLE_FLOW_REQUIRED_COLUMNS = [
+    "orden_id",
+    "vehiculo_id",
+    "version_id",
+    "tipo_propulsion",
+    "turno",
+    "fecha_real",
+    "planned_to_actual_sequence_gap",
+    "total_internal_lead_time_min",
+    "yard_wait_time_min",
+    "charging_wait_time_min",
+    "charging_duration_min",
+    "soc_gap_before_dispatch",
+    "dispatch_delay_min",
+    "non_productive_moves_count",
+    "blocking_exposure",
+    "complejidad_montaje",
+]
+
+AREA_SHIFT_REQUIRED_COLUMNS = [
+    "fecha",
+    "turno",
+    "area",
+    "dispatch_gap",
+    "area_throughput_loss_proxy",
+    "congestion_index",
+    "avg_wait_time",
+    "queue_pressure_score",
+    "slot_utilization",
+    "yard_occupancy_rate",
+    "bottleneck_density",
+    "dispatch_risk_density",
+    "operational_stress_score",
+]
+
+CHARGING_REQUIRED_COLUMNS = [
+    "fecha",
+    "turno",
+    "zona_carga",
+    "slot_id",
+    "sessions_count",
+    "avg_wait_time_min",
+    "energy_delivered_kwh",
+    "interruption_rate",
+    "slot_utilization_ratio",
+    "avg_soc_gap_pct",
+]
+
+YARD_REQUIRED_COLUMNS = [
+    "ts_hour",
+    "zona_patio",
+    "avg_dwell_time_min",
+    "p95_dwell_time_min",
+    "blocking_rate",
+    "movement_density",
+    "non_productive_move_rate",
+    "operational_risk_score",
+    "yard_occupancy_rate",
+]
+
+DISPATCH_REQUIRED_COLUMNS = ["fecha", "dispatch_readiness_risk_score"]
 
 
 @dataclass
@@ -21,6 +83,7 @@ def _read_csv(name: str, parse_dates: list[str] | None = None) -> pd.DataFrame:
 
 
 def _build_vehicle_readiness_features(vf: pd.DataFrame) -> pd.DataFrame:
+    require_columns(vf, VEHICLE_FLOW_REQUIRED_COLUMNS, "vehicle_flow_timeline")
     out = vf.copy()
     out["version_complexity_score"] = out["complejidad_montaje"].clip(lower=0)
     out["readiness_risk_score_input"] = (
@@ -63,26 +126,13 @@ def _build_vehicle_readiness_features(vf: pd.DataFrame) -> pd.DataFrame:
 
 
 def _build_area_shift_features(area_shift: pd.DataFrame) -> pd.DataFrame:
-    cols = [
-        "fecha",
-        "turno",
-        "area",
-        "dispatch_gap",
-        "area_throughput_loss_proxy",
-        "congestion_index",
-        "avg_wait_time",
-        "queue_pressure_score",
-        "slot_utilization",
-        "yard_occupancy_rate",
-        "bottleneck_density",
-        "dispatch_risk_density",
-        "operational_stress_score",
-    ]
-    out = area_shift[cols].copy()
+    require_columns(area_shift, AREA_SHIFT_REQUIRED_COLUMNS, "mart_area_shift")
+    out = area_shift[AREA_SHIFT_REQUIRED_COLUMNS].copy()
     return out
 
 
 def _build_charging_features(ch: pd.DataFrame) -> pd.DataFrame:
+    require_columns(ch, CHARGING_REQUIRED_COLUMNS, "vw_charging_utilization")
     ch2 = ch.copy()
     ch2["target_soc_miss_rate"] = (ch2["avg_soc_gap_pct"].fillna(0) > 5).astype(float)
     ch2["charger_pressure_score"] = (
@@ -104,6 +154,7 @@ def _build_charging_features(ch: pd.DataFrame) -> pd.DataFrame:
 
 
 def _build_yard_features(yard: pd.DataFrame) -> pd.DataFrame:
+    require_columns(yard, YARD_REQUIRED_COLUMNS, "vw_yard_congestion")
     out = yard.groupby(["ts_hour", "zona_patio"], as_index=False).agg(
         avg_dwell_time=("avg_dwell_time_min", "mean"),
         p95_dwell_time=("p95_dwell_time_min", "mean"),
@@ -123,6 +174,19 @@ def _build_launch_transition_features(
     yard_features: pd.DataFrame,
     dispatch: pd.DataFrame,
 ) -> pd.DataFrame:
+    require_columns(
+        vehicle_features,
+        ["fecha_real", "tipo_propulsion", "readiness_risk_score_input", "total_internal_lead_time"],
+        "vehicle_readiness_features",
+    )
+    require_columns(
+        charging_features,
+        ["fecha", "charger_pressure_score", "sessions_per_shift"],
+        "charging_features",
+    )
+    require_columns(yard_features, ["timestamp", "yard_saturation_score"], "yard_features")
+    require_columns(dispatch, DISPATCH_REQUIRED_COLUMNS, "vw_dispatch_readiness")
+
     vf = vehicle_features.copy()
     vf["fecha_real"] = pd.to_datetime(vf["fecha_real"], errors="coerce")
     vf["week"] = vf["fecha_real"].dt.to_period("W").dt.start_time
