@@ -53,12 +53,11 @@ coverage.xml
 secrets/
 .secrets/
 
-# Bases de dados locais geradas
+# Bases de dados locais geradas (reconstruíveis a partir dos CSV em data/processed/)
 *.db
 *.sqlite
 *.sqlite3
 *.duckdb
-!data/processed/gemelo_operativo_ev.duckdb
 
 # IDE
 .vscode/

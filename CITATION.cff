@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+title: "Gemelo Operativo para la Transición a Vans Eléctricas"
+message: "If you use this software or its analysis, please cite it as below."
+type: software
+authors:
+  - family-names: "Fidalgo Martins"
+    given-names: "Miguel"
+repository-code: "https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans"
+url: "https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/"
+abstract: >-
+  Reproducible operational digital twin that identifies where production flow
+  breaks during an electric-vehicle ramp-up, quantifies the cost, and ranks the
+  levers that recover it. Built on deterministic synthetic data, a DuckDB SQL
+  layer, and a Python analytical stack (diagnostics, parametric scenarios, an
+  Operational Priority Index with Monte Carlo stability, and a release gate).
+keywords:
+  - analytics
+  - digital-twin
+  - duckdb
+  - electric-vehicles
+  - manufacturing
+  - operations-research
+  - supply-chain
+license: MIT
+version: "1.0.0"
+date-released: "2026-04-05"

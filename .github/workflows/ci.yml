@@ -109,8 +109,12 @@ jobs:
       - name: Evaluate release gate
         run: python -m src.ev_release_gate
 
-      - name: Integration tests
-        run: python -m pytest -q -m integration
+      - name: Full suite with combined coverage gate
+        run: >-
+          python -m pytest -q
+          -m "integration or not integration"
+          --cov=src --cov-report=term-missing
+          --cov-fail-under=85
 
   security:
     name: security

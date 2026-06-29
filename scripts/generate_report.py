@@ -105,11 +105,17 @@ READINESS_GAP_PP = (ICE_READY_RATE - EV_READY_RATE) * 100
 
 version_readiness = (
     readiness.groupby(["tipo_propulsion", "version_id"], as_index=False)
-    .apply(lambda g: pd.Series({"vehicles": g["total_vehiculos"].sum(), "readiness": weighted_avg(g, "readiness_rate", "total_vehiculos")}))
+    .apply(
+        lambda g: pd.Series(
+            {"vehicles": g["total_vehiculos"].sum(), "readiness": weighted_avg(g, "readiness_rate", "total_vehiculos")}
+        )
+    )
     .reset_index(drop=True)
 )
 worst_ev_version = version_readiness[version_readiness["tipo_propulsion"] == "EV"].sort_values("readiness").iloc[0]
-best_ice_version = version_readiness[version_readiness["tipo_propulsion"] == "ICE"].sort_values("readiness", ascending=False).iloc[0]
+best_ice_version = (
+    version_readiness[version_readiness["tipo_propulsion"] == "ICE"].sort_values("readiness", ascending=False).iloc[0]
+)
 
 yard_zone = (
     yard.groupby("zona_patio")

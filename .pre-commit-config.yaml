@@ -1,0 +1,27 @@
+# Run `pre-commit install` once, then hooks run on every commit.
+# Mirrors the CI quality gate so problems are caught before push.
+
+# Generated artifacts (committed data snapshot, charts, report, dashboard) are
+# excluded from text-normalising hooks; they are produced by the pipeline.
+exclude: '^(data/|outputs/|dist/)'
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.16
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        # Allows the committed data snapshot (largest mart ~20 MB) while
+        # blocking the rebuildable 34 MB DuckDB and other oversized binaries.
+        args: ["--maxkb=25600"]

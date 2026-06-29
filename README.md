@@ -1,5 +1,10 @@
 # Gemelo Operativo para la Transición a Vans Eléctricas
 
+[![CI](https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans/actions/workflows/ci.yml/badge.svg)](https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](#verificación)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Gemelo operativo reproducible que identifica dónde se rompe el flujo durante un ramp-up EV, cuánto cuesta y qué levers lo recuperan.
 
 | | |
@@ -65,6 +70,11 @@ pytest -q
 pytest -q -m integration
 python -m src.ev_release_gate
 ```
+
+La cobertura combinada (unitarios + integración) es ~90 %; CI ejecuta la suite
+completa con un umbral mínimo del 85 % (`--cov-fail-under=85`). La base DuckDB en
+`data/processed/` es un intermedio reconstruible y no se versiona; los CSV son la
+salida canónica.
 
 ## Estructura
 
