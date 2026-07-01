@@ -67,6 +67,29 @@ not correctness.
   "clean and direct, no over-engineering" stance. Revisit only if the type
   surface is tightened deliberately.
 
+## Design-level pass (2026-06-26)
+
+Audited the three visual deliverables for design quality, not just correctness.
+
+- **Chart pack (19 PNGs)** — found and fixed two genuine defects:
+  - *Chart 12 (market geography):* readiness spans only 72–73%, yet min/max
+    colour normalisation stretched that 1-point gap across the full red→green
+    spectrum, so 72% read as alarming-red and 73% as deep-green — directly
+    contradicting the chart's own "readiness es uniforme" message. Now uses a
+    fixed 0.25–1.0 readiness domain (same scale as chart 18); uniform readiness
+    now reads as uniform colour.
+  - *Chart 04 (risk matrix):* bubbles at the score extremes were clipped by the
+    hardcoded 0–100 axis limits. Padded to −8..108 (centre stays 50) with
+    explicit 0..100 ticks so every marker sits fully inside the frame.
+  - Regenerated PNGs + the embedding report PDF; verified visually. The other 17
+    charts were audited (scatter, funnel, heatmap, correlation, dumbbell,
+    coloured bars) and are clean and consistent.
+- **Report PDF (40 pp)** — rebuilt to pick up the corrected charts; builds clean.
+- **Dashboard (flagship HTML)** — rendered headless and inspected: Geist
+  typography, dark-mode tokens, blue `#1d4ed8` accent consistent with the chart
+  pack, clean KPI strip and filter bar, charts render correctly. No defects.
+  (`Gap vs plan = 0` is a legitimate on-plan value, not a bug.)
+
 ## Definition of done
 
 - `ruff check .` and `ruff format --check .` clean.
