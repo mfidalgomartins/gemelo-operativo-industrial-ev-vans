@@ -359,8 +359,12 @@ def chart_04_risk_matrix() -> None:
     )
 
     style_grid(ax, "both")
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
+    # Pad symmetrically past the 0-100 score range so bubbles at the extremes
+    # (LOGISTICA ~99, EXPEDICION ~0) sit fully inside the frame; centre stays 50.
+    ax.set_xlim(-8, 108)
+    ax.set_ylim(-8, 108)
+    ax.set_xticks([0, 20, 40, 60, 80, 100])
+    ax.set_yticks([0, 20, 40, 60, 80, 100])
     ax.set_xlabel("Throughput loss score")
     ax.set_ylabel("Dispatch risk score")
     ax.spines["left"].set_visible(False)
@@ -731,8 +735,12 @@ def chart_12_market_geography() -> None:
     fig, ax = plt.subplots(figsize=(11, 5.8))
     plt.subplots_adjust(left=0.16, right=0.95, top=0.78, bottom=0.12)
 
-    norm = (g["ready"] - g["ready"].min()) / (g["ready"].max() - g["ready"].min() + 1e-9)
-    colors = [plt.cm.RdYlGn(0.15 + 0.7 * n) for n in norm]
+    # Fixed readiness domain (same scale as chart 18) so a near-uniform 72-73%
+    # spread reads as near-uniform colour, instead of stretching a 1-point gap
+    # across the whole spectrum and contradicting the chart's own message.
+    ready_lo, ready_hi = 0.25, 1.0
+    norm = ((g["ready"] - ready_lo) / (ready_hi - ready_lo)).clip(0, 1)
+    colors = [plt.cm.RdYlGn(float(n)) for n in norm]
     bars = ax.barh(g["mercado_destino"], g["vol"], color=colors, edgecolor="none", height=0.66)
     for rect, vol, r in zip(bars, g["vol"], g["ready"]):
         ax.text(
