@@ -121,7 +121,7 @@ yard_zone = (
     yard.groupby("zona_patio")
     .agg(
         avg_dwell=("avg_dwell_time", "mean"),
-        p95_dwell=("p95_dwell_time", "max"),
+        p95_dwell=("p95_dwell_time", "mean"),
         blocking_rate=("blocking_rate", "mean"),
         avg_occupancy=("yard_occupancy_rate", "mean"),
     )
@@ -608,8 +608,9 @@ def build_story() -> list:
             "is not a generic EV slowdown. Three findings define it. First, the readiness gap is an EV "
             f"phenomenon: electric versions are ready {pct(EV_READY_RATE)} of the time against {pct(ICE_READY_RATE)} for "
             "combustion versions, and the four EV versions carry 78 percent of all late-dispatch minutes. "
-            "Second, the physical chokepoint is one yard zone. The pre-dispatch staging area runs at a 49-hour "
-            "p95 dwell time and is blocked almost continuously, while the rest of the yard flows freely. Third, "
+            "Second, the physical chokepoint is one yard zone. The pre-dispatch staging area runs at a "
+            f"{pre_salida['p95_dwell'] / 60:.0f}-hour p95 dwell time and is blocked almost continuously, while the "
+            "rest of the yard flows freely. Third, "
             "internal cycle time is not the issue. EV and ICE vehicles share the same lead-time profile, around "
             "24 hours end to end, so the EV cost shows up in readiness and exit timing rather than in how long a "
             "vehicle takes to build."
@@ -1127,7 +1128,9 @@ def build_story() -> list:
     )
     st += fig(
         "13_yard_zone_congestion.png",
-        "Figure 9. p95 dwell time by yard zone. Pre-dispatch staging dominates at roughly 43 hours and near-total blocking; every other zone clears in under three hours.",
+        f"Figure 9. p95 dwell time by yard zone. Pre-dispatch staging dominates at roughly {pre_salida['p95_dwell'] / 60:.0f} "
+        "hours and near-total blocking; the next-highest zone, buffer charging, clears in about five hours, and the remaining "
+        "four zones all clear in under three-and-a-half.",
     )
     st.append(
         p(
@@ -1458,7 +1461,8 @@ def build_story() -> list:
             "This is the first and largest caveat. The records are generated, not measured. The structure is realistic and the "
             "relationships are internally consistent, which is enough to demonstrate the method and to show what such an analysis "
             "would surface on real data. It is not enough to treat any absolute number here as a fact about a physical plant. The "
-            "49-hour staging dwell and the 41 percent clean-exit rate are properties of this dataset, not benchmarks."
+            f"{pre_salida['p95_dwell'] / 60:.0f}-hour staging dwell and the 41 percent clean-exit rate are properties of this "
+            "dataset, not benchmarks."
         )
     )
     st.append(h3("Scenario impacts are assumptions, not estimates"))
@@ -1534,7 +1538,7 @@ def build_story() -> list:
                 "Logistics",
                 "Fig 3, 5",
             ],
-            ["4", "Stop accelerating the EV mix until exit reliability recovers", "Plant / Planning", "Fig 13, 16"],
+            ["4", "Stop accelerating the EV mix until exit reliability recovers", "Plant / Planning", "Fig 13, 15, 16"],
             [
                 "5",
                 "Calibrate weights, thresholds and elasticities to plant standards before capital decisions",
@@ -1547,8 +1551,9 @@ def build_story() -> list:
     st.append(h2("Priority 1. Fix the staging chokepoint"))
     st.append(
         p(
-            "The pre-dispatch staging zone is the physical bottleneck, at 43 hours p95 dwell and near-total blocking against under "
-            "three hours everywhere else in the yard. Treat it as a capacity-limited resource rather than open ground. Set a hard "
+            f"The pre-dispatch staging zone is the physical bottleneck, at {pre_salida['p95_dwell'] / 60:.0f} hours p95 dwell and "
+            "near-total blocking against five hours or less everywhere else in the yard. Treat it as a capacity-limited resource "
+            "rather than open ground. Set a hard "
             "occupancy cap, segment the buffer by destination dispatch window, and only pull a vehicle into staging when its dispatch "
             "slot is confirmed. This is the highest-confidence recommendation in the report because it rests on measured dwell data, "
             "not on a modelling assumption, and because it directly relieves the blocking that delays even ready vehicles."

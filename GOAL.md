@@ -90,6 +90,53 @@ Audited the three visual deliverables for design quality, not just correctness.
   pack, clean KPI strip and filter bar, charts render correctly. No defects.
   (`Gap vs plan = 0` is a legitimate on-plan value, not a bug.)
 
+## Report-quality pass (2026-06-26): Big Four consulting standard
+
+Goal: bring `outputs/reports/ev_transition_operating_twin_report.pdf` (built by
+`scripts/generate_report.py`) to executive-consulting quality — eliminate AI
+writing patterns, and strengthen analytical rigor, structure and logic.
+
+**Baseline assessment.** Read every section's prose in full. Found zero AI
+writing tells (no "leverage/delve/moreover/robust solution/seamless" etc., zero
+em-dashes, no generic hedging or filler transitions) and a strong existing
+structure: hypothesis-elimination findings (systematically clearing shift
+effects, cycle-time, and yard-as-EV-cause before landing on the real driver),
+a decision-frame section with falsifiable tests, honest calibration caveats,
+and a phased roadmap with exit criteria. The prose did not need a rewrite; it
+needed a rigor audit.
+
+**Found and fixed one real analytical bug**, not a style issue:
+- `generate_report.py`'s `yard_zone` aggregation used `p95_dwell=(...,"max")`
+  — the single worst hourly p95 reading across the entire 12-month window
+  (65.7 h) — while `generate_chart_pack.py` correctly used `.mean()` on the
+  same underlying metric (43.0 h). Two pipelines silently diverged on "the"
+  number for the same concept. The report's own hand-typed captions (Figure 9,
+  Priority 1) had been kept in sync with the *correct* 43 h chart-pack figure,
+  while live f-string citations elsewhere in the same report (Section 7, and
+  a "49-hour" figure in the executive summary and risk section that actually
+  conflated the *plant-level* p95 with the *zone-level* p95) quietly drifted.
+  Fixed the aggregation to `.mean()` (verified it now reconciles exactly with
+  the chart pack: 43.04 h both ways) and converted every hardcoded literal to
+  read the live variable, so this class of drift can't recur silently.
+- Corrected a categorical overclaim ("every other zone clears in under three
+  hours") that was false for the buffer-charging zone (5.2 h p95); now states
+  the two-tier reality precisely.
+- Fixed a citation gap: the recommendations table tied "stop accelerating the
+  EV mix" to Fig 13/16, but the chart whose caption states the exact claim
+  ("accelerating the mix... scores worst") is Fig 15. Added it.
+
+**Verified, did not change:** figure-to-citation mapping for all other
+recommendations, cross-section numerical consistency (78% late-dispatch share,
+41% clean-exit rate, 24h lead time, decision scores, Monte Carlo 77/23 split
+— all consistent everywhere cited), dynamic TOC page numbers (real
+`TableOfContents`, not hardcoded), page-break integrity (no orphaned headers,
+no empty pages) across a full-document sample render.
+
+**Deliberately not done:** re-localising the 19 embedded chart images from
+Spanish to English to match the English report prose. That's a chart-pack
+scope change (the charts are shared with the Spanish-facing dashboard), not a
+report-prose fix, and was out of scope for this pass.
+
 ## Definition of done
 
 - `ruff check .` and `ruff format --check .` clean.
