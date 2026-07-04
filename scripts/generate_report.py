@@ -22,6 +22,7 @@ from reportlab.platypus import (
     BaseDocTemplate,
     Frame,
     Image,
+    KeepTogether,
     NextPageTemplate,
     PageBreak,
     PageTemplate,
@@ -83,9 +84,14 @@ DWELL_P95_H = float(kpi["dwell_p95_min"]) / 60
 WAIT_CHARGE = float(kpi["tiempo_medio_espera_carga_min"])
 CHARGER_UTIL = float(kpi["utilizacion_media_cargadores"])
 ON_TIME_READY = int(round(READY * (1 - RATIO_LATE)))
+CLEAN_EXIT_RATE = ON_TIME_READY / TOTAL
+CLEAN_EXIT_GAP = TOTAL - ON_TIME_READY
+READY_LOSS_RATE = NO_READY / TOTAL
+LATE_GATE_LOSS_RATE = READY * RATIO_LATE / TOTAL
 
 best = scen.sort_values("decision_score", ascending=False).iloc[0]
 base = scen.set_index("escenario").loc["1_ramp_up_ev_base"]
+worst = scen.sort_values("decision_score", ascending=True).iloc[0]
 
 
 def weighted_avg(df: pd.DataFrame, value_col: str, weight_col: str) -> float:
@@ -151,8 +157,23 @@ DISPATCH_STABILITY_DELTA = transition_end["dispatch_stability_index"] - transiti
 CHARGE_GAP_DELTA = transition_end["charging_capacity_gap"] - transition_start["charging_capacity_gap"]
 
 scenario_delta_by_metric = scenario_delta.set_index("metrica")
+DECISION_SCORE_UPLIFT = float(best["decision_score"] - base["decision_score"])
+ACCELERATION_SCORE_PENALTY = float(base["decision_score"] - worst["decision_score"])
+CORRECTIVE_THROUGHPUT_DELTA = float(scenario_delta_by_metric.loc["throughput", "delta_abs"])
+CORRECTIVE_INTERNAL_TIME_DELTA = float(scenario_delta_by_metric.loc["tiempo_total_interno", "delta_pct"])
+CORRECTIVE_LATE_PP_REDUCTION = -float(scenario_delta_by_metric.loc["vehiculos_retrasados", "delta_abs"]) * 100
+CORRECTIVE_CHARGE_WAIT_DELTA = float(scenario_delta_by_metric.loc["espera_carga", "delta_pct"])
 TOP1_LOGISTICS = float(rank_stability.set_index("top1_area").loc["LOGISTICA", "freq_share"])
 TOP1_YARD = float(rank_stability.set_index("top1_area").loc["PATIO", "freq_share"])
+
+AREA_NAME_EN = {
+    "LOGISTICA": "Logistics",
+    "PATIO": "Yard",
+    "CARGA": "Charging",
+    "PRODUCCION": "Production",
+    "EXPEDICION": "Dispatch",
+    "ENERGIA": "Energy",
+}
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -444,7 +465,7 @@ def _aligned_style(base: ParagraphStyle, align: str) -> ParagraphStyle:
     return ParagraphStyle(f"{base.name}_{align}", parent=base, alignment=a)
 
 
-def data_table(header, rows, col_widths, highlight_first_col=True, aligns=None) -> Table:
+def _table_flowables(header, rows, col_widths, highlight_first_col=True, aligns=None) -> list:
     aligns = aligns or {}
     head = []
     for j, h in enumerate(header):
@@ -477,6 +498,26 @@ def data_table(header, rows, col_widths, highlight_first_col=True, aligns=None) 
     return [Spacer(1, 2), t, Spacer(1, 12)]
 
 
+def data_table(header, rows, col_widths, highlight_first_col=True, aligns=None) -> list:
+    # KeepTogether prevents a table from splitting mid-body and stranding a
+    # couple of rows on the previous page with a repeated header below them.
+    return [KeepTogether(_table_flowables(header, rows, col_widths, highlight_first_col, aligns))]
+
+
+def h2_table(title: str, header, rows, col_widths, **kwargs) -> list:
+    """A subsection heading bound to the table that immediately follows it.
+
+    Without this, a bare heading can be orphaned at the bottom of a page
+    while its table is pushed whole to the next page, leaving a stranded
+    title and a gap of white space. Used where a heading has no prose
+    before its table (the appendix's dense reference-style subsections).
+    Wraps the heading and the table's own flowables in a single
+    KeepTogether — nesting two KeepTogethers confuses ReportLab's
+    available-space calculation and forces every table onto its own page.
+    """
+    return [KeepTogether([h2(title), *_table_flowables(header, rows, col_widths, **kwargs)])]
+
+
 def pct(x, d=0):
     return f"{x * 100:.{d}f}%"
 
@@ -491,8 +532,8 @@ def cover() -> list:
     st.append(Spacer(1, 14))
     st.append(
         Paragraph(
-            "Where the EV ramp-up actually breaks the plant, how much output it costs, "
-            "and which capacity levers recover it.",
+            "Where the EV ramp-up breaks the operating model, what reliability it leaks, "
+            "and which controls recover the exit gate.",
             S["cover_sub"],
         )
     )
@@ -577,7 +618,7 @@ def build_story() -> list:
     st.append(
         kpi_strip(
             [
-                (f"{TOTAL // 1000}k", "VEHICLE-ORDERS ANALYSED"),
+                (f"{TOTAL / 1000:.1f}k", "VEHICLE-ORDERS ANALYSED"),
                 (pct(SHARE_EV), "EV SHARE OF FLOW"),
                 (pct(RATIO_LATE), "DISPATCHED LATE"),
                 (pct(READY / TOTAL), "READY AT DISPATCH"),
@@ -587,45 +628,64 @@ def build_story() -> list:
     st.append(Spacer(1, 12))
     st.append(
         lead(
-            "The plant moves volume. Across the full ramp-up it completed every one of its "
-            f"{TOTAL:,} scheduled orders, holding a steady 160 vehicles per day even as the electric "
-            f"mix climbed from 5 percent to nearly 80 percent of weekly output. Throughput is not the "
-            "problem. The problem sits at the end of the line, where vehicles wait to leave."
+            "Management should not accelerate the next EV wave through the current exit model. The plant is "
+            "building to plan, but it is not shipping cleanly: the constraint has moved from production volume "
+            "to readiness, staging and outbound discipline."
+        )
+    )
+    st += data_table(
+        ["Executive answer", "Decision logic"],
+        [
+            [
+                "Decision",
+                "Hold further EV acceleration until the exit gate is controlled; implement the combined corrective package before the next ramp step.",
+            ],
+            [
+                "Why now",
+                f"The plant completed {TOTAL:,} orders to plan, but only {ON_TIME_READY:,} left both ready and on time, leaving {CLEAN_EXIT_GAP:,} non-clean exits.",
+            ],
+            [
+                "What fixes it",
+                "Cap pre-dispatch staging, reserve EV charging at shift peaks and enforce a readiness window before vehicles enter staging.",
+            ],
+            [
+                "Expected effect",
+                f"Scenario twin: +{CORRECTIVE_THROUGHPUT_DELTA:.1f} vehicles/day, -{CORRECTIVE_LATE_PP_REDUCTION:.1f} pp late vehicles and +{DECISION_SCORE_UPLIFT:.1f} decision-score points versus the unmanaged base.",
+            ],
+            [
+                "Governance condition",
+                "Treat scenario impacts as pilot hypotheses until real plant data calibrates charging, staging and dispatch elasticities.",
+            ],
+        ],
+        [CONTENT_W * 0.24, CONTENT_W * 0.76],
+    )
+    st.append(
+        p(
+            f"Across the full ramp-up the plant completed every scheduled order, holding a steady 160 vehicles per day "
+            "while the electric mix climbed from 5 percent to nearly 80 percent of weekly output. That clears the wrong "
+            f"suspect. Throughput is not binding. Reliability is: {pct(READY / TOTAL)} of completed vehicles are ready "
+            f"at their dispatch window, {pct(RATIO_LATE)} of ready vehicles leave more than two hours late, and the clean-exit "
+            f"rate is only {pct(CLEAN_EXIT_RATE)}."
         )
     )
     st.append(
         p(
-            f"Only {pct(READY / TOTAL)} of completed vehicles are ready at their dispatch window, and "
-            f"{pct(RATIO_LATE)} of those that do leave go out more than two hours late. Combine the two "
-            f"gates and just {ON_TIME_READY:,} orders, around {pct(ON_TIME_READY / TOTAL)} of the plan, "
-            "leave both on time and ready. The output the plant builds is not the output it reliably ships. "
-            "That gap is the single most important number in this report."
+            "The failure mode is narrow enough to act on. Electric versions are ready "
+            f"{pct(EV_READY_RATE)} of the time versus {pct(ICE_READY_RATE)} for combustion versions, and the four EV versions "
+            "carry 78 percent of all late-dispatch minutes. The physical choke point is also narrow: pre-dispatch staging "
+            f"runs at {pre_salida['p95_dwell'] / 60:.0f} hours p95 dwell and near-total blocking while the other yard zones "
+            "clear materially faster. Internal cycle time is not the issue; EV and ICE lead-time profiles both sit around "
+            "24 hours end to end. The penalty appears after build completion, at the point where charge, state-of-charge "
+            "confirmation and dispatch slots have to line up."
         )
     )
     st.append(
         p(
-            "The cause is concentrated and identifiable. It is not spread evenly across the factory and it "
-            "is not a generic EV slowdown. Three findings define it. First, the readiness gap is an EV "
-            f"phenomenon: electric versions are ready {pct(EV_READY_RATE)} of the time against {pct(ICE_READY_RATE)} for "
-            "combustion versions, and the four EV versions carry 78 percent of all late-dispatch minutes. "
-            "Second, the physical chokepoint is one yard zone. The pre-dispatch staging area runs at a "
-            f"{pre_salida['p95_dwell'] / 60:.0f}-hour p95 dwell time and is blocked almost continuously, while the "
-            "rest of the yard flows freely. Third, "
-            "internal cycle time is not the issue. EV and ICE vehicles share the same lead-time profile, around "
-            "24 hours end to end, so the EV cost shows up in readiness and exit timing rather than in how long a "
-            "vehicle takes to build."
-        )
-    )
-    st.append(
-        p(
-            "The prioritisation model ranks Logistics and Yard as the two areas to stabilise first, and that "
-            "ranking is robust. Across 300 Monte Carlo redraws of the scoring weights, Logistics stays first "
-            f"{pct(TOP1_LOGISTICS)} of the time and Yard takes the top spot the remaining {pct(TOP1_YARD)}, so no other area ever leads. The "
-            "scenario twin points to the same conclusion from the other direction: no single lever fixes the "
-            "exit gate. The combined corrective package, sequencing discipline plus charging capacity plus yard "
-            "buffer redesign, is the only scenario that improves throughput, internal time and on-time exits at "
-            f"once, lifting the decision score to {best['decision_score']:.1f} against {base['decision_score']:.1f} "
-            "for the unmanaged ramp-up."
+            "The priority ranking is stable under challenge. Across 300 Monte Carlo redraws of the scoring weights, "
+            f"Logistics ranks first {pct(TOP1_LOGISTICS)} of the time and Yard takes the remaining {pct(TOP1_YARD)}; no other area ever leads. "
+            "The scenario twin reaches the same management answer from a different route: no single lever fixes the exit "
+            "gate. The combined package, sequencing discipline plus charging capacity plus yard-buffer redesign, is the only "
+            "scenario that improves throughput, internal time and late exits."
         )
     )
     st.append(h3("What to do, in order"))
@@ -634,7 +694,7 @@ def build_story() -> list:
             "1. Treat the pre-dispatch yard zone as a capacity-limited resource. Cap occupancy, redesign the "
             "buffer by destination window, and pull-sequence vehicles into staging only when their dispatch slot is "
             f"real. This attacks a zone with {pre_salida['avg_dwell'] / 60:.1f} hours of mean dwell and "
-            f"{pct(pre_salida['blocking_rate'])} blocking, the clearest physical expression of the exit delay.<br/>"
+            f"{pct(pre_salida['blocking_rate'])} blocking, the physical expression of the exit delay.<br/>"
             "2. Reserve charging slots for EV versions and add capacity at the shift peaks. Charging capacity is the "
             f"highest-return lever in the scenario model at an expected impact of {levers['impacto_esperado'].max():.2f}, "
             "and EV readiness is the gate that the corrective package moves most.<br/>"
@@ -645,8 +705,8 @@ def build_story() -> list:
     )
     st.append(
         p(
-            "The rest of this report shows the evidence behind each of these statements, quantifies the size of the "
-            "prize, and states plainly where the analysis stops and judgement begins."
+            "The sections that follow show the evidence chain, quantify the operating prize and separate immediate "
+            "rule changes from assumptions that require calibration before capital approval."
         )
     )
     st.append(PageBreak())
@@ -657,7 +717,7 @@ def build_story() -> list:
         lead(
             "A van plant in the middle of an electric ramp-up is running two factories at once. The combustion line "
             "it has optimised for years, and a growing electric line that shares the same yard, the same dispatch bays "
-            "and the same shifts but behaves differently at every step. This report asks where that collision actually "
+            "and the same shifts but behaves differently at every step. This report asks where that collision "
             "hurts and what it costs."
         )
     )
@@ -667,7 +727,7 @@ def build_story() -> list:
             "charge before it leaves, which adds a dependency that did not exist before. It carries a state-of-charge "
             "target that has to be confirmed at dispatch. It competes for a finite set of charging slots that the plant "
             "did not need a year ago. Each of these touches the back half of the flow, the part between end of line and "
-            "the gate, which is exactly where this plant is losing reliability."
+            "the gate, where this plant is losing reliability."
         )
     )
     st.append(
@@ -685,7 +745,7 @@ def build_story() -> list:
             "The analysis has four concrete objectives, and every section maps back to one of them.<br/>"
             "<b>Locate the bottleneck.</b> Identify which area and which physical zone constrain reliable output, "
             "with evidence rather than intuition.<br/>"
-            "<b>Quantify the EV penalty.</b> Separate what the electric mix genuinely costs from what is simply the "
+            "<b>Quantify the EV penalty.</b> Separate what the electric mix costs from what is baseline "
             "plant's existing operating noise.<br/>"
             "<b>Rank the response.</b> Order the areas and the capacity levers by expected return, and test whether that "
             "order is stable or an artefact of the chosen weights.<br/>"
@@ -700,7 +760,7 @@ def build_story() -> list:
             "that supports it, then explains what the chart does and does not prove. Scores reported on a 0 to 100 scale "
             "are relative pressure indices, not physical units, and are defined in the methodology section. Where a number "
             "is a modelling assumption rather than a measurement, the text says so. The recommendations in the final "
-            "section are tied back to the specific findings that justify them."
+            "section are mapped to the specific findings that justify them."
         )
     )
     st.append(h2("Decision frame"))
@@ -733,7 +793,7 @@ def build_story() -> list:
                 "If congestion were evenly spread, a single staging-zone intervention would be too narrow.",
             ],
             [
-                "Is the recommended package robust?",
+                "Is the recommended package stable?",
                 "Scenario comparison, base-vs-corrective deltas, Monte Carlo and sensitivity tests",
                 "If Logistics and Yard stopped leading under reasonable weights, the priority order would need rework before execution.",
             ],
@@ -785,10 +845,10 @@ def build_story() -> list:
     st.append(h2("Data quality"))
     st.append(
         p(
-            "Ten integrity checks run on every build. All ten pass with zero failing rows: no invalid denominators, no "
-            "duplicate orders, no EV requiring a charge with no session, no capacity inconsistency, no delay without a "
-            "cause, no dispatch without readiness, no incoherent sequence, no impossible charging session, no out-of-range "
-            "state of charge, no out-of-order timestamps. The findings that follow sit on data that is internally clean."
+            f"{len(checks)} integrity checks run on every build, covering record cardinality, referential integrity, "
+            "invalid denominators, duplicate orders and vehicles, incoherent sequencing, impossible charging sessions, "
+            f"out-of-range state of charge and out-of-order timestamps. All {len(checks)} pass with zero failing rows. "
+            "The findings that follow sit on data that is internally clean."
         )
     )
     st += data_table(
@@ -803,9 +863,9 @@ def build_story() -> list:
     st.append(h2("Evidence map"))
     st.append(
         p(
-            "The evidence base is deliberately layered. SQL marts carry the governed metrics; feature tables expose the "
+            "The evidence base is layered by purpose. SQL marts carry the governed metrics; feature tables expose the "
             "operating mechanisms; diagnostic outputs turn those mechanisms into area-level priorities; scenario outputs test "
-            "management choices. This matters because the report does not ask the reader to trust a black box. Each major "
+            "management choices. The report does not ask the reader to trust a black box. Each major "
             "claim can be traced to the layer designed for that job."
         )
     )
@@ -868,16 +928,16 @@ def build_story() -> list:
             "The OPI combines five pressure scores into one ranking number per area: throughput loss, yard risk, charging "
             "risk, dispatch risk and launch-transition risk. It is the model's answer to a blunt management question: if we "
             "can only stabilise one or two areas next week, which ones. The index is not a causal estimate. It is a "
-            "transparent, weighted prioritisation that can be recomputed under different weights, which is exactly what the "
-            "robustness analysis does."
+            "transparent, weighted prioritisation that can be recomputed under different weights; the ranking-stability test "
+            "does that explicitly."
         )
     )
     st.append(h2("Decision score"))
     st.append(
         p(
             "Scenarios are scored on a multi-criteria function that rewards throughput, readiness and operational stability "
-            "and penalises late dispatch and congestion risk. It deliberately refuses to optimise a single metric, because "
-            "the whole finding of this report is that the plant can hit its volume target while failing its reliability "
+            "and penalises late dispatch and congestion risk. The score avoids single-metric optimisation, because "
+            "the central finding of this report is that the plant can hit its volume target while failing its reliability "
             "target. A score that only looked at throughput would rate the unmanaged ramp-up as a success."
         )
     )
@@ -888,7 +948,7 @@ def build_story() -> list:
             "priority index must show real dispersion across areas, the risk drivers must be diverse rather than collapsing "
             "to one, the priority tiers must separate, and the top-ranked area must be stable under resampling. All five "
             "pass. The standout is dispersion: the OPI standard deviation across areas is 17.8 against a floor of 1.0, which "
-            "means the ranking genuinely separates areas rather than rating them all alike."
+            "means the ranking separates areas rather than rating them all alike."
         )
     )
     st += data_table(
@@ -947,8 +1007,8 @@ def build_story() -> list:
     st += h1("Findings: the plant builds volume but cannot ship it", "Section 5")
     st.append(
         lead(
-            "Start with the good news, because it frames everything that follows. The plant is not throughput-constrained. "
-            "It builds what it is asked to build, every day, through the entire ramp."
+            "Start with throughput, because it clears the wrong suspect. The plant is not throughput-constrained. "
+            "It builds what it is asked to build through the entire ramp."
         )
     )
     st += fig(
@@ -959,7 +1019,7 @@ def build_story() -> list:
         p(
             "Daily completions sit on a flat trend at roughly 160 vehicles per day. The visible week-to-week swing is the "
             "normal breathing of a three-shift operation, not a downward drift. The throughput gap against plan is zero: "
-            "every scheduled order was completed. If the only question were can the plant make the vehicles, the answer is "
+            "every scheduled order was completed. If the only question were whether the plant can make the vehicles, the answer is "
             "yes, and the EV ramp did not change that answer."
         )
     )
@@ -971,8 +1031,8 @@ def build_story() -> list:
         p(
             "The second chart shows this was a real transition, not a pilot. The electric share of weekly output rises from "
             "around 5 percent at the start to nearly 80 percent by the end. The plant absorbed that shift in mix without "
-            "losing build volume. That is a real achievement and it is worth stating before the report turns to what broke, "
-            "because it locates the problem precisely. The failure is not in making EVs. It is in getting them out."
+            "losing build volume. That separates execution strength from exit failure. The problem is not making EVs; it is "
+            "getting them out cleanly."
         )
     )
     st += fig(
@@ -982,10 +1042,10 @@ def build_story() -> list:
     st.append(
         p(
             f"The exit funnel is where the volume story ends and the reliability story begins. All {TOTAL:,} orders are "
-            f"completed, but only {READY:,} are ready at their dispatch window, a {pct(NO_READY / TOTAL)} readiness loss. "
+            f"completed, but only {READY:,} are ready at their dispatch window, a {pct(READY_LOSS_RATE)} readiness loss. "
             f"Of those that are ready, {pct(RATIO_LATE)} still leave late. Stack the two gates and the clean-exit rate, on "
-            f"time and ready, falls to {pct(ON_TIME_READY / TOTAL)}. The plant is converting a fully-built order book into a "
-            "minority of clean exits. Every section that follows is an attempt to explain that collapse and to size what "
+            f"time and ready, falls to {pct(CLEAN_EXIT_RATE)}. The plant is converting a fully-built order book into a "
+            "minority of clean exits. Every section that follows explains that collapse and sizes what "
             "recovering it is worth."
         )
     )
@@ -995,8 +1055,8 @@ def build_story() -> list:
     st += h1("Findings: the EV penalty is real, but specific", "Section 6")
     st.append(
         lead(
-            "It would be easy to blame the ramp-up in general. The data does not allow that. The electric mix carries a clear "
-            "operational penalty, but it lands in three named places, and one obvious suspect is cleared entirely."
+            "The tempting diagnosis is to blame the ramp-up as a whole. The data is narrower. The electric mix carries a "
+            "clear operational penalty, but it lands in three named places, and one obvious suspect is cleared entirely."
         )
     )
     st += fig(
@@ -1008,16 +1068,16 @@ def build_story() -> list:
             "The comparison by driver is unambiguous on three fronts. Electric vehicles score higher on sequence disruption, "
             "on charging pressure, which combustion vehicles do not generate at all, and most sharply on dispatch-delay risk, "
             f"where EV sits near {evice.set_index('tipo_propulsion').loc['EV', 'dispatch_delay_risk_score']:.0f} against "
-            f"{evice.set_index('tipo_propulsion').loc['ICE', 'dispatch_delay_risk_score']:.0f} for combustion. These are the real costs of the transition and they cluster in "
+            f"{evice.set_index('tipo_propulsion').loc['ICE', 'dispatch_delay_risk_score']:.0f} for combustion. These are the measured transition costs, and they cluster in "
             "the back half of the flow, around charge and exit."
         )
     )
     st.append(
         p(
-            "The exception matters as much as the rule. Yard congestion is not an EV problem. The congestion score is actually "
+            "The exception matters as much as the rule. Yard congestion is not an EV problem. The congestion score is "
             "marginally higher for combustion vehicles, because the yard is a shared physical constraint that every vehicle "
-            "passes through regardless of drivetrain. This is the first place the analysis refuses an easy story. The yard is "
-            "congested, but blaming the EV mix for it would point the response at the wrong lever."
+            "passes through regardless of drivetrain. The yard is congested, but blaming the EV mix for that congestion would "
+            "point the response at the wrong lever."
         )
     )
     st += fig(
@@ -1026,7 +1086,7 @@ def build_story() -> list:
     )
     st.append(
         p(
-            "The readiness cohort is the clearest single chart in the report. Sorted by version, the electric and combustion "
+            "Readiness by version provides the cleanest split in the report. Sorted by version, the electric and combustion "
             f"vehicles separate into two bands with almost no overlap. EV versions are ready between "
             f"{pct(version_readiness[version_readiness['tipo_propulsion'] == 'EV']['readiness'].min())} and "
             f"{pct(version_readiness[version_readiness['tipo_propulsion'] == 'EV']['readiness'].max())} of the time. "
@@ -1045,11 +1105,10 @@ def build_story() -> list:
     )
     st.append(
         p(
-            "If readiness is the mechanism, late-dispatch minutes are the consequence, and they concentrate exactly where the "
+            "If readiness is the mechanism, late-dispatch minutes are the consequence, and they concentrate where the "
             "readiness gap predicts. The four electric versions carry 78 percent of all late-dispatch minutes. The Pareto curve "
-            "rises steeply and then flattens, which is the signature of a concentrated problem rather than a diffuse one. This is "
-            "operationally encouraging. A concentrated problem has a concentrated fix. The plant does not need to improve "
-            "everything; it needs to move the readiness of four versions."
+            "rises steeply and then flattens, which is the signature of a concentrated problem rather than a diffuse one. The "
+            "plant does not need to improve everything at once; it needs to move the readiness of four versions."
         )
     )
     st += fig(
@@ -1058,13 +1117,13 @@ def build_story() -> list:
     )
     st.append(
         p(
-            "The cleared suspect is cycle time. It would be reasonable to assume electric vehicles simply take longer to move "
+            "The cleared suspect is cycle time. It would be reasonable to assume electric vehicles take longer to move "
             "through the plant. They do not. The internal lead-time distributions for EV and ICE sit almost on top of each "
             "other, with medians of 24 and 25 hours and near-identical 90th percentiles. The electric vehicles are built and "
-            "moved just as fast as the combustion ones. What happens to them is different: they reach the end of the line on "
+            "moved at the same pace as the combustion ones. What happens to them is different: they reach the end of the line on "
             "time and then fail to leave, because the charge, the state-of-charge confirmation and the staging space are not "
             "there when they need them. This is why the report keeps separating build performance from exit performance. They "
-            "are genuinely different problems with different owners."
+            "are different problems with different owners."
         )
     )
     st += fig(
@@ -1123,7 +1182,7 @@ def build_story() -> list:
     st.append(
         lead(
             "The EV penalty explains who is late. It does not by itself explain where vehicles get stuck. For that the analysis "
-            "has to go down to the physical yard and to the area-level diagnostic."
+            "needs the physical yard view and the area-level diagnostic."
         )
     )
     st += fig(
@@ -1138,10 +1197,8 @@ def build_story() -> list:
             f"mean dwell of {pre_salida['avg_dwell'] / 60:.1f} hours, a p95 observation above {pre_salida['p95_dwell'] / 60:.1f} hours "
             f"and a blocking rate of {pct(pre_salida['blocking_rate'])}, while the next-highest zone, "
             f"{next_yard_zone['zona_patio'].replace('_', ' ').title()}, averages {next_yard_zone['avg_dwell'] / 60:.1f} hours. "
-            "This is the physical signature of the exit gate "
-            "failure. Vehicles that are not yet ready accumulate in staging, the staging area saturates, and a saturated "
-            "staging area blocks the vehicles behind it, including ready ones. The plant-level p95 dwell of 49 hours is almost "
-            "entirely this one zone."
+            "Vehicles that are not yet ready accumulate in staging, the staging area saturates, and the blockage delays vehicles "
+            f"behind them, including ready ones. The plant-level p95 dwell of {DWELL_P95_H:.0f} hours is driven by this one zone."
         )
     )
     st += fig(
@@ -1151,7 +1208,7 @@ def build_story() -> list:
     st.append(
         p(
             "Lifted to the area level, the Operational Priority Index puts Logistics and Yard in a tier of their own, at 67 and "
-            "65, with the next area more than 25 points behind. This is the model agreeing with the yard data. Logistics owns "
+            "65, with the next area more than 25 points behind. This reconciles with the yard data. Logistics owns "
             "the dispatch-readiness and outbound-window failures; Yard owns the physical staging saturation. The two are the "
             "same failure seen from two angles, which is why they rank together and why the recommendations treat them as one "
             "coordinated intervention rather than two separate projects."
@@ -1183,9 +1240,8 @@ def build_story() -> list:
         p(
             "The risk matrix is the one-slide version of the priority story. Plotting throughput loss against dispatch risk, "
             "Logistics lands in the top-right intervene-now quadrant on throughput loss, Yard sits high on the same axis with "
-            "heavy operational stress, and the remaining areas fall toward the sustain corner. The chart is built so that the "
-            "eye goes straight to the two bubbles that matter. Nothing about the layout is decorative; position encodes risk on "
-            "both axes and size encodes stress."
+            "heavy operational stress, and the remaining areas fall toward the sustain corner. Position encodes risk on both axes; "
+            "bubble size encodes stress. The two areas that require executive attention are visible without reading the table."
         )
     )
     st += fig(
@@ -1208,7 +1264,7 @@ def build_story() -> list:
     st.append(
         lead(
             "A single-period snapshot can hide whether a problem is getting worse. The weekly transition series shows that it is, "
-            "and that the deterioration tracks the EV share almost step for step."
+            "and that the deterioration tracks the EV share closely."
         )
     )
     st += fig(
@@ -1217,12 +1273,11 @@ def build_story() -> list:
     )
     st.append(
         p(
-            f"The relationship is direct. As the electric share climbs by {EV_SHARE_DELTA_PP:.1f} percentage points across the "
+            f"The weekly series adds the time dimension. As the electric share climbs by {EV_SHARE_DELTA_PP:.1f} percentage points across the "
             f"53 weeks, the yard-transition stress index rises by {YARD_STRESS_DELTA:.1f} points and the dispatch-stability "
-            f"index falls by {abs(DISPATCH_STABILITY_DELTA):.1f} points. This is the "
-            "time-based confirmation of the cross-sectional findings. The back-of-line pressure is not a fixed cost of running "
+            f"index falls by {abs(DISPATCH_STABILITY_DELTA):.1f} points. The back-of-line pressure is not a fixed cost of running "
             "EVs; it scales with how many of them are in the flow. Left unmanaged, the trend says the exit problem gets worse "
-            "exactly as the plant succeeds at its transition target, which is the most dangerous shape a problem can take because "
+            "as the plant succeeds at its transition target, which is the most dangerous shape a problem can take because "
             "success in one metric manufactures failure in another."
         )
     )
@@ -1232,7 +1287,7 @@ def build_story() -> list:
             "first to the final operating week. That does not mean chargers are fully utilised all year; the average utilisation "
             f"reported in the governed KPI mart is only {pct(CHARGER_UTIL, 1)}. It means the constraint is temporal concentration: "
             "charging demand arrives at the wrong time relative to slot availability, and that mismatch compounds as the electric "
-            "share rises. The remedy therefore has to include reservation and peak-shift capacity, not simply a year-average "
+            "share rises. The remedy therefore has to include reservation and peak-shift capacity, not a year-average "
             "utilisation target."
         )
     )
@@ -1244,7 +1299,7 @@ def build_story() -> list:
         p(
             "Geography is the second cleared suspect. Output is concentrated in Iberia, which takes around a third of volume, "
             "followed by France and Germany, but readiness is essentially uniform across all seven destinations. No market is "
-            "structurally worse served than another. This matters for the response: the fix is internal and operational, not a "
+            "structurally worse served than another. The fix is internal and operational, not a "
             "matter of reallocating volume between destinations or renegotiating outbound windows market by market. The lever is "
             "inside the plant."
         )
@@ -1252,7 +1307,7 @@ def build_story() -> list:
     st.append(PageBreak())
 
     # ============================================================= 9. FINDINGS: SCENARIOS
-    st += h1("Findings: which response actually works", "Section 9")
+    st += h1("Findings: which response works", "Section 9")
     st.append(
         lead(
             "The diagnostic says what is wrong and where. The scenario twin asks what to do about it, by simulating eight futures "
@@ -1267,8 +1322,8 @@ def build_story() -> list:
         p(
             f"The combined corrective package wins, at a decision score of {best['decision_score']:.1f}. The unmanaged base "
             f"ramp-up scores {base['decision_score']:.1f}, and the worst option, accelerating the EV mix with no operational "
-            "support, falls to 47.1. The ordering carries a clear message. Pushing more electric volume into the existing "
-            "configuration is the single worst thing the plant can do, because it loads the exact gate that is already failing. "
+            f"support, falls to {worst['decision_score']:.1f}. The ordering carries a clear message. Pushing more electric volume into the existing "
+            "configuration is the worst move available, because it loads the exact gate that is already failing. "
             "The single-lever scenarios, more charging slots, better sequencing, more yard space, each help a little and cluster "
             "in the middle. Only the package that does all three together separates from the pack."
         )
@@ -1282,7 +1337,7 @@ def build_story() -> list:
             "The trade-off view shows why. Plotting throughput against the share of late vehicles, the scenarios trace a frontier, "
             "and the corrective package sits at its best corner: higher throughput with fewer late vehicles at the same time. The "
             "accelerated-mix scenario sits at the opposite corner, buying nominal throughput with a sharp rise in late exits. This "
-            "is the chart that kills the tempting argument that the plant should simply build more EVs faster. On this data, faster "
+            "removes the volume-first option from the decision set. On this data, faster "
             "without support moves the plant the wrong way on the metric that is already broken."
         )
     )
@@ -1308,11 +1363,11 @@ def build_story() -> list:
     )
     st.append(
         p(
-            "Held directly against the unmanaged base, the corrective package improves throughput by 3 percent, lifts operational "
-            "stability, cuts internal time by 5 percent and reduces late vehicles from 43 to 40 percent of flow. The one metric that "
-            "moves the wrong way is average charging wait, which edges up by about 4 percent. That is an honest trade and worth "
-            "naming: pulling more EVs through readiness on time puts more simultaneous demand on the chargers. It is also exactly why "
-            "charging capacity is the lever the next chart says to pull first."
+            f"Held directly against the unmanaged base, the corrective package improves throughput by {scenario_delta_by_metric.loc['throughput', 'delta_pct'] * 100:.1f} percent, lifts operational "
+            f"stability, cuts internal time by {abs(CORRECTIVE_INTERNAL_TIME_DELTA) * 100:.1f} percent and reduces late vehicles by {CORRECTIVE_LATE_PP_REDUCTION:.1f} points. "
+            f"The one metric that moves the wrong way is average charging wait, which rises by {CORRECTIVE_CHARGE_WAIT_DELTA * 100:.1f} percent. "
+            "That trade-off is material: pulling more EVs through readiness on time puts more simultaneous demand on chargers. "
+            "It is also why charging capacity is the first lever to test."
         )
     )
     st += fig(
@@ -1323,7 +1378,7 @@ def build_story() -> list:
         p(
             f"Ranked individually, charging capacity is the highest-return lever at an expected impact of "
             f"{levers['impacto_esperado'].max():.2f}, with EV sequencing at {levers.set_index('palanca').loc['secuenciacion_ev', 'impacto_esperado']:.2f} "
-            f"and yard management at {levers.set_index('palanca').loc['gestion_patio', 'impacto_esperado']:.2f} just behind. The gaps "
+            f"and yard management at {levers.set_index('palanca').loc['gestion_patio', 'impacto_esperado']:.2f}. The gaps "
             "between the top three are small, which is the quantitative reason the combined package beats any single move. No one lever "
             "dominates by enough to stand alone. The impact figures are parametric assumptions inside the scenario model, not measured "
             "elasticities, and the recommendations section treats them as a priority ordering rather than as promised percentages."
@@ -1383,7 +1438,7 @@ def build_story() -> list:
     st.append(
         lead(
             "A prioritisation that flips the moment someone questions the weights is worthless for decision-making. The scoring "
-            "framework is stress-tested precisely so that the top of the ranking can be defended."
+            "framework is stress-tested so that the top of the ranking can be defended."
         )
     )
     st += fig(
@@ -1395,8 +1450,8 @@ def build_story() -> list:
             "The weights in the priority index are a judgement call, so the analysis redraws them 300 times from a Dirichlet "
             "distribution and recomputes the ranking each time. Logistics comes first in 77 percent of the draws and Yard in the "
             "remaining 23 percent. No third area ever takes the top spot. The headline conclusion of this report, that Logistics and "
-            "Yard are the two areas to stabilise, does not depend on one particular set of weights. It survives the full range of "
-            "reasonable weightings, and the only thing that moves is the order of the top two, both of which are being recommended "
+            "Yard are the two areas to stabilise, does not depend on one particular set of weights. It holds across the full range of "
+            "reasonable weightings, and the only thing that moves is the order of the top two, both of which are recommended "
             "for coordinated action anyway."
         )
     )
@@ -1405,7 +1460,7 @@ def build_story() -> list:
             "The sensitivity analysis reinforces this from a different direction. Perturbing each individual risk driver up and down "
             "by 20 percent leaves Logistics and Yard in the top two of the top-three list in every single case. The mean score shifts "
             "only at the second decimal. A ranking this stable under both weight resampling and driver perturbation is one a plant "
-            "manager can act on without fear that the recommendation was an artefact of a modelling choice."
+            "manager can act on without treating the recommendation as an artefact of one modelling choice."
         )
     )
     st += data_table(
@@ -1440,8 +1495,8 @@ def build_story() -> list:
             "The remaining uncertainty is not about which two areas lead. It is about the size of the benefit after intervention. "
             "That distinction matters. The diagnostic is strong enough to start operational changes immediately, because it is anchored "
             "in observed synthetic flow mechanics and stable rankings. The business case for new physical chargers or yard expansion "
-            "would still require calibration on real plant data, because the scenario elasticities are assumptions. In practical terms: "
-            "start with sequencing, reservation and staging discipline now; use the first implementation cycle to estimate the real "
+            "would still require calibration on real plant data, because the scenario elasticities are assumptions. Start with "
+            "sequencing, reservation and staging discipline now; use the first implementation cycle to estimate the real "
             "elasticity before committing irreversible capital."
         )
     )
@@ -1461,7 +1516,7 @@ def build_story() -> list:
             "This is the first and largest caveat. The records are generated, not measured. The structure is realistic and the "
             "relationships are internally consistent, which is enough to demonstrate the method and to show what such an analysis "
             "would surface on real data. It is not enough to treat any absolute number here as a fact about a physical plant. The "
-            f"{pre_salida['p95_dwell'] / 60:.0f}-hour staging dwell and the 41 percent clean-exit rate are properties of this "
+            f"{pre_salida['p95_dwell'] / 60:.0f}-hour staging dwell and the {pct(CLEAN_EXIT_RATE)} clean-exit rate are properties of this "
             "dataset, not benchmarks."
         )
     )
@@ -1495,7 +1550,7 @@ def build_story() -> list:
     st.append(
         p(
             "The 95 percent readiness target, the 120-minute late-dispatch threshold and the scoring weights are defaults. They are "
-            "reasonable and the conclusions are robust to moving them within sensible ranges, as the robustness section shows, but a "
+            "reasonable and the conclusions hold when they move within sensible ranges, as the ranking-stability section shows, but a "
             "real deployment would set them to the plant's own standards and service-level agreements before the numbers drive money."
         )
     )
@@ -1513,8 +1568,8 @@ def build_story() -> list:
     st += h1("Recommendations and action priorities", "Section 12")
     st.append(
         lead(
-            "Five recommendations, ordered by expected return and tied to the findings that justify them. The first three are the "
-            "corrective package the scenario model selects. The last two protect the gains and keep the model honest."
+            "The recommendation is not a broad transformation. It is a five-part control package: three operating changes that "
+            "recover the exit gate, one transition-governance decision, and one calibration step before capital approval."
         )
     )
     st += data_table(
@@ -1555,7 +1610,7 @@ def build_story() -> list:
             "near-total blocking against five hours or less everywhere else in the yard. Treat it as a capacity-limited resource "
             "rather than open ground. Set a hard "
             "occupancy cap, segment the buffer by destination dispatch window, and only pull a vehicle into staging when its dispatch "
-            "slot is confirmed. This is the highest-confidence recommendation in the report because it rests on measured dwell data, "
+            "slot is confirmed. This is the highest-confidence recommendation because it rests on measured dwell data, "
             "not on a modelling assumption, and because it directly relieves the blocking that delays even ready vehicles."
         )
     )
@@ -1568,8 +1623,7 @@ def build_story() -> list:
             f"{pct(CHARGER_UTIL)}, which says the constraint is timing and allocation at the peaks, not a shortage of total charging "
             f"energy. The highest-pressure charging zone is {highest_charge_zone['zona_carga'].title()}, with "
             f"{highest_charge_zone['sessions']:.0f} sessions and an average pressure score of {highest_charge_zone['pressure']:.1f}. "
-            "That is good news, because allocation is cheaper to fix than capacity, and because the first intervention can be a "
-            "slotting rule before it becomes an infrastructure programme."
+            "The first intervention can therefore be a slotting rule before it becomes an infrastructure programme."
         )
     )
     st.append(h2("Priority 3. Put a readiness gate on dispatch"))
@@ -1596,7 +1650,7 @@ def build_story() -> list:
         p(
             "Before any of the above drives a spending decision, calibrate the model to the plant. Replace the default readiness "
             "target and late threshold with the plant's own service levels, and fit the scenario elasticities to the plant's observed "
-            "response to past operational changes. The diagnostic and the ranking are robust enough to act on now. The scenario "
+            "response to past operational changes. The diagnostic and the ranking are strong enough to act on now. The scenario "
             "magnitudes are not, and should earn their place against real history before they size an investment."
         )
     )
@@ -1605,8 +1659,8 @@ def build_story() -> list:
         p(
             f"To frame the stakes in one line: the plant already builds {TOTAL:,} vehicles to plan, but only about "
             f"{ON_TIME_READY:,} of them leave both on time and ready today. The corrective package does not ask the plant to build "
-            "more. It asks it to ship cleanly what it already builds. That is the most efficient form of operational improvement "
-            "available, because the volume has already been paid for. Recovering even half of the clean-exit gap would do more for "
+            "more; it focuses on shipping cleanly what the plant already builds. That is high-return operational improvement, because the "
+            "volume has already been paid for. Recovering even half of the clean-exit gap would do more for "
             "the plant's reliability than any throughput initiative, at a fraction of the cost."
         )
     )
@@ -1654,6 +1708,42 @@ def build_story() -> list:
             "one symptom improved while the root bottleneck moved somewhere else."
         )
     )
+    st += data_table(
+        ["Control", "Owner", "Operating trigger"],
+        [
+            [
+                "Clean-exit rate",
+                "Plant manager",
+                "Daily rate fails to improve for five operating days after staging and readiness rules go live.",
+            ],
+            [
+                "EV readiness rate",
+                "Logistics / Charging",
+                "EV versions remain below the agreed target after reserved slots are introduced.",
+            ],
+            [
+                "Pre-dispatch blocking",
+                "Yard",
+                "Blocking does not fall after occupancy caps and destination-window segmentation are enforced.",
+            ],
+            [
+                "Peak charging wait",
+                "Energy / Charging",
+                "Wait time rises while readiness improves, signalling the point where slotting is no longer enough.",
+            ],
+            [
+                "Late minutes by version",
+                "Operations analytics",
+                "Delay concentration shifts away from the four EV versions, indicating the bottleneck has moved.",
+            ],
+            [
+                "OPI top-two stability",
+                "Operations analytics",
+                "Logistics and Yard stop ranking in the top two under the latest operating data.",
+            ],
+        ],
+        [CONTENT_W * 0.26, CONTENT_W * 0.24, CONTENT_W * 0.50],
+    )
     st.append(PageBreak())
 
     # ============================================================= 13. FURTHER QUESTIONS
@@ -1697,7 +1787,7 @@ def build_story() -> list:
     )
     st.append(
         p(
-            "None of these questions blocks the operational recommendations. They do block a capital business case. That is the "
+            "None of these questions blocks the operating recommendations. They do block a capital business case. That is the "
             "right governance boundary: use the diagnostic to fix rule-based leakage now, and use the implementation period to "
             "turn the synthetic scenario twin into a calibrated investment model."
         )
@@ -1706,8 +1796,9 @@ def build_story() -> list:
 
     # ============================================================= 14. APPENDIX
     st += h1("Appendix", "Section 14")
-    st.append(h2("A. Operational KPI summary"))
-    st += data_table(
+    bottleneck_cause_en = {"BLOQUEO_INTERNO_Y_REUBICACION": "Internal blocking and relocation"}
+    st += h2_table(
+        "A. Operational KPI summary",
         ["Metric", "Value"],
         [
             ["Total vehicle-orders", f"{TOTAL:,}"],
@@ -1719,16 +1810,26 @@ def build_story() -> list:
             ["Mean charger utilisation", pct(CHARGER_UTIL, 1)],
             ["Vehicles not ready at dispatch", f"{NO_READY:,}"],
             ["Late-dispatch ratio", pct(RATIO_LATE, 1)],
-            ["Clean-exit rate (on time and ready)", pct(ON_TIME_READY / TOTAL, 1)],
+            ["Clean-exit rate (on time and ready)", pct(CLEAN_EXIT_RATE, 1)],
             ["Global readiness score", f"{READINESS_GLOBAL:.1f}"],
-            ["Principal bottleneck cause", str(kpi["causa_principal_cuello"]).replace("_", " ").title()],
-            ["Area of greatest throughput loss", str(kpi["area_mayor_perdida_throughput"]).title()],
+            [
+                "Principal bottleneck cause",
+                bottleneck_cause_en.get(
+                    str(kpi["causa_principal_cuello"]), str(kpi["causa_principal_cuello"]).replace("_", " ").title()
+                ),
+            ],
+            [
+                "Area of greatest throughput loss",
+                AREA_NAME_EN.get(
+                    str(kpi["area_mayor_perdida_throughput"]), str(kpi["area_mayor_perdida_throughput"]).title()
+                ),
+            ],
         ],
         [CONTENT_W * 0.62, CONTENT_W * 0.38],
         aligns={1: "RIGHT"},
     )
-    st.append(h2("B. EV versus ICE pressure scores"))
-    st += data_table(
+    st += h2_table(
+        "B. EV versus ICE pressure scores",
         ["Driver", "EV", "ICE"],
         [
             [
@@ -1760,8 +1861,8 @@ def build_story() -> list:
         [CONTENT_W * 0.5, CONTENT_W * 0.25, CONTENT_W * 0.25],
         aligns={1: "CENTER", 2: "CENTER"},
     )
-    st.append(h2("C. Readiness by version"))
-    st += data_table(
+    st += h2_table(
+        "C. Readiness by version",
         ["Propulsion", "Version", "Orders", "Readiness"],
         [
             [
@@ -1775,24 +1876,52 @@ def build_story() -> list:
         [CONTENT_W * 0.18, CONTENT_W * 0.38, CONTENT_W * 0.22, CONTENT_W * 0.22],
         aligns={2: "RIGHT", 3: "RIGHT"},
     )
-    st.append(h2("D. Capacity levers by expected impact"))
-    st += data_table(
+    lever_name_en = {
+        "capacidad_carga": "Charging capacity",
+        "secuenciacion_ev": "EV sequencing",
+        "gestion_patio": "Yard management",
+        "disciplina_expedicion": "Dispatch discipline",
+        "resiliencia_turno": "Shift resilience",
+    }
+    st += h2_table(
+        "D. Capacity levers by expected impact",
         ["Lever", "Expected impact"],
         [
-            [lv["palanca"].replace("_", " ").capitalize(), f"{lv['impacto_esperado']:.2f}"]
+            [
+                lever_name_en.get(lv["palanca"], lv["palanca"].replace("_", " ").capitalize()),
+                f"{lv['impacto_esperado']:.2f}",
+            ]
             for _, lv in levers.sort_values("impacto_esperado", ascending=False).iterrows()
         ],
         [CONTENT_W * 0.62, CONTENT_W * 0.38],
         aligns={1: "RIGHT"},
     )
-    st.append(h2("E. Corrective package delta summary"))
-    st += data_table(
+    # (English label, display as a percentage of its own value rather than a raw score)
+    delta_metric_labels = {
+        "throughput": ("Throughput", False),
+        "tiempo_total_interno": ("Internal time", False),
+        "ocupacion_media_patio": ("Average yard occupancy", True),
+        "ocupacion_pico_patio": ("Peak yard occupancy", True),
+        "espera_carga": ("Charging wait (min)", False),
+        "riesgo_salida_baja_readiness": ("Low-readiness dispatch risk", False),
+        "riesgo_congestion": ("Congestion risk", False),
+        "vehiculos_retrasados": ("Late vehicles", True),
+        "estabilidad_operativa": ("Operational stability", False),
+    }
+
+    def _delta_value(x: float, as_pct: bool) -> str:
+        if as_pct:
+            return pct(x, 1)
+        return f"{x:.3f}" if abs(x) < 10 else f"{x:.1f}"
+
+    st += h2_table(
+        "E. Corrective package delta summary",
         ["Metric", "Base", "Corrective", "Delta"],
         [
             [
-                r["metrica"].replace("_", " ").capitalize(),
-                f"{r['base']:.3f}" if abs(r["base"]) < 10 else f"{r['base']:.1f}",
-                f"{r['mejorado']:.3f}" if abs(r["mejorado"]) < 10 else f"{r['mejorado']:.1f}",
+                delta_metric_labels.get(r["metrica"], (r["metrica"].replace("_", " ").capitalize(), False))[0],
+                _delta_value(r["base"], delta_metric_labels.get(r["metrica"], (None, False))[1]),
+                _delta_value(r["mejorado"], delta_metric_labels.get(r["metrica"], (None, False))[1]),
                 f"{r['delta_pct'] * 100:+.1f}%",
             ]
             for _, r in scenario_delta.iterrows()
@@ -1800,8 +1929,8 @@ def build_story() -> list:
         [CONTENT_W * 0.42, CONTENT_W * 0.18, CONTENT_W * 0.20, CONTENT_W * 0.20],
         aligns={1: "RIGHT", 2: "RIGHT", 3: "RIGHT"},
     )
-    st.append(h2("F. Ranking robustness detail"))
-    st += data_table(
+    st += h2_table(
+        "F. Ranking stability detail",
         ["Test", "Result"],
         [
             ["Monte Carlo top-1: Logistics", pct(TOP1_LOGISTICS, 1)],
@@ -1809,12 +1938,18 @@ def build_story() -> list:
             ["Sensitivity cases tested", f"{len(sensitivity)}"],
             [
                 "Top-three pattern across sensitivity",
-                "; ".join(sorted(set(sensitivity["top3_areas"]))),
+                "; ".join(
+                    sorted(
+                        {
+                            ", ".join(AREA_NAME_EN.get(a, a.title()) for a in areas.split(","))
+                            for areas in sensitivity["top3_areas"]
+                        }
+                    )
+                ),
             ],
         ],
         [CONTENT_W * 0.42, CONTENT_W * 0.58],
     )
-    st.append(h2("G. Figure index"))
     figs = [
         "Fig 1 Daily throughput",
         "Fig 2 Weekly EV share",
@@ -1834,10 +1969,12 @@ def build_story() -> list:
         "Fig 16 Scenario trade-off",
         "Fig 17 Before vs after",
         "Fig 18 Lever ranking",
-        "Fig 19 Monte Carlo robustness",
+        "Fig 19 Monte Carlo stability",
     ]
     rows = [[figs[i], figs[i + 1] if i + 1 < len(figs) else ""] for i in range(0, len(figs), 2)]
-    st += data_table(["Figure", "Figure"], rows, [CONTENT_W * 0.5, CONTENT_W * 0.5], highlight_first_col=False)
+    st += h2_table(
+        "G. Figure index", ["Figure", "Figure"], rows, [CONTENT_W * 0.5, CONTENT_W * 0.5], highlight_first_col=False
+    )
     return st
 
 

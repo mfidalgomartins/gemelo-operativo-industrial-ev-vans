@@ -137,6 +137,58 @@ Spanish to English to match the English report prose. That's a chart-pack
 scope change (the charts are shared with the Spanish-facing dashboard), not a
 report-prose fix, and was out of scope for this pass.
 
+## Visual-design pass (2026-07-04): Big Four presentation standard
+
+Goal: redesign `outputs/reports/ev_transition_operating_twin_report.pdf` so every
+page looks flawlessly laid out by a human consultant — formatting, hierarchy,
+typography, spacing, alignment, tables — not just correct prose.
+
+**Found and fixed four genuine layout/presentation defects:**
+
+1. **Stranded table rows.** `data_table()`'s underlying `Table(...,
+   repeatRows=1)` let a 15-row table split mid-body across pages 8-9, leaving
+   two rows stranded above a repeated header. Fixed by wrapping every table in
+   `KeepTogether`. While fixing this, found the prose itself was wrong — it
+   claimed "ten integrity checks" when the CSV has 15 — corrected to a live
+   `len(checks)` count.
+2. **Orphaned appendix headings.** Once tables were wrapped in `KeepTogether`,
+   a heading with no prose before its table (all 7 appendix subsections, A-G)
+   could still be stranded alone at the bottom of a page while its
+   now-monolithic table got pushed whole to the next, leaving ~40% blank space.
+   Added an `h2_table()` helper that binds heading + table into one
+   `KeepTogether` unit. First attempt nested two `KeepTogether`s (h2_table
+   wrapping data_table's own wrapped output), which confused ReportLab's
+   space calculation and forced every subsection onto its own page (41→46
+   pages). Fixed by extracting `_table_flowables()` (unwrapped) so each
+   helper wraps in exactly one `KeepTogether`, never nested.
+3. **Untranslated Spanish leaking into an English report.** Three appendix
+   tables rendered raw source-data codes instead of the English names used
+   everywhere else in the document:
+   - Appendix A: `causa_principal_cuello` ("BLOQUEO_INTERNO_Y_REUBICACION")
+     and `area_mayor_perdida_throughput` ("LOGISTICA") printed as raw/badly
+     title-cased Spanish.
+   - Appendix D: capacity levers (`capacidad_carga`, `secuenciacion_ev`,
+     `gestion_patio`, `disciplina_expedicion`, `resiliencia_turno`) printed as
+     "Capacidad carga", "Secuenciacion ev", etc.
+   - Appendix E: corrective-package metrics (`tiempo_total_interno`,
+     `ocupacion_media_patio`, `riesgo_salida_baja_readiness`, ...) printed as
+     "Tiempo total interno", "Ocupacion media patio", etc., with no
+     percentage-vs-raw-decimal distinction.
+   - Appendix F: `top3_areas` sensitivity results printed as raw comma-joined
+     codes like "LOGISTICA,PATIO,CARGA".
+   Fixed with a module-level `AREA_NAME_EN` map plus scoped `lever_name_en`,
+   `delta_metric_labels` and `bottleneck_cause_en` dicts, all cross-checked
+   against the English names the body prose already uses for the same
+   concepts (e.g. Figure 18's "sequencing and yard management", Figure 10's
+   "Charging, Production, Dispatch and Energy").
+
+**Verified via full-document visual sweep:** rendered all 41 pages at 100 dpi
+and reviewed as tiled contact sheets, plus targeted 150 dpi renders of the
+appendix. No orphaned headers, no split tables, no remaining non-English
+strings, consistent spacing/typography/alignment throughout. Page count holds
+at 41 after all fixes. `ruff check .`, `ruff format --check .`, and the full
+107-test unit suite all pass.
+
 ## Definition of done
 
 - `ruff check .` and `ruff format --check .` clean.
