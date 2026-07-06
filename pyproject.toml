@@ -4,22 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gemelo-operativo-ev"
-version = "1.0.0"
-description = "Operational digital twin for EV van manufacturing transition"
+version = "1.0.2"
+description = "Gemelo operativo para la transición de fabricación de vans EV"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    { name = "Miguel Fidalgo" },
+    { name = "Miguel Fidalgo Martins" },
 ]
 keywords = [
-    "analytics",
-    "digital-twin",
+    "analitica",
+    "gemelo-digital",
     "duckdb",
-    "electric-vehicles",
-    "manufacturing",
-    "operations-research",
-    "supply-chain",
+    "vehiculos-electricos",
+    "manufactura",
+    "investigacion-operativa",
+    "cadena-suministro",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -39,8 +39,8 @@ dependencies = [
 ]
 
 [project.urls]
-Dashboard = "https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/"
-Repository = "https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans"
+Panel = "https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/"
+Repositorio = "https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans"
 
 [project.optional-dependencies]
 dev = [
@@ -70,7 +70,7 @@ python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = ["-ra", "--strict-config", "--strict-markers", "-m", "not integration"]
 markers = [
-    "integration: full-pipeline tests that write to the data directory; run with pytest -m integration",
+    "integration: tests de canalización completa que escriben en el directorio data; ejecutar con pytest -m integration",
 ]
 
 [tool.ruff]
@@ -96,8 +96,8 @@ show_missing = true
 skip_covered = true
 
 [tool.bandit]
-# A camada DuckDB constrói SQL com identificadores internos validados por whitelist.
-# Os valores externos continuam parametrizados; B608 gera falsos positivos neste projeto.
+# La capa DuckDB construye SQL con identificadores internos validados por whitelist.
+# Los valores externos siguen parametrizados; B608 genera falsos positivos en este proyecto.
 skips = ["B608"]
 exclude_dirs = [
     ".venv",

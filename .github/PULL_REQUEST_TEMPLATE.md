@@ -1,20 +1,20 @@
-## What
+## Qué
 
-Brief description of the change and the decision question or issue it addresses.
+Descripción breve del cambio y de la pregunta de decisión o incidencia que resuelve.
 
-## Why
+## Por qué
 
-Context / motivation. Link any related issue (`Closes #...`).
+Contexto y motivación. Enlazar cualquier incidencia relacionada (`Closes #...`).
 
-## How verified
+## Verificación
 
-- [ ] `ruff check .` clean
-- [ ] `ruff format --check .` clean
-- [ ] `pytest` (unit suite) green
-- [ ] `pytest -m integration` green (if the pipeline or outputs changed)
-- [ ] Coverage stays at or above the CI gate (85%)
-- [ ] Generated artifacts (charts / report / marts) regenerated if affected
+- [ ] `ruff check .` limpio
+- [ ] `ruff format --check .` limpio
+- [ ] `pytest` verde
+- [ ] `pytest -m integration` verde si cambia la canalización o los artefactos
+- [ ] Cobertura igual o superior al umbral de CI (85%)
+- [ ] Artefactos generados, gráficos, informe y marts regenerados si aplica
 
-## Notes
+## Notas
 
-Anything reviewers should know — trade-offs, follow-ups, or out-of-scope items.
+Aspectos que los revisores deban saber: compensaciones, seguimientos o elementos fuera de alcance.

@@ -17,7 +17,7 @@ _PIPELINE_OUTPUTS_EXIST = all(p.exists() for p in _REQUIRED_FILES)
 
 @pytest.mark.skipif(
     not _PIPELINE_OUTPUTS_EXIST,
-    reason="Pipeline outputs not present — run `python -m src.run_pipeline` first",
+    reason="Outputs de canalización no presentes; ejecutar `python -m src.run_pipeline` primero",
 )
 def test_ev_release_gate_uses_generated_governance_outputs() -> None:
     result = run_release_gate()
@@ -28,13 +28,13 @@ def test_ev_release_gate_uses_generated_governance_outputs() -> None:
         "not committee-grade",
     }
     if result.approved:
-        assert result.reason.startswith("Release apto")
+        assert result.reason.startswith("Publicación apta")
 
 
 def test_ev_release_gate_returns_unapproved_when_readiness_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """run_release_gate returns approved=False, grade='unknown' when files are absent."""
+    """run_release_gate devuelve approved=False y grado unknown cuando faltan archivos."""
     monkeypatch.setattr("src.ev_release_gate.OUTPUT_REPORTS_DIR", tmp_path)
     result = run_release_gate()
     assert not result.approved
@@ -45,7 +45,7 @@ def test_ev_release_gate_returns_unapproved_when_readiness_missing(
 def test_ev_release_gate_returns_unapproved_when_manifest_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Gate returns unapproved when manifest is missing but readiness file exists."""
+    """La puerta rechaza cuando falta el manifiesto aunque exista release_readiness."""
     readiness = {
         "release_grade": "decision-support only",
         "publish_blocked": False,
@@ -101,7 +101,7 @@ def test_ev_release_gate_rejects_invalid_json(
                 "kpi_single_source_of_truth": True,
             },
             {"checks": {"html_exists": True}},
-            "Release bloqueado por validación",
+            "Publicación bloqueada por validación",
         ),
         (
             {
@@ -110,7 +110,7 @@ def test_ev_release_gate_rejects_invalid_json(
                 "kpi_single_source_of_truth": False,
             },
             {"checks": {"html_exists": True}},
-            "KPI source of truth inconsistente",
+            "Fuente única de verdad KPI inconsistente",
         ),
         (
             {
@@ -119,7 +119,7 @@ def test_ev_release_gate_rejects_invalid_json(
                 "kpi_single_source_of_truth": True,
             },
             {"checks": {"html_exists": True, "payload_size_ok": False}},
-            "Dashboard manifest con checks en WARN",
+            "Manifiesto del panel con comprobaciones en alerta",
         ),
     ],
 )
@@ -159,4 +159,4 @@ def test_ev_release_gate_approves_when_all_quality_gates_pass(
 
     assert result.approved
     assert result.release_grade == "decision-support only"
-    assert result.reason == "Release apto para publicación"
+    assert result.reason == "Publicación apta"

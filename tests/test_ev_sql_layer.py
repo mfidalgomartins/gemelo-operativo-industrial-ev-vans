@@ -45,7 +45,7 @@ class _FakeConnection:
 def test_resolve_raw_csv_raises_with_official_ev_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sql_layer, "EV_DATA_RAW_DIR", tmp_path / "raw_ev")
 
-    with pytest.raises(FileNotFoundError, match="Falta tabla raw requerida"):
+    with pytest.raises(FileNotFoundError, match="Falta tabla de origen requerida"):
         sql_layer._resolve_raw_csv("ordenes")
 
 

@@ -19,7 +19,7 @@ env:
 
 jobs:
   quality:
-    name: quality / py${{ matrix.python-version }}
+    name: calidad / py${{ matrix.python-version }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -27,17 +27,17 @@ jobs:
       matrix:
         python-version: ["3.10", "3.12"]
     steps:
-      - name: Checkout
+      - name: Descargar código
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Install project and dev tooling
+      - name: Instalar proyecto y herramientas dev
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
@@ -45,71 +45,71 @@ jobs:
       - name: Ruff lint
         run: python -m ruff check .
 
-      - name: Ruff format check
+      - name: Comprobar formato Ruff
         run: python -m ruff format --check .
 
-      - name: Unit tests with coverage
+      - name: Pruebas unitarias con cobertura
         run: python -m pytest -q --cov=src --cov-report=term-missing --cov-report=xml
 
   package:
-    name: package
+    name: paquete
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: quality
     steps:
-      - name: Checkout
+      - name: Descargar código
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Build source and wheel distributions
+      - name: Construir distribuciones source y wheel
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           python -m build
 
   integration:
-    name: integration
+    name: integración
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: quality
     steps:
-      - name: Checkout
+      - name: Descargar código
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Install project and dev tooling
+      - name: Instalar proyecto y herramientas dev
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
 
-      - name: Generate synthetic data
+      - name: Generar datos sintéticos
         run: generate-data --seed 20260328 --start-date 2025-01-01 --months 12
 
-      - name: Run analytical pipeline
+      - name: Ejecutar canalización analítica
         run: python -m src.run_pipeline
 
-      - name: Build chart pack
+      - name: Construir paquete de gráficos
         run: python scripts/generate_chart_pack.py
 
-      - name: Build report
+      - name: Construir informe
         run: python scripts/generate_report.py
 
-      - name: Evaluate release gate
+      - name: Evaluar puerta de publicación
         run: python -m src.ev_release_gate
 
-      - name: Full suite with combined coverage gate
+      - name: Suite completa con puerta de cobertura combinada
         run: >-
           python -m pytest -q
           -m "integration or not integration"
@@ -117,27 +117,27 @@ jobs:
           --cov-fail-under=85
 
   security:
-    name: security
+    name: seguridad
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
+      - name: Descargar código
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Install project and security tooling
+      - name: Instalar proyecto y herramientas de seguridad
         run: |
           python -m pip install --upgrade pip
           python -m pip install ".[security]"
 
-      - name: Bandit static security scan
+      - name: Análisis estático de seguridad Bandit
         run: python -m bandit -q -r src -c pyproject.toml
 
-      - name: Dependency vulnerability audit
+      - name: Auditoría de vulnerabilidades de dependencias
         run: python -m pip_audit --strict --skip-editable

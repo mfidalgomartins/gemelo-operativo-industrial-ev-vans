@@ -33,10 +33,10 @@ def test_to_markdown_safe_fallback_handles_empty_dataframe(monkeypatch: pytest.M
 def test_write_json_utf8_supports_custom_default_and_utf8(tmp_path: Path) -> None:
     output = tmp_path / "nested" / "payload.json"
 
-    write_json_utf8(output, {"estado": "aprovado", "path": tmp_path}, default=str)
+    write_json_utf8(output, {"estado": "aprobado", "ruta": tmp_path}, default=str)
 
     payload = output.read_text(encoding="utf-8")
-    assert '"estado": "aprovado"' in payload
+    assert '"estado": "aprobado"' in payload
     assert str(tmp_path) in payload
     assert payload.endswith("\n")
 
@@ -96,27 +96,27 @@ def test_resolve_ev_raw_raises_when_missing_from_all_locations(tmp_path: Path, m
     monkeypatch.setattr(validation, "EV_DATA_RAW_DIR", tmp_path / "ev_factory")
     monkeypatch.setattr(validation, "DATA_RAW_DIR", tmp_path / "raw")
 
-    with pytest.raises(FileNotFoundError, match="No existe tabla raw EV requerida"):
+    with pytest.raises(FileNotFoundError, match="No existe tabla EV de origen requerida"):
         validation._resolve_ev_raw("ordenes")
 
 
-def test_remove_non_official_dashboards_removes_only_legacy_html(
+def test_remove_non_official_dashboards_removes_only_inherited_html(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     output_dir = tmp_path / "outputs" / "dashboard"
     output_dir.mkdir(parents=True)
     official = output_dir / dashboard.OFFICIAL_DASHBOARD_NAME
-    legacy = output_dir / "legacy.html"
-    official.write_text("<html>official</html>", encoding="utf-8")
-    legacy.write_text("<html>legacy</html>", encoding="utf-8")
+    inherited = output_dir / "heredado.html"
+    official.write_text("<html>oficial</html>", encoding="utf-8")
+    inherited.write_text("<html>heredado</html>", encoding="utf-8")
 
     monkeypatch.setattr(dashboard, "PROJECT_ROOT", tmp_path)
 
     removed = dashboard._remove_non_official_dashboards(output_dir, dashboard.OFFICIAL_DASHBOARD_NAME)
 
-    assert removed == ["outputs/dashboard/legacy.html"]
+    assert removed == ["outputs/dashboard/heredado.html"]
     assert official.exists()
-    assert not legacy.exists()
+    assert not inherited.exists()
 
 
 def test_build_payload_creates_sorted_filters_and_serialized_data() -> None:

@@ -1,38 +1,27 @@
-# Code of Conduct
+# Código de Conducta
 
-## Our pledge
+## Compromiso
 
-We as contributors and maintainers pledge to make participation in this project
-a harassment-free experience for everyone, regardless of age, body size,
-disability, ethnicity, gender identity and expression, level of experience,
-nationality, personal appearance, race, religion, or sexual identity and
-orientation.
+Como contribuyentes y mantenedores, nos comprometemos a mantener una participación libre de acoso para todas las personas, con independencia de edad, cuerpo, discapacidad, etnia, identidad o expresión de género, nivel de experiencia, nacionalidad, apariencia, raza, religión u orientación sexual.
 
-## Our standards
+## Comportamientos esperados
 
-Examples of behaviour that contributes to a positive environment:
+- Usar lenguaje acogedor e inclusivo.
+- Respetar puntos de vista y experiencias diferentes.
+- Aceptar críticas constructivas con criterio profesional.
+- Centrarse en lo que beneficia al proyecto.
+- Mostrar empatía hacia otras personas de la comunidad.
 
-- Using welcoming and inclusive language.
-- Being respectful of differing viewpoints and experiences.
-- Gracefully accepting constructive criticism.
-- Focusing on what is best for the project.
+## Comportamientos no aceptables
 
-Examples of unacceptable behaviour:
+- Comentarios sexualizados, insinuaciones o atención sexual no deseada.
+- Insultos, comentarios despectivos o ataques personales o políticos.
+- Acoso público o privado.
+- Publicación de información privada sin permiso explícito.
+- Conductas que razonablemente puedan considerarse inapropiadas en un entorno profesional.
 
-- Harassment, insulting or derogatory comments, and personal or political attacks.
-- Publishing others' private information without explicit permission.
-- Other conduct which could reasonably be considered inappropriate in a
-  professional setting.
+## Aplicación
 
-## Enforcement
+Los incidentes pueden comunicarse al mantenedor mediante el correo indicado en el perfil de GitHub o mediante las herramientas privadas de reporte de GitHub. Todas las quejas se revisarán y se responderán según la gravedad y el contexto.
 
-Instances of abusive, harassing, or otherwise unacceptable behaviour may be
-reported to the maintainer via the email on the GitHub profile, or through
-GitHub's private reporting tools. All complaints will be reviewed and
-investigated and will result in a response that is deemed necessary and
-appropriate to the circumstances.
-
-## Attribution
-
-This Code of Conduct is adapted from the
-[Contributor Covenant](https://www.contributor-covenant.org), version 2.1.
+Este código se adapta del Contributor Covenant.

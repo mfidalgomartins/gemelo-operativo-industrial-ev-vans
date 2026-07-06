@@ -1,28 +1,26 @@
 ---
-name: Feature request
-about: Suggest an analysis, metric, scenario lever, or capability
-title: "[feature] "
+name: Solicitud de funcionalidad
+about: Proponer un análisis, métrica, palanca de escenario o capacidad
+title: "[mejora] "
 labels: enhancement
 ---
 
-## Problem / decision question
+## Problema o pregunta de decisión
 
-What operational question or gap is this addressing? Why does it matter?
+¿Qué pregunta operativa o brecha cubre? ¿Por qué importa?
 
-## Proposed solution
+## Solución propuesta
 
-What you'd like to see — a new metric, diagnostic, scenario lever, chart,
-report section, or pipeline capability.
+Qué quieres ver: nueva métrica, diagnóstico, palanca de escenario, gráfico, sección de informe o capacidad de canalización.
 
-## Alternatives considered
+## Alternativas consideradas
 
-Other approaches you thought about and why you prefer the proposal.
+Otros enfoques evaluados y por qué prefieres esta propuesta.
 
-## Determinism note
+## Nota de determinismo
 
-How would this stay reproducible from the canonical synthetic seed (no
-wall-clock time, unseeded randomness, or network dependencies)?
+¿Cómo se mantendría reproducible desde la semilla sintética canónica, sin hora de sistema, aleatoriedad sin semilla ni dependencias de red?
 
-## Additional context
+## Contexto adicional
 
-Mockups, references, or related issues.
+Maquetas, referencias o incidencias relacionadas.

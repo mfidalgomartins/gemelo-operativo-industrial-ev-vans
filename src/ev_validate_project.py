@@ -64,6 +64,46 @@ class ValidationResult:
     release_grade: str
 
 
+RELEASE_GRADE_LABELS = {
+    "decision-support only": "solo apoyo a decisión",
+    "screening-grade only": "solo screening",
+    "publish-blocked": "publicación bloqueada",
+    "not committee-grade": "no apto para comité",
+    "unknown": "desconocido",
+}
+
+SEVERITY_LABELS = {
+    "critical": "critica",
+    "high": "alta",
+    "medium": "media",
+    "low": "baja",
+}
+
+
+def _release_grade_label(value: str) -> str:
+    return RELEASE_GRADE_LABELS.get(value, value)
+
+
+def _yes_no(value: bool) -> str:
+    return "Sí" if value else "No"
+
+
+def _issues_for_display(issues_df: pd.DataFrame) -> pd.DataFrame:
+    if issues_df.empty:
+        return pd.DataFrame(
+            columns=["comprobacion", "severidad", "filas_fallidas", "detalle", "correccion_recomendada"]
+        )
+    return issues_df.rename(
+        columns={
+            "check": "comprobacion",
+            "severity": "severidad",
+            "failed_rows": "filas_fallidas",
+            "detail": "detalle",
+            "recommended_fix": "correccion_recomendada",
+        }
+    ).assign(severidad=lambda df: df["severidad"].map(SEVERITY_LABELS).fillna(df["severidad"]))
+
+
 def _read_csv(path: Path, parse_dates: list[str] | None = None) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(f"Falta archivo para validación: {path}")
@@ -89,7 +129,7 @@ def _resolve_ev_raw(table_name: str) -> Path:
     fallback = DATA_RAW_DIR / f"{table_name}.csv"
     if fallback.exists():
         return fallback
-    raise FileNotFoundError(f"No existe tabla raw EV requerida: {primary}")
+    raise FileNotFoundError(f"No existe tabla EV de origen requerida: {primary}")
 
 
 def run_ev_validation() -> ValidationResult:
@@ -150,8 +190,10 @@ def run_ev_validation() -> ValidationResult:
     for name, df in processed_tables.items():
         require_columns(df, PROCESSED_REQUIRED_COLUMNS[name], name)
 
-    legacy_kpi_summary_path = OUTPUT_REPORTS_DIR / "kpi_summary.csv"
-    legacy_kpi_summary = pd.read_csv(legacy_kpi_summary_path) if legacy_kpi_summary_path.exists() else pd.DataFrame()
+    inherited_kpi_summary_path = OUTPUT_REPORTS_DIR / "kpi_summary.csv"
+    inherited_kpi_summary = (
+        pd.read_csv(inherited_kpi_summary_path) if inherited_kpi_summary_path.exists() else pd.DataFrame()
+    )
 
     dashboard_path = OUTPUT_DASHBOARD_DIR / "industrial-ev-operating-command-center.html"
     dashboard_ok = dashboard_path.exists() and dashboard_path.stat().st_size > 100_000
@@ -160,7 +202,9 @@ def run_ev_validation() -> ValidationResult:
 
     issues: list[dict[str, object]] = []
 
-    def add_issue(check: str, severity: str, failed_rows: int, detail: str, fix: str = "N/A") -> None:
+    def add_issue(
+        check: str, severity: str, failed_rows: int, detail: str, fix: str = "Sin recomendación específica"
+    ) -> None:
         if failed_rows <= 0:
             return
         issues.append(
@@ -173,7 +217,7 @@ def run_ev_validation() -> ValidationResult:
             }
         )
 
-    # Row counts razonables
+    # Conteos de filas razonables
     if len(ordenes) < 1000:
         add_issue(
             "row_count_ordenes",
@@ -189,16 +233,20 @@ def run_ev_validation() -> ValidationResult:
         "critical",
         int(ordenes["orden_id"].duplicated().sum()),
         "orden_id debe ser único",
-        "Generator actualizado con unicidad estricta",
+        "Actualizar el generador con unicidad estricta",
     )
 
     # Nulls problemáticos
     null_vehiculo = int(ordenes["vehiculo_id"].isna().sum())
     add_issue(
-        "null_vehiculo_id_ordenes", "critical", null_vehiculo, "Ordenes sin vehiculo_id", "Imponer NOT NULL en staging"
+        "null_vehiculo_id_ordenes",
+        "critical",
+        null_vehiculo,
+        "Órdenes sin vehiculo_id",
+        "Imponer NOT NULL en la preparación SQL",
     )
 
-    # Timestamps imposibles
+    # Marcas temporales imposibles
     ts_issues = int(
         (
             (vehiculos["timestamp_entrada_patio"] < vehiculos["timestamp_fin_linea"])
@@ -214,7 +262,11 @@ def run_ev_validation() -> ValidationResult:
         ).sum()
     )
     add_issue(
-        "timestamps_imposibles", "critical", ts_issues, "Secuencia temporal inválida", "Regla de saneamiento en staging"
+        "timestamps_imposibles",
+        "critical",
+        ts_issues,
+        "Secuencia temporal inválida",
+        "Aplicar regla de saneamiento en la preparación SQL",
     )
 
     # Secuencias incoherentes
@@ -224,7 +276,7 @@ def run_ev_validation() -> ValidationResult:
         "high",
         seq_dup,
         "Colisión secuencia plan por fecha-turno",
-        "Resolver ties por prioridad y timestamp",
+        "Resolver empates por prioridad y marca temporal",
     )
 
     # Patio capacidad
@@ -246,12 +298,12 @@ def run_ev_validation() -> ValidationResult:
         "critical",
         sess_bad,
         "Sesiones con duración negativa o energía <=0",
-        "Constraint en generador y staging",
+        "Añadir restricción en generador y preparación SQL",
     )
 
     # SOC en rango
     soc_bad = int((~bateria["soc_pct"].between(0, 100) | ~bateria["target_soc_pct"].between(0, 100)).sum())
-    add_issue("soc_fuera_rango", "critical", soc_bad, "SOC fuera de [0,100]", "Clipping y validación sensor")
+    add_issue("soc_fuera_rango", "critical", soc_bad, "SOC fuera de [0,100]", "Recorte de rango y validación de sensor")
 
     # EV requiere carga tratamiento consistente
     ev_versions = set(versiones.loc[versiones["requiere_carga_salida_flag"] == 1, "version_id"])
@@ -266,48 +318,48 @@ def run_ev_validation() -> ValidationResult:
         "Forzar sesión mínima o excepción explícita",
     )
 
-    # Readiness y salida consistentes
+    # Preparación y salida consistentes
     salidas_reales = int(logistica["fecha_salida_real"].notna().sum())
     out_without_ready = int(
         ((logistica["fecha_salida_real"].notna()) & (logistica["readiness_salida_flag"] == 0)).sum()
     )
     out_without_ready_rate = (out_without_ready / salidas_reales) if salidas_reales else 0.0
     add_issue(
-        "salida_sin_readiness",
+        "salida_sin_preparacion",
         "critical",
         out_without_ready,
-        f"Salidas reales sin readiness (rate={out_without_ready_rate:.2%})",
+        f"Salidas reales sin preparación (tasa={out_without_ready_rate:.2%})",
         "Bloqueo en lógica de expedición o excepción trazable por causa",
     )
 
     # Métricas agregadas y denominadores
     denom_bad = int(((scoring["operational_priority_index"] < 0) | (scoring["operational_priority_index"] > 100)).sum())
-    add_issue("score_fuera_rango", "medium", denom_bad, "OPI fuera de 0-100", "Normalización de scores")
+    add_issue("score_fuera_rango", "medium", denom_bad, "OPI fuera de 0-100", "Normalización de puntuaciones")
 
     # Integridad analítica: evitar falso sentido de precisión
     opi_unique = int(scoring["operational_priority_index"].nunique(dropna=True))
     driver_unique = int(scoring["main_risk_driver"].nunique(dropna=True))
     tier_unique = int(scoring["area_priority_tier"].nunique(dropna=True))
     add_issue(
-        "scoring_sin_discriminacion",
+        "puntuacion_sin_discriminacion",
         "critical",
         int(opi_unique < 3),
-        f"OPI con baja discriminación (nunique={opi_unique})",
+        f"OPI con baja discriminación (valores_unicos={opi_unique})",
         "Revisar mart_area_shift, pesos y normalización",
     )
     add_issue(
-        "driver_riesgo_colapsado",
+        "factor_riesgo_colapsado",
         "high",
         int(driver_unique < 2),
-        f"main_risk_driver sin variedad (nunique={driver_unique})",
-        "Aumentar señales por área y validación de joins",
+        f"factor principal de riesgo sin variedad (valores_unicos={driver_unique})",
+        "Aumentar señales por área y validación de cruces",
     )
     add_issue(
         "tiers_colapsados",
         "medium",
         int(tier_unique < 2),
-        f"area_priority_tier sin separación suficiente (nunique={tier_unique})",
-        "Recalibrar thresholds y dispersión de scores",
+        f"nivel de prioridad sin separación suficiente (valores_unicos={tier_unique})",
+        "Recalibrar umbrales y dispersión de puntuaciones",
     )
 
     flat_area_metrics = int(
@@ -329,7 +381,7 @@ def run_ev_validation() -> ValidationResult:
         "high" if flat_area_metrics > 2 else "low",
         int(flat_area_metrics > 2),
         f"Se detectaron {flat_area_metrics} métricas área-turno planas entre áreas",
-        "Revisar integración de turnos y joins por área",
+        "Revisar integración de turnos y cruces por área",
     )
 
     sensitivity_top3_unique = int(scoring_sensitivity["top3_areas"].nunique(dropna=True))
@@ -354,7 +406,7 @@ def run_ev_validation() -> ValidationResult:
         "kpi_share_ev_inconsistente",
         "high",
         int(share_ev_gap > 0.02),
-        f"share_ev KPI vs flow no consistente (gap={share_ev_gap:.4f})",
+        f"KPI share_ev no consistente con el flujo (brecha={share_ev_gap:.4f})",
         "Recalcular KPI desde mart gobernado",
     )
     readiness_flow = float(vehicle_flow["readiness_final_flag"].mean() * 100) if not vehicle_flow.empty else np.nan
@@ -366,7 +418,7 @@ def run_ev_validation() -> ValidationResult:
         "kpi_readiness_inconsistente",
         "high",
         int(readiness_gap > 1e-9),
-        f"score_readiness_global KPI vs flow no consistente (gap={readiness_gap:.6f})",
+        f"KPI score_readiness_global no consistente con el flujo (brecha={readiness_gap:.6f})",
         "Recalcular KPI desde readiness_final_flag",
     )
 
@@ -378,7 +430,7 @@ def run_ev_validation() -> ValidationResult:
         "kpi_delay_rate_inconsistente",
         "high",
         int(delay_rate_gap > 1e-9),
-        f"ratio_salida_retrasada KPI vs detalle no consistente (gap={delay_rate_gap:.6f})",
+        f"ratio_salida_retrasada KPI vs detalle no consistente (brecha={delay_rate_gap:.6f})",
         "Recalcular KPI sobre vehículos despachados",
     )
     add_issue(
@@ -395,47 +447,47 @@ def run_ev_validation() -> ValidationResult:
         "kpi_throughput_inconsistente",
         "high",
         int(throughput_plan_flow != throughput_plan_kpi),
-        f"throughput_planificado KPI ({throughput_plan_kpi}) distinto de flow ({throughput_plan_flow})",
-        "Alinear definición de throughput base",
+        f"KPI throughput_planificado ({throughput_plan_kpi}) distinto del flujo ({throughput_plan_flow})",
+        "Alinear definición de caudal base",
     )
 
-    # Single source of truth de KPI (evitar drift de artefactos legacy)
-    legacy_kpi_present = int(not legacy_kpi_summary.empty)
-    legacy_mismatch = 0
-    if legacy_kpi_present and not kpi.empty:
-        legacy_cols = set(legacy_kpi_summary.columns)
-        required_legacy = {
+    # Fuente única de verdad de KPI (evitar deriva de artefactos heredados)
+    inherited_kpi_present = int(not inherited_kpi_summary.empty)
+    inherited_mismatch = 0
+    if inherited_kpi_present and not kpi.empty:
+        inherited_cols = set(inherited_kpi_summary.columns)
+        required_inherited = {
             "throughput_diario_unidades",
             "score_readiness_operativa",
         }
-        if required_legacy.issubset(legacy_cols):
+        if required_inherited.issubset(inherited_cols):
             flow_days = max(int(vehicle_flow["fecha_real"].nunique()), 1) if not vehicle_flow.empty else 1
             expected_daily = float(kpi["throughput_real"].iloc[0]) / flow_days
-            observed_daily = float(legacy_kpi_summary["throughput_diario_unidades"].iloc[0])
+            observed_daily = float(inherited_kpi_summary["throughput_diario_unidades"].iloc[0])
             expected_readiness = float(kpi["score_readiness_global"].iloc[0])
-            observed_readiness = float(legacy_kpi_summary["score_readiness_operativa"].iloc[0])
-            legacy_mismatch = int(
+            observed_readiness = float(inherited_kpi_summary["score_readiness_operativa"].iloc[0])
+            inherited_mismatch = int(
                 abs(observed_daily - expected_daily) > 0.5 or abs(observed_readiness - expected_readiness) > 1.0
             )
         else:
-            legacy_mismatch = 1
+            inherited_mismatch = 1
 
     add_issue(
-        "kpi_legacy_artifact_present",
+        "kpi_artifact_heredado_presente",
         "high",
-        legacy_kpi_present,
+        inherited_kpi_present,
         "Existe outputs/reports/kpi_summary.csv fuera de la capa KPI oficial",
-        "Eliminar artefacto legacy y usar sólo data/processed/ev_factory/kpi_operativos.csv",
+        "Eliminar artefacto heredado y usar solo data/processed/ev_factory/kpi_operativos.csv",
     )
     add_issue(
-        "kpi_legacy_inconsistente",
+        "kpi_heredado_inconsistente",
         "high",
-        legacy_mismatch,
+        inherited_mismatch,
         "kpi_summary.csv no es consistente con KPI oficial gobernado",
         "Regenerar desde KPI oficial o eliminar artefacto",
     )
 
-    # Consistencia outputs y dashboard
+    # Consistencia de outputs y panel
     placeholders_left = 0
     if dashboard_ok:
         html = dashboard_path.read_text(encoding="utf-8", errors="ignore")
@@ -444,15 +496,15 @@ def run_ev_validation() -> ValidationResult:
         "dashboard_inconsistente",
         "high",
         placeholders_left,
-        "Placeholder sin resolver en dashboard",
-        "Rebuild dashboard",
+        "Placeholder sin resolver en el panel",
+        "Reconstruir panel",
     )
     add_issue(
         "dashboard_manifest_missing",
         "high",
         int(not bool(dashboard_manifest)),
-        "No existe manifest de build de dashboard",
-        "Ejecutar build oficial y registrar checks",
+        "No existe manifiesto de construcción del panel",
+        "Ejecutar construcción oficial y registrar comprobaciones",
     )
     if dashboard_manifest:
         failed_manifest_checks = int(sum(1 for ok in dashboard_manifest.get("checks", {}).values() if not ok))
@@ -460,8 +512,8 @@ def run_ev_validation() -> ValidationResult:
             "dashboard_manifest_checks",
             "high",
             failed_manifest_checks,
-            "Manifest reporta checks en WARN",
-            "Corregir layout/data/payload del dashboard",
+            "El manifiesto reporta comprobaciones en alerta",
+            "Corregir diseño, datos o carga embebida del panel",
         )
 
     # Escenarios
@@ -471,7 +523,7 @@ def run_ev_validation() -> ValidationResult:
             "high",
             abs(len(scenarios) - 8),
             "No se generaron los 8 escenarios obligatorios",
-            "Reejecutar scenario twin",
+            "Reejecutar gemelo de escenarios",
         )
     scenario_base = scenarios.loc[scenarios["escenario"] == "1_ramp_up_ev_base", "share_ev_estimado"]
     scenario_acc = scenarios.loc[scenarios["escenario"] == "2_ramp_up_ev_acelerado", "share_ev_estimado"]
@@ -480,7 +532,7 @@ def run_ev_validation() -> ValidationResult:
             "scenario_ev_no_monotonic",
             "high",
             int(float(scenario_acc.iloc[0]) <= float(scenario_base.iloc[0])),
-            "Escenario acelerado no incrementa share EV respecto al base",
+            "Escenario acelerado no incrementa cuota EV respecto al base",
             "Revisar motor de escenarios y parámetros",
         )
     scenario_spread = (
@@ -490,15 +542,15 @@ def run_ev_validation() -> ValidationResult:
         "scenario_decision_spread_bajo",
         "medium",
         int(scenario_spread < 2.0),
-        f"Spread de decision_score bajo ({scenario_spread:.2f})",
-        "Aumentar sensibilidad del scenario engine",
+        f"Dispersión de puntuación de decisión baja ({scenario_spread:.2f})",
+        "Aumentar sensibilidad del motor de escenarios",
     )
 
     # Riesgo de sobreinterpretación
     caveats = [
-        "Dato sintético: útil para arquitectura y lógica, no para benchmark real de planta.",
+        "Dato sintético: útil para arquitectura y lógica, no para comparación real de planta.",
         "Las elasticidades del gemelo operativo son supuestos calibrados, no estimación causal.",
-        "La criticidad por área depende de pesos de scoring; revisar sensibilidad antes de uso real.",
+        "La criticidad por área depende de pesos de puntuación; revisar sensibilidad antes de uso real.",
         "No incorpora variabilidad externa real (suministro, clima, huelgas, etc.).",
     ]
 
@@ -559,59 +611,61 @@ def run_ev_validation() -> ValidationResult:
 
     # Reporte final
     lines = [
-        "# Validation Report - Gemelo Operativo EV",
+        "# Informe de Validación - Gemelo Operativo EV",
         "",
         f"- Estado global: **{status}**",
         f"- Confianza global: **{confidence}**",
-        f"- Release grade: **{release_grade}**",
-        f"- Issues detectados: **{len(issues_df)}**",
-        f"- Checks SQL en WARN: **{sql_warn}**",
-        f"- Ratio WARN SQL: **{sql_warn_ratio:.2%}**",
-        f"- Dashboard presente y materializado: **{'SI' if dashboard_ok else 'NO'}**",
+        f"- Grado de publicación: **{_release_grade_label(release_grade)}**",
+        f"- Problemas detectados: **{len(issues_df)}**",
+        f"- Comprobaciones SQL en alerta: **{sql_warn}**",
+        f"- Ratio de alertas SQL: **{sql_warn_ratio:.2%}**",
+        f"- Panel presente y materializado: **{_yes_no(dashboard_ok)}**",
         "",
         "## Estados de gobernanza",
-        f"- technically valid: **{'YES' if technically_valid else 'NO'}**",
-        f"- analytically acceptable: **{'YES' if analytically_acceptable else 'NO'}**",
-        f"- decision-support only: **{'YES' if decision_support_only else 'NO'}**",
-        f"- screening-grade only: **{'YES' if screening_grade_only else 'NO'}**",
-        f"- not committee-grade: **{'YES' if technically_valid else 'NO'}**",
-        f"- publish-blocked: **{'YES' if release_grade == 'publish-blocked' else 'NO'}**",
+        f"- técnicamente válido: **{_yes_no(technically_valid)}**",
+        f"- analíticamente aceptable: **{_yes_no(analytically_acceptable)}**",
+        f"- solo apoyo a decisión: **{_yes_no(decision_support_only)}**",
+        f"- solo exploración inicial: **{_yes_no(screening_grade_only)}**",
+        f"- no apto para comité: **{_yes_no(technically_valid)}**",
+        f"- publicación bloqueada: **{_yes_no(release_grade == 'publish-blocked')}**",
         "",
-        "## Checklist de validación",
-        f"- row counts razonables: {'OK' if len(ordenes) >= 1000 else 'WARN'}",
-        f"- duplicados inesperados: {'OK' if ordenes['orden_id'].is_unique else 'WARN'}",
-        f"- nulls problemáticos: {'OK' if null_vehiculo == 0 else 'WARN'}",
-        f"- timestamps imposibles: {'OK' if ts_issues == 0 else 'WARN'}",
-        f"- secuencias incoherentes: {'OK' if seq_dup == 0 else 'WARN'}",
-        f"- ocupación patio compatible: {'OK' if patio_over == 0 else 'WARN'}",
-        f"- sesiones carga coherentes: {'OK' if sess_bad == 0 else 'WARN'}",
-        f"- SOC dentro de rango: {'OK' if soc_bad == 0 else 'WARN'}",
-        f"- EV con carga consistente: {'OK' if ev_without_charge == 0 else 'WARN'}",
-        f"- readiness y salida consistentes: {'OK' if out_without_ready == 0 else 'WARN'}",
-        f"- métricas agregadas y denominadores: {'OK' if denom_bad == 0 else 'WARN'}",
-        f"- consistencia outputs-dashboard: {'OK' if placeholders_left == 0 and dashboard_ok else 'WARN'}",
-        f"- discriminación de scoring: {'OK' if opi_unique >= 3 else 'WARN'}",
-        f"- diversidad de driver de riesgo: {'OK' if driver_unique >= 2 else 'WARN'}",
-        f"- variabilidad área-turno: {'OK' if flat_area_metrics <= 2 else 'WARN'}",
-        f"- consistencia KPI share_ev: {'OK' if share_ev_gap <= 0.02 else 'WARN'}",
-        f"- consistencia KPI readiness: {'OK' if readiness_gap <= 1e-9 else 'WARN'}",
-        f"- consistencia KPI delay rate: {'OK' if delay_rate_gap <= 1e-9 else 'WARN'}",
-        f"- single source of truth KPI: {'OK' if legacy_kpi_present == 0 else 'WARN'}",
-        f"- spread de escenarios: {'OK' if scenario_spread >= 2.0 else 'WARN'}",
+        "## Lista de validación",
+        f"- conteos de filas razonables: {'OK' if len(ordenes) >= 1000 else 'ALERTA'}",
+        f"- duplicados inesperados: {'OK' if ordenes['orden_id'].is_unique else 'ALERTA'}",
+        f"- nulos problemáticos: {'OK' if null_vehiculo == 0 else 'ALERTA'}",
+        f"- marcas temporales imposibles: {'OK' if ts_issues == 0 else 'ALERTA'}",
+        f"- secuencias incoherentes: {'OK' if seq_dup == 0 else 'ALERTA'}",
+        f"- ocupación patio compatible: {'OK' if patio_over == 0 else 'ALERTA'}",
+        f"- sesiones carga coherentes: {'OK' if sess_bad == 0 else 'ALERTA'}",
+        f"- SOC dentro de rango: {'OK' if soc_bad == 0 else 'ALERTA'}",
+        f"- EV con carga consistente: {'OK' if ev_without_charge == 0 else 'ALERTA'}",
+        f"- preparación y salida consistentes: {'OK' if out_without_ready == 0 else 'ALERTA'}",
+        f"- métricas agregadas y denominadores: {'OK' if denom_bad == 0 else 'ALERTA'}",
+        f"- consistencia outputs-panel: {'OK' if placeholders_left == 0 and dashboard_ok else 'ALERTA'}",
+        f"- discriminación de puntuación: {'OK' if opi_unique >= 3 else 'ALERTA'}",
+        f"- diversidad de factor de riesgo: {'OK' if driver_unique >= 2 else 'ALERTA'}",
+        f"- variabilidad área-turno: {'OK' if flat_area_metrics <= 2 else 'ALERTA'}",
+        f"- consistencia KPI cuota EV: {'OK' if share_ev_gap <= 0.02 else 'ALERTA'}",
+        f"- consistencia KPI de preparación: {'OK' if readiness_gap <= 1e-9 else 'ALERTA'}",
+        f"- consistencia KPI de tasa de atraso: {'OK' if delay_rate_gap <= 1e-9 else 'ALERTA'}",
+        f"- fuente única de verdad KPI: {'OK' if inherited_kpi_present == 0 else 'ALERTA'}",
+        f"- dispersión de escenarios: {'OK' if scenario_spread >= 2.0 else 'ALERTA'}",
         "- riesgo de sobreinterpretación explicitado: OK",
         "",
-        "## Issues Found",
+        "## Problemas Encontrados",
     ]
 
+    display_issues_df = _issues_for_display(issues_df)
+
     if issues_df.empty:
-        lines.append("No se detectaron issues materiales en esta ejecución.")
+        lines.append("No se detectaron problemas materiales en esta ejecución.")
     else:
-        lines.append(to_markdown_safe(issues_df))
+        lines.append(to_markdown_safe(display_issues_df))
 
     lines.extend(
         [
             "",
-            "## Caveats Obligatorios",
+            "## Advertencias Obligatorias",
         ]
     )
     lines.extend([f"- {c}" for c in caveats])
@@ -619,7 +673,7 @@ def run_ev_validation() -> ValidationResult:
     lines.extend(
         [
             "",
-            "## Overall Confidence Assessment",
+            "## Evaluación Global de Confianza",
             f"Confianza **{confidence}** para demostración técnica y apoyo a discusión operativa. Para uso real de planta se requiere calibración con datos productivos y validación de negocio adicional.",
         ]
     )
@@ -628,12 +682,7 @@ def run_ev_validation() -> ValidationResult:
     write_text_utf8(report_path, "\n".join(lines))
 
     issues_path = OUTPUT_REPORTS_DIR / "validation_issues_found.csv"
-    if issues_df.empty:
-        pd.DataFrame(columns=["check", "severity", "failed_rows", "detail", "recommended_fix"]).to_csv(
-            issues_path, index=False
-        )
-    else:
-        issues_df.to_csv(issues_path, index=False)
+    display_issues_df.to_csv(issues_path, index=False)
 
     release_json = {
         "status": status,
@@ -649,7 +698,7 @@ def run_ev_validation() -> ValidationResult:
         "high_issues": high_issues,
         "medium_issues": medium_issues,
         "sql_warn_ratio": sql_warn_ratio,
-        "kpi_single_source_of_truth": legacy_kpi_present == 0 and legacy_mismatch == 0,
+        "kpi_single_source_of_truth": inherited_kpi_present == 0 and inherited_mismatch == 0,
     }
     write_json_utf8(OUTPUT_REPORTS_DIR / "release_readiness.json", release_json)
 
@@ -664,7 +713,7 @@ def run_ev_validation() -> ValidationResult:
 if __name__ == "__main__":
     result = run_ev_validation()
     print("Validación EV completada")
-    print(f"- status: {result.status}")
-    print(f"- confidence: {result.confidence}")
-    print(f"- release_grade: {result.release_grade}")
+    print(f"- estado: {result.status}")
+    print(f"- confianza: {result.confidence}")
+    print(f"- grado_publicacion: {_release_grade_label(result.release_grade)}")
     print(f"- issues: {result.issues}")

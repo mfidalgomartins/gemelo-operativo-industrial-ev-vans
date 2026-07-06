@@ -1,91 +1,91 @@
-# Data Contracts and Production Caveats
+# Contratos de Datos y Advertencias de Producción
 
-Referencia curta para schema, granularidade e limites de uso.
+Referencia breve para esquema, granularidad y límites de uso.
 
-## Raw schema oficial
+## Esquema de origen oficial
 
-Fonte canonica: `data/raw/ev_factory/`.
+Fuente canónica: `data/raw/ev_factory/`.
 
-| Tabela | Grao | Chave pratica | Conteudo |
+| Tabla | Grano | Clave práctica | Contenido |
 |---|---|---|---|
-| `ordenes` | ordem | `orden_id` | plano/real, turno, sequencia, prioridade, mercado, readiness inicial |
-| `vehiculos` | veiculo | `vehiculo_id` | timestamps do fluxo fisico, versao, SOC saida |
-| `versiones_vehiculo` | versao | `version_id` | familia, propulsao, bateria, complexidade, flags EV |
-| `estado_bateria` | leitura bateria | `vehiculo_id`, `timestamp` | SOC, target SOC, estado de carga, energia |
-| `slots_carga` | slot | `slot_id` | zona, potencia, disponibilidade, manutencao |
-| `sesiones_carga` | sessao carga | `sesion_id` | inicio/fim, energia, espera, interrupcao |
-| `patio` | snapshot patio | `vehiculo_id`, `timestamp` | zona, posicao, dwell, bloqueio, movimento requerido |
-| `movimientos_patio` | movimento | `movimiento_id` | origem/destino, motivo, operador, movimento improdutivo |
-| `turnos` | dia-turno | `fecha`, `turno` | headcount, absentismo, produtividade, pressao |
-| `logistica_salida` | saida | `salida_id` | plano/real de expedicao, transportista, readiness, atraso |
-| `cuellos_botella` | evento | `evento_id` | area, severidade, duracao, impactos proxy |
-| `recursos_operativos` | recurso | `recurso_id` | capacidade nominal/disponivel e restricao atual |
-| `restricciones_operativas` | restricao | `restriccion_id` | janela, area, tipo, severidade, impacto capacidade |
-| `escenarios_transicion` | dia | `fecha` | share EV, intensidade ramp-up, pressao patio/carga/logistica |
+| `ordenes` | orden | `orden_id` | plan/real, turno, secuencia, prioridad, mercado y preparación inicial |
+| `vehiculos` | vehículo | `vehiculo_id` | marcas temporales del flujo físico, versión y SOC de salida |
+| `versiones_vehiculo` | versión | `version_id` | familia, propulsión, batería, complejidad y marcadores EV |
+| `estado_bateria` | lectura batería | `vehiculo_id`, `timestamp` | SOC, SOC objetivo, estado de carga y energía |
+| `slots_carga` | punto de carga | `slot_id` | zona, potencia, disponibilidad y mantenimiento |
+| `sesiones_carga` | sesión carga | `sesion_id` | inicio/fin, energía, espera e interrupción |
+| `patio` | instantánea de patio | `vehiculo_id`, `timestamp` | zona, posición, permanencia, bloqueo y movimiento requerido |
+| `movimientos_patio` | movimiento | `movimiento_id` | origen/destino, motivo, operador y movimiento improductivo |
+| `turnos` | día-turno | `fecha`, `turno` | dotación, absentismo, productividad y presión |
+| `logistica_salida` | salida | `salida_id` | plan/real de expedición, transportista, preparación y atraso |
+| `cuellos_botella` | evento | `evento_id` | área, severidad, duración e impactos proxy |
+| `recursos_operativos` | recurso | `recurso_id` | capacidad nominal/disponible y restricción actual |
+| `restricciones_operativas` | restricción | `restriccion_id` | ventana, área, tipo, severidad e impacto en capacidad |
+| `escenarios_transicion` | día | `fecha` | cuota EV, intensidad de rampa y presión de patio/carga/logística |
 
-## Processed schema principal
+## Esquema procesado principal
 
-Fonte: `data/processed/ev_factory/`.
+Fuente: `data/processed/ev_factory/`.
 
-| Artefacto | Grao | Uso principal |
+| Artefacto | Grano | Uso principal |
 |---|---|---|
-| `vw_vehicle_flow_timeline.csv` | ordem/veiculo | fluxo completo fim de linha -> patio -> carga -> saida |
-| `vw_charging_utilization.csv` | data-turno-zona-slot | utilizacao, filas, interrupcoes e gap SOC |
-| `vw_yard_congestion.csv` | hora-zona patio | ocupacao, dwell, bloqueio e risco operacional |
-| `vw_dispatch_readiness.csv` | veiculo | readiness final, atraso, causa, SOC e risco de expedicao |
-| `vw_shift_bottleneck_summary.csv` | data-turno-area | eventos de cuello, severidade e impacto |
-| `mart_vehicle_day.csv` | veiculo-dia | mart analitico para features veiculo |
-| `mart_area_shift.csv` | data-turno-area | mart tatico de stress operacional |
-| `mart_dispatch_readiness.csv` | data-turno-propulsao-versao | readiness e delay por segmento |
-| `kpi_operativos.csv` | snapshot unico | source of truth dos KPI executivos |
-| `vehicle_readiness_features.csv` | veiculo | inputs de scoring e diagnostico |
-| `area_shift_features.csv` | data-turno-area | inputs de OPI por area |
-| `charging_features.csv` | data-turno-zona-slot | pressao de carga |
-| `yard_features.csv` | hora-zona patio | saturacao de patio |
-| `launch_transition_features.csv` | semana | pressao de transicao EV |
-| `operational_prioritization_table.csv` | area | OPI, driver principal, tier e acao recomendada |
-| `scenario_table.csv` | cenario | simulacao parametrica de 8 cenarios |
-| `validation_checks.csv` | check | validacoes SQL de negocio |
+| `vw_vehicle_flow_timeline.csv` | orden/vehículo | flujo completo fin de línea -> patio -> carga -> salida |
+| `vw_charging_utilization.csv` | fecha-turno-zona-punto | utilización, colas, interrupciones y brecha SOC |
+| `vw_yard_congestion.csv` | hora-zona patio | ocupación, permanencia, bloqueo y riesgo operativo |
+| `vw_dispatch_readiness.csv` | vehículo | preparación final, atraso, causa, SOC y riesgo de expedición |
+| `vw_shift_bottleneck_summary.csv` | fecha-turno-área | eventos de cuello, severidad e impacto |
+| `mart_vehicle_day.csv` | vehículo-día | mart analítico para variables de vehículo |
+| `mart_area_shift.csv` | fecha-turno-área | mart táctico de estrés operativo |
+| `mart_dispatch_readiness.csv` | fecha-turno-propulsión-versión | preparación y retraso por segmento |
+| `kpi_operativos.csv` | instantánea única | fuente de verdad de KPI ejecutivos |
+| `vehicle_readiness_features.csv` | vehículo | entradas de puntuación y diagnóstico |
+| `area_shift_features.csv` | fecha-turno-área | entradas de OPI por área |
+| `charging_features.csv` | fecha-turno-zona-punto | presión de carga |
+| `yard_features.csv` | hora-zona patio | saturación de patio |
+| `launch_transition_features.csv` | semana | presión de transición EV |
+| `operational_prioritization_table.csv` | área | OPI, factor principal, nivel y acción recomendada |
+| `scenario_table.csv` | escenario | simulación paramétrica de 8 escenarios |
+| `validation_checks.csv` | comprobación | validaciones SQL de negocio |
 
-Definicoes detalhadas: `docs/sql_metric_definitions.md` e `docs/feature_dictionary.md`.
+Definiciones detalladas: `docs/sql_metric_definitions.md` y `docs/feature_dictionary.md`.
 
-## Contratos de qualidade
+## Contratos de calidad
 
-- `orden_id` deve ser unico.
-- Sequencias por `fecha_turno_operativo`, `turno`, `secuencia_planeada` nao devem duplicar.
-- Timestamps de fluxo nao podem andar para tras.
-- `soc_pct` e `target_soc_pct` ficam em `[0, 100]`.
-- Sessao de carga requer `fin_sesion >= inicio_sesion` e energia positiva.
-- Veiculo com saida real nao pode ter `readiness_salida_flag = 0`.
-- KPI criticos do dashboard devem vir de `kpi_operativos.csv`.
-- Dashboard oficial deve ser unico em `outputs/dashboard/`.
+- `orden_id` debe ser único.
+- Secuencias por `fecha_turno_operativo`, `turno`, `secuencia_planeada` no deben duplicarse.
+- Las marcas temporales de flujo no pueden retroceder.
+- `soc_pct` y `target_soc_pct` deben estar en `[0, 100]`.
+- Una sesión de carga requiere `fin_sesion >= inicio_sesion` y energía positiva.
+- Un vehículo con salida real no puede tener `readiness_salida_flag = 0`.
+- KPI críticos del panel deben venir de `kpi_operativos.csv`.
+- El panel oficial debe ser único en `outputs/dashboard/`.
 
-## Arquitetura em uma pagina
+## Arquitectura en una página
 
 ```text
 data/raw/ev_factory/*.csv
         |
         v
-DuckDB SQL scripts em sql/ev_factory/
+Scripts DuckDB SQL en sql/ev_factory/
         |
         v
 data/processed/gemelo_operativo_ev.duckdb
 data/processed/ev_factory/{views,marts,kpi}.csv
         |
         v
-Python analytics: features -> diagnostico -> cenarios -> scoring
+Analítica Python: variables -> diagnóstico -> escenarios -> puntuación
         |
         v
-Dashboard HTML, graficos PNG, PDF, validation report, release gate
+Panel HTML, gráficos PNG, PDF, informe de validación y puerta de publicación
 ```
 
-## Caveats para producao
+## Advertencias de producción
 
-- Dados atuais sao sinteticos; nao usar para compromissos operacionais sem calibracao com historico real.
-- Elasticidades dos cenarios sao parametros, nao estimativas causais.
-- `area_throughput_loss_proxy` atribui impacto por evento observado; nao mede causalidade incremental.
-- O OPI e interpretavel, mas depende de pesos e thresholds que devem ser aprovados por operacoes.
-- O dashboard e estatico; nao tem autenticacao, backend, lineage runtime nem refresh incremental.
-- Dependencias visuais do dashboard usam CDN; ambientes fechados precisam vendorizar Chart.js e fontes.
-- A execucao completa sobrescreve CSV/relatorios em `data/processed/` e `outputs/`.
-- Antes de uso real, adicionar contratos de PII, controlo de acesso, observabilidade, versionamento de datasets e testes de reconciliacao com sistemas fonte.
+- Los datos actuales son sintéticos; no usarlos para compromisos operativos sin calibración con histórico real.
+- Las elasticidades de escenarios son parámetros, no estimaciones causales.
+- `area_throughput_loss_proxy` atribuye impacto por evento observado; no mide causalidad incremental.
+- El OPI es interpretable, pero depende de pesos y umbrales que deben aprobarse por operaciones.
+- El panel es estático; no tiene autenticación, servicio servidor, linaje en tiempo de ejecución ni refresco incremental.
+- Las dependencias visuales del panel usan CDN; los entornos cerrados deben empaquetar localmente Chart.js y fuentes.
+- La ejecución completa sobrescribe CSV e informes en `data/processed/` y `outputs/`.
+- Antes de uso real, añadir contratos de PII, control de acceso, observabilidad, versionado de conjuntos de datos y pruebas de reconciliación con sistemas fuente.

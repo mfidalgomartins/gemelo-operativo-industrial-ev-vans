@@ -1,8 +1,8 @@
-"""Genera el pack de gráficos públicos (PNG) a partir de los datos procesados.
+"""Genera el paquete de gráficos públicos (PNG) a partir de los datos procesados.
 
 Salida: outputs/graphs/*.png
 
-Pack ampliado de visuales seleccionados por su valor de decisión para revisión
+Paquete ampliado de visuales seleccionados por su valor de decisión para revisión
 ejecutiva y técnica. Cada gráfico responde a una sola pregunta analítica. Fondo
 claro, tipografía consistente, anotación directa y un único color de acento.
 """
@@ -48,6 +48,11 @@ TIER_COLOR = {
     "monitorizar muy de cerca": WARN,
     "mantener bajo observación": POSITIVE,
     "sin prioridad inmediata": POSITIVE,
+}
+
+YARD_ZONE_ES = {
+    "BUFFER_CARGA": "Pulmón de carga",
+    "PRE_SALIDA": "Preexpedición",
 }
 
 plt.rcParams.update(
@@ -146,8 +151,8 @@ def chart_01_throughput() -> None:
 
     title_block(
         ax,
-        "01 · Throughput operativo",
-        "El sistema sostiene 160 vehículos/día durante el ramp-up EV",
+        "01 · Caudal operativo",
+        "El sistema sostiene 160 vehículos/día durante la rampa EV",
         "Salida diaria del mart oficial; las olas semanales son ruido operativo, la media período es estable.",
     )
     footer(fig, "Fuente: vw_vehicle_flow_timeline · período 2025-01 a 2025-10")
@@ -208,14 +213,14 @@ def chart_02_share_ev_weekly() -> None:
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0, decimals=0))
     ax.set_ylim(0, max(0.6, weekly["share_ev"].max() * 1.15))
     ax.set_xlabel("")
-    ax.set_ylabel("Share EV semanal")
+    ax.set_ylabel("Cuota EV semanal")
     ax.spines["bottom"].set_color(LINE)
     ax.spines["left"].set_visible(False)
 
     title_block(
         ax,
-        "02 · Mix EV",
-        "El mix EV sube y arrastra presión hacia patio y carga",
+        "02 · Cuota EV",
+        "La cuota EV sube y arrastra presión hacia patio y carga",
         "Porcentaje semanal de vehículos EV sobre el total del flujo.",
     )
     footer(fig, "Fuente: vw_vehicle_flow_timeline")
@@ -265,7 +270,7 @@ def chart_03_priority_ranking() -> None:
         ax,
         "03 · Priorización operativa",
         "LOGÍSTICA y PATIO concentran la presión esta semana",
-        "OPI por área: combina pérdida de throughput, riesgo de salida y stress operativo.",
+        "OPI por área: combina pérdida de caudal, riesgo de salida y tensión operativa.",
     )
     footer(fig, "Fuente: operational_prioritization_table")
     save(fig, "03_priority_ranking_opi")
@@ -359,14 +364,14 @@ def chart_04_risk_matrix() -> None:
     )
 
     style_grid(ax, "both")
-    # Pad symmetrically past the 0-100 score range so bubbles at the extremes
-    # (LOGISTICA ~99, EXPEDICION ~0) sit fully inside the frame; centre stays 50.
+    # Margen simétrico fuera del rango 0-100 para que las burbujas extremas
+    # queden dentro del marco y el centro permanezca en 50.
     ax.set_xlim(-8, 108)
     ax.set_ylim(-8, 108)
     ax.set_xticks([0, 20, 40, 60, 80, 100])
     ax.set_yticks([0, 20, 40, 60, 80, 100])
-    ax.set_xlabel("Throughput loss score")
-    ax.set_ylabel("Dispatch risk score")
+    ax.set_xlabel("Puntuación de pérdida de caudal")
+    ax.set_ylabel("Puntuación de riesgo de expedición")
     ax.spines["left"].set_visible(False)
     ax.spines["bottom"].set_color(LINE)
 
@@ -374,7 +379,7 @@ def chart_04_risk_matrix() -> None:
         ax,
         "04 · Matriz de riesgo",
         "Pérdida de flujo × riesgo de salida — dónde actuar primero",
-        "Tamaño del punto: operational stress. LOGÍSTICA y PATIO están en el cuadrante de intervención inmediata.",
+        "Tamaño del punto: tensión operativa. LOGÍSTICA y PATIO están en el cuadrante de intervención inmediata.",
     )
     footer(fig, "Fuente: operational_prioritization_table")
     save(fig, "04_risk_matrix")
@@ -406,7 +411,7 @@ def chart_05_scenario_decision() -> None:
 
     style_grid(ax, "x")
     ax.set_xlim(df["decision_score"].min() - 3, df["decision_score"].max() + 4)
-    ax.set_xlabel("Decision score (multi-criterio)")
+    ax.set_xlabel("Puntuación de decisión (multicriterio)")
     ax.set_ylabel("")
     ax.spines["left"].set_visible(False)
     ax.spines["bottom"].set_color(LINE)
@@ -415,8 +420,8 @@ def chart_05_scenario_decision() -> None:
     title_block(
         ax,
         "05 · Comparador de escenarios",
-        "La combinación de medidas correctivas gana al ramp-up puro",
-        "Decision score = throughput + readiness + estabilidad − riesgo de salida.",
+        "La combinación de medidas correctivas supera a la rampa pura",
+        "Puntuación de decisión = caudal + preparación + estabilidad - riesgo de salida.",
     )
     footer(fig, "Fuente: scenario_decision_comparison")
     save(fig, "05_scenario_decision")
@@ -430,7 +435,7 @@ def chart_06_ev_vs_ice() -> None:
         ("yard_congestion_score", "Congestión patio"),
         ("charging_pressure_score", "Presión de carga"),
         ("dispatch_delay_risk_score", "Riesgo de retraso"),
-        ("launch_transition_stress_score", "Stress de transición"),
+        ("launch_transition_stress_score", "Tensión de transición"),
     ]
     ev = df[df["tipo_propulsion"] == "EV"].iloc[0]
     ice = df[df["tipo_propulsion"] == "ICE"].iloc[0]
@@ -456,7 +461,7 @@ def chart_06_ev_vs_ice() -> None:
     ax.set_yticklabels(labels, color=INK, fontsize=10.5)
     ax.set_xlim(0, max(max(ev_vals), max(ice_vals)) * 1.18)
     style_grid(ax, "x")
-    ax.set_xlabel("Score (0–100)")
+    ax.set_xlabel("Puntuación (0-100)")
     ax.spines["left"].set_visible(False)
     ax.spines["bottom"].set_color(LINE)
     ax.invert_yaxis()
@@ -465,8 +470,8 @@ def chart_06_ev_vs_ice() -> None:
     title_block(
         ax,
         "06 · EV vs ICE",
-        "El mix EV añade carga en secuencia, expedición y energía",
-        "Comparación por driver de presión operativa. La congestión de patio es estructural, no propia de la propulsión.",
+        "La cuota EV añade carga en secuencia, expedición y energía",
+        "Comparación por factor de presión operativa. La congestión de patio es estructural, no propia de la propulsión.",
     )
     footer(fig, "Fuente: diagnostic_ev_vs_non_ev")
     save(fig, "06_ev_vs_ice")
@@ -474,7 +479,7 @@ def chart_06_ev_vs_ice() -> None:
 
 # ──────────────────────────────────────────────────────────────────────────────
 def chart_07_readiness_cohort() -> None:
-    """Readiness por versión (cohorte): el hueco EV salta a la vista."""
+    """Preparación por versión (cohorte): el hueco EV salta a la vista."""
     df = pd.read_csv(DATA / "kpi_readiness_shift_version.csv")
     agg = (
         df.assign(ready=df["readiness_rate"] * df["total_vehiculos"])
@@ -508,7 +513,7 @@ def chart_07_readiness_cohort() -> None:
     style_grid(ax, "x")
     ax.xaxis.set_major_formatter(mtick.PercentFormatter(1.0, decimals=0))
     ax.set_xlim(0, 1.08)
-    ax.set_xlabel("Readiness rate a la salida")
+    ax.set_xlabel("Tasa de preparación a la salida")
     ax.spines["left"].set_visible(False)
     ax.spines["bottom"].set_color(LINE)
     ax.tick_params(axis="y", labelcolor=INK, labelsize=10)
@@ -521,9 +526,9 @@ def chart_07_readiness_cohort() -> None:
 
     title_block(
         ax,
-        "07 · Cohorte de readiness",
+        "07 · Cohorte de preparación",
         "Las versiones EV salen listas el 28–59% de las veces; las ICE, por encima del 87%",
-        "Readiness rate ponderado por volumen y versión. Ninguna versión EV se acerca al objetivo del 95%.",
+        "Tasa de preparación ponderada por volumen y versión. Ninguna versión EV se acerca al objetivo del 95%.",
     )
     footer(fig, "Fuente: kpi_readiness_shift_version")
     save(fig, "07_readiness_cohort")
@@ -531,17 +536,17 @@ def chart_07_readiness_cohort() -> None:
 
 # ──────────────────────────────────────────────────────────────────────────────
 def chart_08_launch_trend() -> None:
-    """Tendencia semanal: a más mix EV, más stress de transición de patio."""
+    """Tendencia semanal: a más cuota EV, más tensión de transición de patio."""
     df = pd.read_csv(DATA / "launch_transition_features.csv", parse_dates=["week"]).sort_values("week")
 
     fig, ax = plt.subplots(figsize=(12, 5.8))
     plt.subplots_adjust(left=0.07, right=0.92, top=0.76, bottom=0.13)
 
     ax.fill_between(df["week"], 0, df["share_ev"], color=ACCENT, alpha=0.10, linewidth=0)
-    ax.plot(df["week"], df["share_ev"], color=ACCENT, linewidth=2.2, label="Share EV (izq.)")
+    ax.plot(df["week"], df["share_ev"], color=ACCENT, linewidth=2.2, label="Cuota EV (izq.)")
     ax.set_ylim(0, 1.0)
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0, decimals=0))
-    ax.set_ylabel("Share EV", color=ACCENT)
+    ax.set_ylabel("Cuota EV", color=ACCENT)
     ax.tick_params(axis="y", colors=ACCENT)
     style_grid(ax, "y")
 
@@ -551,10 +556,14 @@ def chart_08_launch_trend() -> None:
         df["yard_transition_stress_index"],
         color=DANGER,
         linewidth=2.0,
-        label="Yard transition stress (der.)",
+        label="Tensión de transición en patio (der.)",
     )
     ax2.plot(
-        df["week"], df["dispatch_stability_index"], color=POSITIVE, linewidth=2.0, label="Dispatch stability (der.)"
+        df["week"],
+        df["dispatch_stability_index"],
+        color=POSITIVE,
+        linewidth=2.0,
+        label="Estabilidad de expedición (der.)",
     )
     ax2.set_ylim(0, 100)
     ax2.set_ylabel("Índice (0–100)", color=MUTED)
@@ -568,8 +577,8 @@ def chart_08_launch_trend() -> None:
     title_block(
         ax,
         "08 · Transición de lanzamiento",
-        "El stress de patio sube con el mix EV; la estabilidad de salida cae en paralelo",
-        "Series semanales del ramp-up (53 semanas). El stress de transición pasa de 25 a 53 cuando el EV domina el flujo.",
+        "La tensión de patio sube con la cuota EV; la estabilidad de salida cae en paralelo",
+        "Series semanales de la rampa (53 semanas). La tensión de transición pasa de 25 a 53 cuando el EV domina el flujo.",
     )
     footer(fig, "Fuente: launch_transition_features")
     save(fig, "08_launch_transition_trend")
@@ -624,9 +633,9 @@ def chart_09_dispatch_funnel() -> None:
         ax,
         "09 · Funnel de expedición",
         f"Solo el {on_time_ready / total * 100:.0f}% de las órdenes sale puntual y lista",
-        f"La caída de readiness drena {drop_ready:.0f} pp del plan; el atraso de salida, otros {drop_late:.0f} pp.",
+        f"La caída de preparación drena {drop_ready:.0f} pp del plan; el atraso de salida, otros {drop_late:.0f} pp.",
     )
-    footer(fig, "Fuente: kpi_operativos · readiness y ratio de salida retrasada")
+    footer(fig, "Fuente: kpi_operativos · preparación y ratio de salida retrasada")
     save(fig, "09_dispatch_funnel")
 
 
@@ -661,7 +670,7 @@ def chart_10_leadtime_distribution() -> None:
         ax,
         "10 · Distribución de lead time",
         f"EV e ICE comparten perfil de lead time interno ({ev.median():.0f} h vs {ice.median():.0f} h)",
-        "Tiempo interno de extremo a extremo. El coste EV no está en el tiempo de ciclo, sino en readiness y salida.",
+        "Tiempo interno de extremo a extremo. El coste EV no está en el tiempo de ciclo, sino en preparación y salida.",
     )
     footer(fig, "Fuente: mart_vehicle_day")
     save(fig, "10_leadtime_distribution")
@@ -724,7 +733,7 @@ def chart_11_delay_pareto() -> None:
 
 # ──────────────────────────────────────────────────────────────────────────────
 def chart_12_market_geography() -> None:
-    """Geografía: readiness y volumen por mercado de destino."""
+    """Geografía: preparación y volumen por mercado de destino."""
     df = pd.read_csv(
         DATA / "mart_vehicle_day.csv", usecols=["mercado_destino", "readiness_final_flag", "tipo_propulsion"]
     )
@@ -735,9 +744,8 @@ def chart_12_market_geography() -> None:
     fig, ax = plt.subplots(figsize=(11, 5.8))
     plt.subplots_adjust(left=0.16, right=0.95, top=0.78, bottom=0.12)
 
-    # Fixed readiness domain (same scale as chart 18) so a near-uniform 72-73%
-    # spread reads as near-uniform colour, instead of stretching a 1-point gap
-    # across the whole spectrum and contradicting the chart's own message.
+    # Dominio fijo de preparación (misma escala que el gráfico 18) para que un
+    # 72-73% casi uniforme se lea como color casi uniforme.
     ready_lo, ready_hi = 0.25, 1.0
     norm = ((g["ready"] - ready_lo) / (ready_hi - ready_lo)).clip(0, 1)
     colors = [plt.cm.RdYlGn(float(n)) for n in norm]
@@ -763,8 +771,8 @@ def chart_12_market_geography() -> None:
     title_block(
         ax,
         "12 · Mercados de destino",
-        "Iberia concentra un tercio del volumen; el readiness es uniforme entre destinos",
-        "Volumen por mercado y readiness final (color verde = más listo). El riesgo es operativo, no geográfico.",
+        "Iberia concentra un tercio del volumen; la preparación es uniforme entre destinos",
+        "Volumen por mercado y preparación final (color verde = más listo). El riesgo es operativo, no geográfico.",
     )
     footer(fig, "Fuente: mart_vehicle_day")
     save(fig, "12_market_geography")
@@ -784,7 +792,8 @@ def chart_13_yard_zones() -> None:
     fig, ax = plt.subplots(figsize=(11, 5.6))
     plt.subplots_adjust(left=0.18, right=0.95, top=0.78, bottom=0.12)
 
-    bars = ax.barh(g["zona_patio"], g["p95_h"], color=colors, edgecolor="none", height=0.62)
+    labels = g["zona_patio"].map(lambda z: YARD_ZONE_ES.get(str(z), str(z).replace("_", " ").capitalize()))
+    bars = ax.barh(labels, g["p95_h"], color=colors, edgecolor="none", height=0.62)
     for rect, h, b in zip(bars, g["p95_h"], g["block"]):
         ax.text(
             h + max(g["p95_h"]) * 0.01,
@@ -815,7 +824,7 @@ def chart_13_yard_zones() -> None:
 
 # ──────────────────────────────────────────────────────────────────────────────
 def chart_14_scenario_tradeoff() -> None:
-    """Trade-off: throughput vs vehículos retrasados, por escenario."""
+    """Compensación: caudal vs vehículos retrasados, por escenario."""
     df = pd.read_csv(DATA / "scenario_decision_comparison.csv").reset_index(drop=True)
     df["label"] = df["escenario"].str.replace(r"^\d+_", "", regex=True).str.replace("_", " ")
     best = df["decision_score"].idxmax()
@@ -852,16 +861,16 @@ def chart_14_scenario_tradeoff() -> None:
 
     style_grid(ax, "both")
     ax.set_xlabel("Vehículos retrasados (% del flujo)")
-    ax.set_ylabel("Throughput (índice de escenario)")
+    ax.set_ylabel("Caudal (índice de escenario)")
     ax.spines["left"].set_visible(False)
     ax.spines["bottom"].set_color(LINE)
     ax.invert_xaxis()
 
     title_block(
         ax,
-        "14 · Trade-off de escenarios",
-        "La combinación correctiva es la frontera: más throughput con menos retraso",
-        "Cada punto es un escenario. Arriba-izquierda es mejor (eje X invertido). El tamaño es el decision score.",
+        "14 · Compensación de escenarios",
+        "La combinación correctiva es la frontera: más caudal con menos retraso",
+        "Cada punto es un escenario. Arriba-izquierda es mejor (eje X invertido). El tamaño es la puntuación de decisión.",
     )
     footer(fig, "Fuente: scenario_decision_comparison")
     save(fig, "14_scenario_tradeoff")
@@ -944,7 +953,7 @@ def chart_16_montecarlo_robustness() -> None:
         ax,
         "16 · Robustez del ranking",
         "LOGÍSTICA encabeza el ranking en el 77% de los remuestreos Monte Carlo",
-        "300 sorteos Dirichlet sobre los pesos del score. La conclusión no depende de una única ponderación.",
+        "300 sorteos Dirichlet sobre los pesos de puntuación. La conclusión no depende de una única ponderación.",
     )
     footer(fig, "Fuente: scoring_montecarlo_draws (n=300)")
     save(fig, "16_montecarlo_robustness")
@@ -952,15 +961,15 @@ def chart_16_montecarlo_robustness() -> None:
 
 # ──────────────────────────────────────────────────────────────────────────────
 def chart_17_driver_correlation() -> None:
-    """Correlación entre drivers operativos por área-turno."""
+    """Correlación entre factores operativos por área-turno."""
     df = pd.read_csv(DATA / "mart_area_shift.csv")
     cols = {
         "congestion_index": "Congestión",
         "avg_wait_time": "Espera media",
         "queue_pressure_score": "Presión de cola",
         "bottleneck_density": "Densidad cuello",
-        "operational_stress_score": "Stress operativo",
-        "area_throughput_loss_proxy": "Pérdida throughput",
+        "operational_stress_score": "Tensión operativa",
+        "area_throughput_loss_proxy": "Pérdida de caudal",
     }
     sub = df[list(cols)].rename(columns=cols)
     corr = sub.corr(numeric_only=True)
@@ -986,9 +995,9 @@ def chart_17_driver_correlation() -> None:
 
     title_block(
         ax,
-        "17 · Correlación de drivers",
-        "Congestión, espera y stress se mueven juntos; la pérdida de throughput es casi independiente",
-        "Correlación de Pearson entre drivers a nivel área-turno. Confirma dos familias de riesgo distintas.",
+        "17 · Correlación de factores",
+        "Congestión, espera y tensión se mueven juntas; la pérdida de caudal es casi independiente",
+        "Correlación de Pearson entre factores a nivel área-turno. Confirma dos familias de riesgo distintas.",
     )
     footer(fig, "Fuente: mart_area_shift")
     save(fig, "17_driver_correlation")
@@ -996,7 +1005,7 @@ def chart_17_driver_correlation() -> None:
 
 # ──────────────────────────────────────────────────────────────────────────────
 def chart_18_readiness_heatmap() -> None:
-    """Varianza: readiness por turno × versión."""
+    """Varianza: preparación por turno × versión."""
     df = pd.read_csv(DATA / "kpi_readiness_shift_version.csv")
     piv = df.pivot_table(index="version_id", columns="turno", values="readiness_rate", aggfunc="mean")
     order = df.groupby("version_id")["readiness_rate"].mean().sort_values(ascending=False).index
@@ -1021,9 +1030,9 @@ def chart_18_readiness_heatmap() -> None:
 
     title_block(
         ax,
-        "18 · Readiness por turno × versión",
-        "El hueco de readiness es de versión, no de turno: los tres turnos se comportan igual",
-        "Readiness rate por versión y turno. La variación entre turnos es marginal frente al salto EV→ICE.",
+        "18 · Preparación por turno × versión",
+        "El hueco de preparación es de versión, no de turno: los tres turnos se comportan igual",
+        "Tasa de preparación por versión y turno. La variación entre turnos es marginal frente al salto EV→ICE.",
     )
     footer(fig, "Fuente: kpi_readiness_shift_version")
     save(fig, "18_readiness_heatmap")
@@ -1031,13 +1040,13 @@ def chart_18_readiness_heatmap() -> None:
 
 # ──────────────────────────────────────────────────────────────────────────────
 def chart_19_before_after() -> None:
-    """Antes vs después: base ramp-up vs combinación correctiva."""
+    """Antes vs después: rampa base vs combinación correctiva."""
     df = pd.read_csv(DATA / "scenario_decision_comparison.csv").set_index("escenario")
     base = df.loc["1_ramp_up_ev_base"]
     best = df.loc["8_combinacion_medidas_correctivas"]
 
     metrics = [
-        ("throughput", "Throughput", False),
+        ("throughput", "Caudal", False),
         ("estabilidad_operativa", "Estabilidad operativa", False),
         ("tiempo_total_interno", "Tiempo interno total", True),
         ("espera_carga", "Espera de carga (min)", True),
@@ -1078,8 +1087,8 @@ def chart_19_before_after() -> None:
     title_block(
         ax,
         "19 · Antes vs después",
-        "El paquete correctivo mejora throughput, estabilidad y tiempo interno a la vez",
-        "Escenario base de ramp-up frente a la combinación de medidas. Verde = mejora, rojo = deterioro.",
+        "El paquete correctivo mejora caudal, estabilidad y tiempo interno a la vez",
+        "Escenario base de rampa frente a la combinación de medidas. Verde = mejora, rojo = deterioro.",
     )
     footer(fig, "Fuente: scenario_decision_comparison")
     save(fig, "19_before_after")
@@ -1087,7 +1096,7 @@ def chart_19_before_after() -> None:
 
 # ──────────────────────────────────────────────────────────────────────────────
 def main() -> None:
-    print("Generando chart pack…")
+    print("Generando paquete de gráficos...")
     chart_01_throughput()
     chart_02_share_ev_weekly()
     chart_03_priority_ranking()
@@ -1107,7 +1116,7 @@ def main() -> None:
     chart_17_driver_correlation()
     chart_18_readiness_heatmap()
     chart_19_before_after()
-    print(f"OK — 19 PNGs en {OUT.relative_to(ROOT)}")
+    print(f"OK - 19 PNGs en {OUT.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

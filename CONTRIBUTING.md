@@ -1,64 +1,54 @@
-# Contributing
+# Guía de Contribución
 
-Thanks for your interest in improving the EV operational twin. This project is a
-reproducible analytics pipeline, so the bar for contributions is: **the pipeline
-stays deterministic, the tests stay green, and the published outputs remain
-regenerable from source.**
+Gracias por mejorar el gemelo operativo EV. Este repositorio es una canalización analítica reproducible, así que el criterio principal es simple: la ejecución debe seguir siendo determinista, las pruebas deben pasar y los artefactos publicados deben poder regenerarse desde el código fuente.
 
-## Development setup
+## Configuración local
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-python -m pip install -e ".[dev]"      # add ".[security]" to run the scanners
+python -m pip install -e ".[dev]"      # añadir ".[security]" para los escáneres
 ```
 
-Supported Python: **3.10–3.12** (CI matrix runs 3.10 and 3.12).
+Python soportado: **3.10-3.12** en CI.
 
-Optionally install the git hooks so the same checks CI runs fire on every commit:
+Opcionalmente, instalar hooks locales para ejecutar las mismas comprobaciones que CI:
 
 ```bash
 pre-commit install
 ```
 
-## The pipeline
+## Canalización
 
 ```bash
-generate-data --seed 20260328 --start-date 2025-01-01 --months 12  # canonical snapshot
-python -m src.run_pipeline           # features, diagnostics, scenarios, scoring
+generate-data --seed 20260328 --start-date 2025-01-01 --months 12
+python -m src.run_pipeline           # variables, diagnóstico, escenarios y puntuación
 python scripts/generate_chart_pack.py
 python scripts/generate_report.py
-python -m src.ev_release_gate        # PASS/FAIL governance gate
+python -m src.ev_release_gate
 ```
 
-The DuckDB file under `data/processed/` is a rebuildable intermediate and is **not**
-tracked in git. The CSV marts beside it are the canonical, committed outputs.
+El fichero DuckDB en `data/processed/` es un intermedio reconstruible y no se versiona. Los CSV junto a él son las salidas canónicas versionadas.
 
-## Checks to run before opening a PR
+## Calidad
 
 ```bash
 ruff check .
 ruff format --check .
-pytest                                # fast unit suite (no side effects)
-pytest -m integration                 # full pipeline; writes to data/ (run last)
+pytest -q
+pytest -m integration                 # canalización completa; escribe en data/ y outputs/
 ```
 
-- **Unit tests** must not write outside `tmp_path`. If a test needs to run the
-  full pipeline or touch the data directory, mark it `@pytest.mark.integration`.
-- Keep combined coverage at or above the CI gate (**85%**). New analytical
-  helpers should ship with unit tests for their pure logic.
-- Use Python 3.10+ built-in generics (`list[str]`, `dict[str, int]`), not
-  `typing.List`/`Dict`.
+- Las pruebas unitarias no deben escribir fuera de `tmp_path`.
+- Si una prueba ejecuta la canalización completa o toca `data/`, marcarla con `@pytest.mark.integration`.
+- Mantener la cobertura combinada por encima del umbral de CI: **85%**.
+- Nuevos auxiliares analíticos deben incluir pruebas unitarias para su lógica pura.
 
-## Commit and PR conventions
+## Commits y PRs
 
-- Use clear, imperative commit subjects (`fix(report): ...`, `chore(ci): ...`).
-- Keep generated artifacts (charts, report, marts) in sync with the code that
-  produces them when a change affects them.
-- Fill in the pull-request template; describe what you changed and how you
-  verified it.
+- Usar asuntos imperativos y claros, por ejemplo `fix(informe): ...` o `docs(ci): ...`.
+- Mantener artefactos generados, gráficos, informe y marts sincronizados con el código que los produce.
+- Completar la plantilla de pull request con cambios, verificación y límites.
 
-## Determinism
+## Límites de datos
 
-This is a synthetic-data project: every figure must be reproducible from the
-canonical seed above. Do not introduce wall-clock time, unseeded randomness, or
-network dependencies into the pipeline.
+Este proyecto usa datos sintéticos. Toda figura debe poder reproducirse desde la semilla canónica `20260328`. No introducir datos reales de planta, secretos ni dependencias de red en la canalización.

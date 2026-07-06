@@ -1,17 +1,17 @@
 ---
-name: Bug report
-about: Report a defect in the pipeline, analysis, or outputs
-title: "[bug] "
+name: Reporte de defecto
+about: Reportar un defecto en la canalización, el análisis o los artefactos
+title: "[defecto] "
 labels: bug
 ---
 
-## Summary
+## Resumen
 
-A clear, concise description of the bug.
+Descripción clara y concisa del defecto.
 
-## Reproduction
+## Reproducción
 
-Steps to reproduce, ideally from a clean checkout:
+Pasos para reproducirlo, idealmente desde una copia limpia del repositorio:
 
 ```bash
 generate-data --seed 20260328 --start-date 2025-01-01 --months 12
@@ -19,17 +19,17 @@ python -m src.run_pipeline
 # ...
 ```
 
-## Expected vs actual
+## Esperado vs real
 
-- **Expected:** what you expected to happen.
-- **Actual:** what happened instead (include error output / tracebacks).
+- **Esperado:** qué esperabas que ocurriera.
+- **Real:** qué ocurrió en su lugar, incluyendo error o traza.
 
-## Environment
+## Entorno
 
-- OS:
-- Python version:
-- Package version / commit:
+- SO:
+- Versión de Python:
+- Versión del paquete o commit:
 
-## Additional context
+## Contexto adicional
 
-Anything else that helps — affected file, chart, KPI, or report page.
+Cualquier detalle útil: fichero, gráfico, KPI o página del informe afectada.

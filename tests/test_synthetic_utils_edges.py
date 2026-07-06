@@ -46,7 +46,7 @@ def test_shift_helpers_validate_boundaries_and_invalid_inputs() -> None:
 def test_clamp_rejects_invalid_bounds() -> None:
     assert clamp(10, 0, 5) == 5.0
 
-    with pytest.raises(ValueError, match="low no puede ser mayor que high"):
+    with pytest.raises(ValueError, match="límite inferior no puede ser mayor"):
         clamp(1, 2, 1)
 
 

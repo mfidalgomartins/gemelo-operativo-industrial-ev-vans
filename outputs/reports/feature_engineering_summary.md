@@ -1,4 +1,4 @@
-# Feature Engineering Summary
+# Resumen de Ingeniería de Variables
 
 ## Tablas generadas
 - vehicle_readiness_features: 58697 filas
@@ -7,8 +7,8 @@
 - yard_features: 46155 filas
 - launch_transition_features: 53 filas
 
-## Features clave
-- `readiness_risk_score_input`: base interpretable para scoring de readiness.
+## Variables clave
+- `readiness_risk_score_input`: base interpretable para puntuación de preparación.
 - `operational_stress_score`: señal sintética de estrés área-turno.
 - `charger_pressure_score`: cuantifica presión real de carga.
 - `yard_saturation_score`: captura congestión estructural del patio.

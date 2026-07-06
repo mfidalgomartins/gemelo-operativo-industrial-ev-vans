@@ -1,4 +1,4 @@
-# Diagnostic Framework - Gemelo Operativo EV
+# Marco Diagnóstico - Gemelo Operativo EV
 
 ## Objetivo
 Identificar dónde se rompe el flujo y priorizar acciones operativas interpretables en secuenciación, patio, carga y expedición.
@@ -6,11 +6,11 @@ Identificar dónde se rompe el flujo y priorizar acciones operativas interpretab
 ## Capas de análisis
 1. Secuenciación: desviación plan-real y complejidad de versión.
 2. Patio: espera, bloqueo y no productividad de movimientos.
-3. Carga: colas, presión de slot e incumplimiento de SOC objetivo.
-4. Expedición: retrasos y gap de readiness.
-5. Área-turno: estrés operacional y criticidad por impacto de throughput atribuido a eventos del área.
+3. Carga: colas, presión de punto de carga e incumplimiento de SOC objetivo.
+4. Expedición: retrasos y brecha de preparación.
+5. Área-turno: tensión operacional y criticidad por impacto de caudal atribuido a eventos del área.
 
-## Scores principales
+## Puntuaciones principales
 - `sequence_disruption_score`
 - `yard_congestion_score`
 - `charging_pressure_score`
@@ -19,8 +19,8 @@ Identificar dónde se rompe el flujo y priorizar acciones operativas interpretab
 - `area_criticality_score`
 
 ## Lógica de persistencia
-- `ESTRUCTURAL`: share de periodos críticos >= 30%.
-- `PICO_OCASIONAL`: share crítico bajo, pero p95 de criticality muy alto.
+- `ESTRUCTURAL`: cuota de periodos críticos >= 30%.
+- `PICO_OCASIONAL`: cuota crítica baja, pero p95 de criticidad muy alto.
 - `ESTABLE`: sin evidencia de tensión sostenida.
 
 ## Salidas
@@ -32,4 +32,4 @@ Identificar dónde se rompe el flujo y priorizar acciones operativas interpretab
 - `diagnostic_area_ranking.csv`
 
 ## Uso operativo
-El framework conecta síntomas con acción inicial recomendada para facilitar priorización diaria y planificación semanal durante la transición EV.
+El marco conecta síntomas con acción inicial recomendada para facilitar priorización diaria y planificación semanal durante la transición EV.

@@ -44,6 +44,14 @@ SCENARIO_METRICS = [
     "estabilidad_operativa",
 ]
 
+LEVER_LABELS = {
+    "secuenciacion_ev": "secuenciación EV",
+    "capacidad_carga": "capacidad de carga",
+    "gestion_patio": "gestión de patio",
+    "disciplina_expedicion": "disciplina de expedición",
+    "resiliencia_turno": "resiliencia de turno",
+}
+
 
 @dataclass
 class ScenarioTwinResult:
@@ -222,7 +230,7 @@ def run_ev_scenario_twin() -> ScenarioTwinResult:
         },
         {
             "escenario": "2_ramp_up_ev_acelerado",
-            "descripcion": "Aceleración de mix EV sin refuerzo completo",
+            "descripcion": "Aceleración de cuota EV sin refuerzo completo",
             "share_ev_delta": 0.25,
             "sequencing_gain": 0.05,
             "charging_gain": 0.00,
@@ -325,7 +333,7 @@ def run_ev_scenario_twin() -> ScenarioTwinResult:
     comparison["delta_abs"] = comparison["mejorado"] - comparison["base"]
     comparison["delta_pct"] = np.where(comparison["base"] != 0, comparison["delta_abs"] / comparison["base"], np.nan)
 
-    # Score de decisión multiobjetivo
+    # Puntuación de decisión multiobjetivo
     scenario_df["decision_score"] = (
         0.30 * (scenario_df["throughput"] / scenario_df["throughput"].max())
         + 0.20 * (1 - scenario_df["tiempo_total_interno"] / scenario_df["tiempo_total_interno"].max())
@@ -363,14 +371,14 @@ def run_ev_scenario_twin() -> ScenarioTwinResult:
     impacts.to_csv(EV_DIR / "scenario_impacts_long.csv", index=False)
 
     narrative_lines = [
-        "# Trade-offs de Escenarios - Gemelo Operativo EV",
+        "# Compensaciones de Escenarios - Gemelo Operativo EV",
         "",
         "## Lectura general",
         "- Escalar EV sin medidas correctivas desplaza el cuello hacia carga y patio.",
-        "- La combinación de secuenciación + carga + patio mejora simultáneamente throughput y estabilidad.",
-        "- Bajo presión logística, el riesgo de expedición crece más rápido que la pérdida de throughput.",
+        "- La combinación de secuenciación, carga y patio mejora caudal y estabilidad a la vez.",
+        "- Bajo presión logística, el riesgo de expedición crece más rápido que la pérdida de caudal.",
         "",
-        "## Trade-offs principales",
+        "## Compensaciones principales",
         "- Acelerar EV sin refuerzo incrementa congestión y espera de carga.",
         "- Mejor secuenciación reduce tiempo interno, pero no elimina riesgo si falta capacidad de carga.",
         "- Expandir patio estabiliza picos, pero sin disciplina de salida puede cronificar inventario interno.",
@@ -378,7 +386,9 @@ def run_ev_scenario_twin() -> ScenarioTwinResult:
         "## Ranking de palancas",
     ]
     for row in levers.itertuples(index=False):
-        narrative_lines.append(f"- {row.palanca}: impacto esperado {row.impacto_esperado:.2f}")
+        narrative_lines.append(
+            f"- {LEVER_LABELS.get(row.palanca, row.palanca)}: impacto esperado {row.impacto_esperado:.2f}"
+        )
 
     write_text_utf8(OUTPUT_REPORTS_DIR / "scenario_tradeoffs.md", "\n".join(narrative_lines))
 

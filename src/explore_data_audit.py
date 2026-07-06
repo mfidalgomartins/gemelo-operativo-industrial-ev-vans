@@ -11,6 +11,13 @@ from .utils import require_columns, to_markdown_safe, write_text_utf8
 RAW_DIR = EV_DATA_RAW_DIR
 REPORT_DIR = OUTPUT_REPORTS_DIR
 
+SEVERITY_LABELS = {
+    "critical": "critica",
+    "high": "alta",
+    "medium": "media",
+    "low": "baja",
+}
+
 
 @dataclass(frozen=True)
 class TableSpec:
@@ -35,7 +42,7 @@ TABLE_SPECS = [
         ["timestamp", "vehiculo_id"],
         {"vehiculo_id": "vehiculos.vehiculo_id"},
     ),
-    TableSpec("slots_carga", "1 fila por slot de carga", ["slot_id"], {}),
+    TableSpec("slots_carga", "1 fila por punto de carga", ["slot_id"], {}),
     TableSpec(
         "sesiones_carga",
         "1 fila por sesión de carga",
@@ -125,7 +132,7 @@ def _table_temporal_coverage(df: pd.DataFrame) -> str:
         if ("fecha" in c.lower() or "timestamp" in c.lower()) and pd.api.types.is_datetime64_any_dtype(df[c])
     ]
     if not time_cols:
-        return "N/A"
+        return "Sin dato"
     mins = []
     maxs = []
     for c in time_cols:
@@ -133,7 +140,7 @@ def _table_temporal_coverage(df: pd.DataFrame) -> str:
             mins.append(df[c].min())
             maxs.append(df[c].max())
     if not mins:
-        return "N/A"
+        return "Sin dato"
     return f"{min(mins)} -> {max(maxs)}"
 
 
@@ -155,17 +162,17 @@ def _profile_tables(tables: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, pd.D
         summary_rows.append(
             {
                 "tabla": spec.name,
-                "grain": spec.grain,
-                "key_candidates": "; ".join(spec.key_candidates),
-                "foreign_keys_esperadas": "; ".join([f"{k}->{v}" for k, v in spec.expected_fks.items()])
+                "grano": spec.grain,
+                "claves_candidatas": "; ".join(spec.key_candidates),
+                "claves_foraneas_esperadas": "; ".join([f"{k}->{v}" for k, v in spec.expected_fks.items()])
                 if spec.expected_fks
-                else "N/A",
+                else "Sin dato",
                 "n_filas": int(df.shape[0]),
                 "n_columnas": int(df.shape[1]),
                 "cobertura_temporal": _table_temporal_coverage(df),
-                "null_rate_pct_promedio": round(null_rate, 3),
+                "porcentaje_nulos_promedio": round(null_rate, 3),
                 "duplicados_pct": round(dup_rate, 4),
-                "candidate_key_unique": "; ".join(key_uniqueness) if key_uniqueness else "N/A",
+                "clave_candidata_unica": "; ".join(key_uniqueness) if key_uniqueness else "Sin dato",
             }
         )
 
@@ -175,7 +182,9 @@ def _profile_tables(tables: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, pd.D
             distinct = int(series.nunique(dropna=True))
             top_values = series.value_counts(dropna=True).head(3)
             top_repr = (
-                " | ".join([f"{idx}:{int(val)}" for idx, val in top_values.items()]) if not top_values.empty else "N/A"
+                " | ".join([f"{idx}:{int(val)}" for idx, val in top_values.items()])
+                if not top_values.empty
+                else "Sin dato"
             )
 
             col_row = {
@@ -221,16 +230,16 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     recursos = tables["recursos_operativos"]
     restricciones = tables["restricciones_operativas"]
 
-    def add_issue(issue: str, severity: str, affected: int, rule: str, recommendation: str) -> None:
+    def add_issue(problem: str, severity: str, affected: int, rule: str, recommendation: str) -> None:
         if affected <= 0:
             return
         issues.append(
             {
-                "issue": issue,
-                "severity": severity,
-                "affected_rows": int(affected),
-                "rule": rule,
-                "recommended_fix": recommendation,
+                "problema": problem,
+                "severidad": SEVERITY_LABELS.get(severity, severity),
+                "filas_afectadas": int(affected),
+                "regla": rule,
+                "correccion_recomendada": recommendation,
             }
         )
 
@@ -285,7 +294,7 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "critical",
         salida_no_ready,
         "No debe haber salida real con readiness_salida_flag=0",
-        "Introducir bloqueo hard en lógica de expedición o marca explícita de override operativo.",
+        "Introducir bloqueo estricto en lógica de expedición o marca explícita de excepción operativa.",
     )
 
     impossible_sessions = int(
@@ -300,7 +309,7 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "critical",
         impossible_sessions,
         "fin_sesion >= inicio_sesion, energia>0, espera>=0",
-        "Corregir función de generación de sesiones y aplicar constraints en staging SQL.",
+        "Corregir función de generación de sesiones y aplicar restricciones en la preparación SQL.",
     )
 
     patio_dup_positions = int(patio.duplicated(subset=["timestamp", "vehiculo_id"]).sum())
@@ -308,8 +317,8 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "ocupaciones_patio_incompatibles",
         "high",
         patio_dup_positions,
-        "vehículo no puede estar en dos posiciones al mismo timestamp",
-        "Deduplicar snapshots por timestamp+vehiculo y conservar estado de mayor prioridad.",
+        "vehículo no puede estar en dos posiciones en la misma marca temporal",
+        "Deduplicar instantáneas por marca temporal+vehiculo y conservar el estado de mayor prioridad.",
     )
 
     soc_out = int((~bateria["soc_pct"].between(0, 100) | ~bateria["target_soc_pct"].between(0, 100)).sum())
@@ -340,7 +349,7 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "medium",
         delay_no_cause,
         "Retraso positivo requiere causa de retraso válida",
-        "Imponer catálogo de causas y fallback AUTOMATIC_CLASSIFICATION.",
+        "Imponer catálogo de causas y clasificación automática cuando falte causa.",
     )
 
     bottleneck_no_impact = int(
@@ -369,33 +378,38 @@ def _detect_issues(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "Sincronizar estado de recursos con restricciones activas por corte temporal.",
     )
 
+    if not issues:
+        return pd.DataFrame(columns=["problema", "severidad", "filas_afectadas", "regla", "correccion_recomendada"])
+
+    severity_order = {"critica": 0, "alta": 1, "media": 2, "baja": 3}
+    issues_df = pd.DataFrame(issues)
     return (
-        pd.DataFrame(issues).sort_values(["severity", "affected_rows"], ascending=[True, False])
-        if issues
-        else pd.DataFrame(columns=["issue", "severity", "affected_rows", "rule", "recommended_fix"])
+        issues_df.assign(_orden_severidad=issues_df["severidad"].map(severity_order).fillna(99))
+        .sort_values(["_orden_severidad", "filas_afectadas"], ascending=[True, False])
+        .drop(columns="_orden_severidad")
     )
 
 
 def _build_recommendations_md(issues: pd.DataFrame) -> str:
     recommendations = [
         "## Recomendaciones para transformación analítica",
-        "- Normalizar timestamps a UTC + timezone operacional de planta.",
-        "- Construir `vehicle_timeline_canonical` como fuente única para lead times.",
-        "- Aplicar constraints de integridad referencial en capa staging SQL.",
+        "- Normalizar marcas temporales a UTC y zona horaria operacional de planta.",
+        "- Construir `vehicle_timeline_canonical` como fuente única para tiempos de paso.",
+        "- Aplicar restricciones de integridad referencial en la capa de preparación SQL.",
         "- Mantener catálogo controlado de estados y causas para evitar ruido semántico.",
-        "- Definir reglas de override operativo para salidas sin readiness.",
-        "- Versionar reglas de scoring y validación para trazabilidad auditada.",
+        "- Definir reglas de excepción operativa para salidas sin preparación.",
+        "- Versionar reglas de puntuación y validación para trazabilidad auditada.",
     ]
 
     if not issues.empty:
-        critical = issues[issues["severity"] == "critical"]
+        critical = issues[issues["severidad"] == "critica"]
         if not critical.empty:
-            recommendations.append("- Prioridad inmediata: resolver issues `critical` antes de consumo ejecutivo.")
+            recommendations.append("- Prioridad inmediata: resolver problemas `critica` antes de consumo ejecutivo.")
 
     recommendations.extend(
         [
             "",
-            "## Propuesta de joins oficiales",
+            "## Propuesta de cruces oficiales",
             "- `ordenes.vehiculo_id` -> `vehiculos.vehiculo_id`",
             "- `ordenes.version_id` -> `versiones_vehiculo.version_id`",
             "- `sesiones_carga.vehiculo_id` -> `vehiculos.vehiculo_id`",
@@ -407,10 +421,10 @@ def _build_recommendations_md(issues: pd.DataFrame) -> str:
             "- `turnos(fecha, turno)` -> `ordenes(fecha_programada::date, turno)`",
             "",
             "## Tablas candidatas para marts analíticos",
-            "- `mart_vehicle_flow_day`: flujo integral diario por vehículo (lead times, readiness, salida).",
+            "- `mart_vehicle_flow_day`: flujo integral diario por vehículo (tiempos de paso, preparación y salida).",
             "- `mart_area_shift_ops`: presión operativa y cuellos por área-turno.",
-            "- `mart_charging_readiness`: utilización, colas, SOC gap e interrupciones.",
-            "- `mart_yard_congestion`: dwell, blocking y movimientos no productivos por zona.",
+            "- `mart_charging_readiness`: utilización, colas, brecha SOC e interrupciones.",
+            "- `mart_yard_congestion`: permanencia, bloqueo y movimientos no productivos por zona.",
             "- `mart_dispatch_risk`: riesgo de salida por causa, turno, versión y mercado.",
         ]
     )
@@ -430,19 +444,19 @@ def run_explore_data_audit() -> dict[str, object]:
     issues_df.to_csv(issues_path, index=False)
 
     lines = [
-        "# /explore-data Audit - Operational Data Readiness",
+        "# Auditoría /explore-data - Preparación Operativa de Datos",
         "",
         "## Alcance",
-        "Auditoría formal de calidad y readiness operacional sobre las 14 tablas base del gemelo operativo EV.",
+        "Auditoría formal de calidad y preparación operativa sobre las 14 tablas base del gemelo operativo EV.",
         "",
-        "## Resumen por dataset",
+        "## Resumen por conjunto de datos",
         to_markdown_safe(summary_df),
         "",
-        "## Issues priorizados",
+        "## Problemas priorizados",
     ]
 
     if issues_df.empty:
-        lines.append("No se detectaron issues materiales en esta ejecución.")
+        lines.append("No se detectaron problemas materiales en esta ejecución.")
     else:
         lines.append(to_markdown_safe(issues_df))
 
@@ -462,6 +476,6 @@ def run_explore_data_audit() -> dict[str, object]:
 
 if __name__ == "__main__":
     out = run_explore_data_audit()
-    print("Explore-data audit generado")
+    print("Auditoría explore-data generada")
     for k, v in out.items():
         print(f"- {k}: {v}")

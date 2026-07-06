@@ -1,11 +1,11 @@
-"""Builds the analytical PDF report from processed data and the chart pack.
+"""Construye el informe analítico PDF desde los datos procesados y el paquete de gráficos.
 
-Output: outputs/reports/ev_transition_operating_twin_report.pdf
+Salida: outputs/reports/ev_transition_operating_twin_report.pdf
 
-A multi-page, narrative report in the style of a senior operations analyst.
-Prose flows continuously; charts and tables are placed inline next to the
-findings they support. Numbers are pulled from the processed marts so the
-report stays consistent with the published dashboard.
+Informe narrativo multipágina con estilo de analista sénior de operaciones.
+El texto fluye de forma continua; gráficos y tablas se colocan junto a los
+hallazgos que sustentan. Las cifras se leen desde los marts procesados para que
+el informe se mantenga consistente con el panel publicado.
 """
 
 from __future__ import annotations
@@ -40,7 +40,7 @@ OUT = ROOT / "outputs" / "reports"
 OUT.mkdir(parents=True, exist_ok=True)
 PDF = OUT / "ev_transition_operating_twin_report.pdf"
 
-# ── Palette (matches the chart pack)
+# ── Paleta (alineada con el paquete de gráficos)
 INK = colors.HexColor("#1c1917")
 INK_2 = colors.HexColor("#44403c")
 MUTED = colors.HexColor("#78716c")
@@ -56,7 +56,7 @@ PAGE_W, PAGE_H = A4
 MARGIN = 2.2 * cm
 CONTENT_W = PAGE_W - 2 * MARGIN
 
-# ── Numbers loaded once from the marts (single source of truth)
+# ── Cifras cargadas una vez desde los marts (fuente única de verdad)
 kpi = pd.read_csv(DATA / "kpi_operativos.csv").iloc[0]
 prio = pd.read_csv(DATA / "operational_prioritization_table.csv")
 scen = pd.read_csv(DATA / "scenario_decision_comparison.csv")
@@ -166,14 +166,73 @@ CORRECTIVE_CHARGE_WAIT_DELTA = float(scenario_delta_by_metric.loc["espera_carga"
 TOP1_LOGISTICS = float(rank_stability.set_index("top1_area").loc["LOGISTICA", "freq_share"])
 TOP1_YARD = float(rank_stability.set_index("top1_area").loc["PATIO", "freq_share"])
 
-AREA_NAME_EN = {
-    "LOGISTICA": "Logistics",
-    "PATIO": "Yard",
-    "CARGA": "Charging",
-    "PRODUCCION": "Production",
-    "EXPEDICION": "Dispatch",
-    "ENERGIA": "Energy",
+AREA_NAME_ES = {
+    "LOGISTICA": "Logística",
+    "PATIO": "Patio",
+    "CARGA": "Carga",
+    "PRODUCCION": "Producción",
+    "EXPEDICION": "Expedición",
+    "ENERGIA": "Energía",
 }
+
+VALIDATION_CHECK_ES = {
+    "cardinalidad_flujo_vehiculo": "Cardinalidad del flujo de vehículos",
+    "chaves_criticas_nulas": "Claves críticas nulas",
+    "denominadores_invalidos": "Denominadores inválidos",
+    "dispatch_duplicado_vehiculo": "Vehículo duplicado en expedición",
+    "duplicados_ordenes": "Órdenes duplicadas",
+    "duplicados_vehiculos": "Vehículos duplicados",
+    "ev_requiere_carga_sin_sesion": "EV con carga requerida sin sesión",
+    "restriccion_capacidad_inconsistente": "Restricción de capacidad inconsistente",
+    "retraso_sin_causa": "Retraso sin causa",
+    "salida_sin_readiness": "Salida sin preparación",
+    "scores_riesgo_nulos": "Puntuaciones de riesgo nulas",
+    "secuencia_incoherente": "Secuencia incoherente",
+    "sesion_carga_imposible": "Sesión de carga imposible",
+    "soc_fuera_rango": "SOC fuera de rango",
+    "timestamps_fuera_orden": "Marcas temporales fuera de orden",
+}
+
+GOVERNANCE_CHECK_ES = {
+    "opi_diversity": "Diversidad del OPI",
+    "risk_driver_diversity": "Diversidad de factores de riesgo",
+    "tier_diversity": "Diversidad de niveles",
+    "opi_dispersion": "Dispersión del OPI",
+    "rank_stability_top1_share": "Estabilidad del primer puesto",
+}
+
+RISK_DRIVER_ES = {
+    "throughput_loss_score": "Pérdida de caudal productivo",
+    "yard_risk_score": "Riesgo de patio",
+    "charging_risk_score": "Riesgo de carga",
+    "dispatch_risk_score": "Riesgo de expedición",
+    "launch_transition_risk_score": "Riesgo de transición",
+}
+
+SCENARIO_NAME_ES = {
+    "1_ramp_up_ev_base": "Rampa EV base",
+    "2_ramp_up_ev_acelerado": "Rampa EV acelerada",
+    "3_aumento_slots_carga": "Aumento de puntos de carga",
+    "4_mejor_secuenciacion_ev": "Mejor secuenciación EV",
+    "5_expansion_o_mejor_uso_patio": "Expansión o mejor uso de patio",
+    "6_mas_presion_logistica_salida": "Más presión en logística de salida",
+    "7_turno_tensionado_menor_disponibilidad": "Turno tensionado con menor disponibilidad",
+    "8_combinacion_medidas_correctivas": "Combinación de medidas correctivas",
+}
+
+STATUS_ES = {"PASS": "OK", "FAIL": "FALLA", "WARN": "AVISO"}
+YARD_ZONE_ES = {
+    "BUFFER_CARGA": "Pulmón de carga",
+    "PRE_SALIDA": "Preexpedición",
+}
+
+
+def label_from_code(value: str, mapping: dict[str, str]) -> str:
+    return mapping.get(value, value.replace("_", " ").capitalize())
+
+
+def yard_zone_label(value: str) -> str:
+    return label_from_code(str(value), YARD_ZONE_ES)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -322,7 +381,7 @@ S = build_styles()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Document template with header / footer / TOC notify
+# Plantilla del documento con cabecera, pie e índice
 class Report(BaseDocTemplate):
     def __init__(self, filename, **kw):
         super().__init__(filename, pagesize=A4, **kw)
@@ -345,22 +404,22 @@ class Report(BaseDocTemplate):
 
     def _chrome(self, canvas, doc):
         canvas.saveState()
-        # header
+        # Cabecera
         canvas.setFont("Helvetica", 7.5)
         canvas.setFillColor(SUBTLE)
-        canvas.drawString(MARGIN, PAGE_H - MARGIN + 6 * mm, "Operating Twin for the EV Van Transition")
+        canvas.drawString(MARGIN, PAGE_H - MARGIN + 6 * mm, "Gemelo operativo para la transición a vans EV")
         canvas.drawRightString(
-            PAGE_W - MARGIN, PAGE_H - MARGIN + 6 * mm, "Operational diagnostics and scenario analysis"
+            PAGE_W - MARGIN, PAGE_H - MARGIN + 6 * mm, "Diagnóstico operativo y análisis de escenarios"
         )
         canvas.setStrokeColor(LINE)
         canvas.setLineWidth(0.6)
         canvas.line(MARGIN, PAGE_H - MARGIN + 4 * mm, PAGE_W - MARGIN, PAGE_H - MARGIN + 4 * mm)
-        # footer
+        # Pie
         canvas.setStrokeColor(LINE)
         canvas.line(MARGIN, MARGIN - 4 * mm, PAGE_W - MARGIN, MARGIN - 4 * mm)
         canvas.setFont("Helvetica", 7.5)
         canvas.setFillColor(SUBTLE)
-        canvas.drawString(MARGIN, MARGIN - 9 * mm, "Synthetic factory data")
+        canvas.drawString(MARGIN, MARGIN - 9 * mm, "Datos sintéticos de fábrica")
         canvas.drawRightString(PAGE_W - MARGIN, MARGIN - 9 * mm, f"{doc.page}")
         canvas.restoreState()
 
@@ -375,7 +434,7 @@ class Report(BaseDocTemplate):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Flowable helpers
+# Helpers de flowables
 def fig(name: str, caption: str, width=CONTENT_W) -> list:
     path = GRAPHS / name
     img = Image(str(path))
@@ -425,7 +484,7 @@ def hr(color=LINE, w=0.8, space_after=10):
 
 
 def kpi_strip(items) -> Table:
-    """items: list of (number, label) -> single row of stat cards."""
+    """items: lista de (número, etiqueta) -> fila única de tarjetas KPI."""
     cells = []
     for num, label in items:
         inner = Table(
@@ -499,21 +558,20 @@ def _table_flowables(header, rows, col_widths, highlight_first_col=True, aligns=
 
 
 def data_table(header, rows, col_widths, highlight_first_col=True, aligns=None) -> list:
-    # KeepTogether prevents a table from splitting mid-body and stranding a
-    # couple of rows on the previous page with a repeated header below them.
+    # KeepTogether evita dividir una tabla a mitad del cuerpo y dejar pocas
+    # filas aisladas en la página anterior con una cabecera repetida debajo.
     return [KeepTogether(_table_flowables(header, rows, col_widths, highlight_first_col, aligns))]
 
 
 def h2_table(title: str, header, rows, col_widths, **kwargs) -> list:
-    """A subsection heading bound to the table that immediately follows it.
+    """Subsección unida a la tabla que la sigue inmediatamente.
 
-    Without this, a bare heading can be orphaned at the bottom of a page
-    while its table is pushed whole to the next page, leaving a stranded
-    title and a gap of white space. Used where a heading has no prose
-    before its table (the appendix's dense reference-style subsections).
-    Wraps the heading and the table's own flowables in a single
-    KeepTogether — nesting two KeepTogethers confuses ReportLab's
-    available-space calculation and forces every table onto its own page.
+    Sin esto, un encabezado puede quedar huérfano al final de una página
+    mientras la tabla salta entera a la siguiente, dejando un título aislado y
+    espacio en blanco. Se usa cuando no hay prosa antes de la tabla, como en las
+    subsecciones densas del apéndice. Envuelve encabezado y tabla en un único
+    KeepTogether; anidar dos KeepTogether confunde el cálculo de espacio de
+    ReportLab y fuerza cada tabla a una página propia.
     """
     return [KeepTogether([h2(title), *_table_flowables(header, rows, col_widths, **kwargs)])]
 
@@ -526,14 +584,14 @@ def pct(x, d=0):
 def cover() -> list:
     st = []
     st.append(Spacer(1, 3.2 * cm))
-    st.append(Paragraph("OPERATIONS DIAGNOSTIC AND DECISION REPORT", S["eyebrow"]))
+    st.append(Paragraph("INFORME DE DIAGNÓSTICO OPERATIVO Y DECISIÓN", S["eyebrow"]))
     st.append(Spacer(1, 6))
-    st.append(Paragraph("Operating Twin for the<br/>Electric Van Transition", S["cover_title"]))
+    st.append(Paragraph("Gemelo Operativo para la<br/>Transición a Vans Eléctricas", S["cover_title"]))
     st.append(Spacer(1, 14))
     st.append(
         Paragraph(
-            "Where the EV ramp-up breaks the operating model, what reliability it leaks, "
-            "and which controls recover the exit gate.",
+            "Dónde rompe la rampa EV el modelo operativo, cuánta fiabilidad pierde "
+            "y qué controles recuperan la puerta de salida.",
             S["cover_sub"],
         )
     )
@@ -542,28 +600,28 @@ def cover() -> list:
     meta = Table(
         [
             [
-                Paragraph("<b>Scope</b>", S["cover_meta"]),
-                Paragraph("Single van assembly plant during a 12-month EV ramp-up", S["cover_meta"]),
+                Paragraph("<b>Alcance</b>", S["cover_meta"]),
+                Paragraph("Planta única de ensamblaje de vans durante una rampa EV de 12 meses", S["cover_meta"]),
             ],
             [
-                Paragraph("<b>Period</b>", S["cover_meta"]),
-                Paragraph("January 2025 to December 2025, 53 operating weeks", S["cover_meta"]),
+                Paragraph("<b>Periodo</b>", S["cover_meta"]),
+                Paragraph("Enero de 2025 a diciembre de 2025, 53 semanas operativas", S["cover_meta"]),
             ],
             [
-                Paragraph("<b>Records</b>", S["cover_meta"]),
-                Paragraph(f"{TOTAL:,} vehicle-orders across sequencing, yard, charging and dispatch", S["cover_meta"]),
+                Paragraph("<b>Registros</b>", S["cover_meta"]),
+                Paragraph(f"{TOTAL:,} órdenes-vehículo en secuenciación, patio, carga y expedición", S["cover_meta"]),
             ],
             [
-                Paragraph("<b>Method</b>", S["cover_meta"]),
+                Paragraph("<b>Método</b>", S["cover_meta"]),
                 Paragraph(
-                    "Reproducible pipeline: DuckDB marts, Python diagnostics, scenario twin, Monte Carlo scoring",
+                    "Canalización reproducible: marts DuckDB, diagnóstico Python, gemelo de escenarios y puntuación Monte Carlo",
                     S["cover_meta"],
                 ),
             ],
             [
-                Paragraph("<b>Data</b>", S["cover_meta"]),
+                Paragraph("<b>Datos</b>", S["cover_meta"]),
                 Paragraph(
-                    "Synthetic, deterministic seed. Patterns are internally consistent; absolute numbers are not measurements from a real plant.",
+                    "Sintéticos, con semilla determinista. Los patrones son consistentes internamente; las cifras absolutas no son mediciones de una planta real.",
                     S["cover_meta"],
                 ),
             ],
@@ -585,7 +643,7 @@ def cover() -> list:
     st.append(hr(LINE, 0.8, 6))
     st.append(
         Paragraph(
-            "Figures are generated directly from the processed marts and match the live operating dashboard.",
+            "Las figuras se generan directamente desde los marts procesados y coinciden con el panel operativo publicado.",
             S["caption"],
         )
     )
@@ -593,7 +651,7 @@ def cover() -> list:
 
 
 def toc_page() -> list:
-    st = [Paragraph("Contents", S["h1_plain"]), hr()]
+    st = [Paragraph("Índice", S["h1_plain"]), hr()]
     toc = TableOfContents()
     toc.levelStyles = [S["toc1"], S["toc2"]]
     st.append(toc)
@@ -613,289 +671,289 @@ def build_story() -> list:
     st += toc_page()
     st.append(PageBreak())
 
-    # ============================================================= 1. EXEC SUMMARY
-    st += h1("Executive summary", "Section 1")
+    # ============================================================= 1. RESUMEN EJECUTIVO
+    st += h1("Resumen ejecutivo", "Sección 1")
     st.append(
         kpi_strip(
             [
-                (f"{TOTAL / 1000:.1f}k", "VEHICLE-ORDERS ANALYSED"),
-                (pct(SHARE_EV), "EV SHARE OF FLOW"),
-                (pct(RATIO_LATE), "DISPATCHED LATE"),
-                (pct(READY / TOTAL), "READY AT DISPATCH"),
+                (f"{TOTAL / 1000:.1f}k", "ÓRDENES-VEHÍCULO ANALIZADAS"),
+                (pct(SHARE_EV), "PESO EV EN EL FLUJO"),
+                (pct(RATIO_LATE), "SALIDAS RETRASADAS"),
+                (pct(READY / TOTAL), "LISTOS EN EXPEDICIÓN"),
             ]
         )
     )
     st.append(Spacer(1, 12))
     st.append(
         lead(
-            "Management should not accelerate the next EV wave through the current exit model. The plant is "
-            "building to plan, but it is not shipping cleanly: the constraint has moved from production volume "
-            "to readiness, staging and outbound discipline."
+            "La dirección no debería acelerar la siguiente ola EV con el modelo de salida actual. La planta "
+            "produce según plan, pero no expide limpiamente: la restricción se ha desplazado del volumen de "
+            "producción a la preparación de salida, la espera preexpedición y la disciplina logística."
         )
     )
     st += data_table(
-        ["Executive answer", "Decision logic"],
+        ["Respuesta ejecutiva", "Lógica de decisión"],
         [
             [
-                "Decision",
-                "Hold further EV acceleration until the exit gate is controlled; implement the combined corrective package before the next ramp step.",
+                "Decisión",
+                "Contener nuevas aceleraciones EV hasta controlar la puerta de salida; implantar el paquete correctivo combinado antes del siguiente escalón de rampa.",
             ],
             [
-                "Why now",
-                f"The plant completed {TOTAL:,} orders to plan, but only {ON_TIME_READY:,} left both ready and on time, leaving {CLEAN_EXIT_GAP:,} non-clean exits.",
+                "Por qué ahora",
+                f"La planta completó {TOTAL:,} órdenes según plan, pero solo {ON_TIME_READY:,} salieron listas y a tiempo; quedan {CLEAN_EXIT_GAP:,} salidas no limpias.",
             ],
             [
-                "What fixes it",
-                "Cap pre-dispatch staging, reserve EV charging at shift peaks and enforce a readiness window before vehicles enter staging.",
+                "Qué lo corrige",
+                "Limitar la espera preexpedición, reservar carga EV en picos de turno y exigir una ventana de preparación antes de que los vehículos entren en esa zona.",
             ],
             [
-                "Expected effect",
-                f"Scenario twin: +{CORRECTIVE_THROUGHPUT_DELTA:.1f} vehicles/day, -{CORRECTIVE_LATE_PP_REDUCTION:.1f} pp late vehicles and +{DECISION_SCORE_UPLIFT:.1f} decision-score points versus the unmanaged base.",
+                "Efecto esperado",
+                f"Gemelo de escenarios: +{CORRECTIVE_THROUGHPUT_DELTA:.1f} vehículos/día, -{CORRECTIVE_LATE_PP_REDUCTION:.1f} pp de vehículos retrasados y +{DECISION_SCORE_UPLIFT:.1f} puntos de decisión frente a la base no gestionada.",
             ],
             [
-                "Governance condition",
-                "Treat scenario impacts as pilot hypotheses until real plant data calibrates charging, staging and dispatch elasticities.",
+                "Condición de gobernanza",
+                "Tratar los impactos de escenario como hipótesis piloto hasta calibrar elasticidades de carga, espera preexpedición y expedición con datos reales de planta.",
             ],
         ],
         [CONTENT_W * 0.24, CONTENT_W * 0.76],
     )
     st.append(
         p(
-            f"Across the full ramp-up the plant completed every scheduled order, holding a steady 160 vehicles per day "
-            "while the electric mix climbed from 5 percent to nearly 80 percent of weekly output. That clears the wrong "
-            f"suspect. Throughput is not binding. Reliability is: {pct(READY / TOTAL)} of completed vehicles are ready "
-            f"at their dispatch window, {pct(RATIO_LATE)} of ready vehicles leave more than two hours late, and the clean-exit "
-            f"rate is only {pct(CLEAN_EXIT_RATE)}."
+            f"Durante toda la rampa la planta completó cada orden programada y sostuvo unos 160 vehículos diarios "
+            "mientras la cuota eléctrica subió del 5% a casi el 80% de la producción semanal. Eso descarta el sospechoso "
+            f"equivocado: el caudal productivo no es la restricción. La fiabilidad sí lo es: {pct(READY / TOTAL)} de los vehículos "
+            f"terminados están listos en su ventana de expedición, {pct(RATIO_LATE)} de los listos salen con más de dos horas "
+            f"de retraso y la tasa de salida limpia es solo {pct(CLEAN_EXIT_RATE)}."
         )
     )
     st.append(
         p(
-            "The failure mode is narrow enough to act on. Electric versions are ready "
-            f"{pct(EV_READY_RATE)} of the time versus {pct(ICE_READY_RATE)} for combustion versions, and the four EV versions "
-            "carry 78 percent of all late-dispatch minutes. The physical choke point is also narrow: pre-dispatch staging "
-            f"runs at {pre_salida['p95_dwell'] / 60:.0f} hours p95 dwell and near-total blocking while the other yard zones "
-            "clear materially faster. Internal cycle time is not the issue; EV and ICE lead-time profiles both sit around "
-            "24 hours end to end. The penalty appears after build completion, at the point where charge, state-of-charge "
-            "confirmation and dispatch slots have to line up."
+            "El modo de fallo es lo bastante acotado para actuar. Las versiones eléctricas están listas "
+            f"{pct(EV_READY_RATE)} del tiempo frente a {pct(ICE_READY_RATE)} en las versiones de combustión, y las cuatro "
+            "versiones EV concentran el 78% de todos los minutos de retraso en expedición. El cuello físico también es estrecho: "
+            f"la espera preexpedición alcanza {pre_salida['p95_dwell'] / 60:.0f} horas de permanencia p95 y bloqueo casi total, "
+            "mientras las demás zonas de patio despejan mucho más rápido. El tiempo de ciclo interno no es el problema; EV e ICE "
+            "se sitúan alrededor de 24 horas de extremo a extremo. La penalización aparece después del fin de línea, cuando carga, "
+            "confirmación de SOC y ventanas de expedición tienen que alinearse."
         )
     )
     st.append(
         p(
-            "The priority ranking is stable under challenge. Across 300 Monte Carlo redraws of the scoring weights, "
-            f"Logistics ranks first {pct(TOP1_LOGISTICS)} of the time and Yard takes the remaining {pct(TOP1_YARD)}; no other area ever leads. "
-            "The scenario twin reaches the same management answer from a different route: no single lever fixes the exit "
-            "gate. The combined package, sequencing discipline plus charging capacity plus yard-buffer redesign, is the only "
-            "scenario that improves throughput, internal time and late exits."
+            "La clasificación de prioridad resiste el contraste. En 300 remuestreos Monte Carlo de los pesos de puntuación, "
+            f"Logística queda primera {pct(TOP1_LOGISTICS)} del tiempo y Patio toma el {pct(TOP1_YARD)} restante; ninguna otra área lidera. "
+            "El gemelo de escenarios llega a la misma respuesta por otra vía: ninguna palanca aislada corrige la puerta de salida. "
+            "El paquete combinado, disciplina de secuenciación más capacidad de carga más rediseño del pulmón de patio, es el único "
+            "escenario que mejora caudal productivo, tiempo interno y salidas retrasadas a la vez."
         )
     )
-    st.append(h3("What to do, in order"))
+    st.append(h3("Qué hacer, por orden"))
     st.append(
         p(
-            "1. Treat the pre-dispatch yard zone as a capacity-limited resource. Cap occupancy, redesign the "
-            "buffer by destination window, and pull-sequence vehicles into staging only when their dispatch slot is "
-            f"real. This attacks a zone with {pre_salida['avg_dwell'] / 60:.1f} hours of mean dwell and "
-            f"{pct(pre_salida['blocking_rate'])} blocking, the physical expression of the exit delay.<br/>"
-            "2. Reserve charging slots for EV versions and add capacity at the shift peaks. Charging capacity is the "
-            f"highest-return lever in the scenario model at an expected impact of {levers['impacto_esperado'].max():.2f}, "
-            "and EV readiness is the gate that the corrective package moves most.<br/>"
-            "3. Impose a readiness window on dispatch. Stop releasing combustion vehicles into a staging area that is "
-            "already saturated by EVs waiting on charge and state-of-charge confirmation, and the on-time gate recovers "
-            "without any new throughput."
+            "1. Tratar la zona de patio preexpedición como un recurso con capacidad limitada. Limitar ocupación, rediseñar "
+            "el pulmón por ventana de destino y secuenciar vehículos hacia espera preexpedición solo cuando la ventana de expedición sea "
+            f"real. Esto ataca una zona con {pre_salida['avg_dwell'] / 60:.1f} horas de permanencia media y "
+            f"{pct(pre_salida['blocking_rate'])} de bloqueo, la expresión física del retraso de salida.<br/>"
+            "2. Reservar puntos de carga para versiones EV y añadir capacidad en picos de turno. La capacidad de carga es la "
+            f"palanca de mayor retorno en el modelo de escenarios, con un impacto esperado de {levers['impacto_esperado'].max():.2f}, "
+            "y la preparación EV es la puerta que más mueve el paquete correctivo.<br/>"
+            "3. Imponer una ventana de preparación en expedición. Dejar de liberar vehículos de combustión hacia una espera ya "
+            "saturada por EVs esperando carga y confirmación de SOC permite recuperar la salida a tiempo sin añadir caudal productivo."
         )
     )
     st.append(
         p(
-            "The sections that follow show the evidence chain, quantify the operating prize and separate immediate "
-            "rule changes from assumptions that require calibration before capital approval."
+            "Las secciones siguientes muestran la cadena de evidencia, cuantifican el premio operativo y separan cambios de regla "
+            "inmediatos de supuestos que requieren calibración antes de aprobar inversión."
         )
     )
     st.append(PageBreak())
 
     # ============================================================= 2. CONTEXT
-    st += h1("Context and objectives", "Section 2")
+    st += h1("Contexto y objetivos", "Sección 2")
     st.append(
         lead(
-            "A van plant in the middle of an electric ramp-up is running two factories at once. The combustion line "
-            "it has optimised for years, and a growing electric line that shares the same yard, the same dispatch bays "
-            "and the same shifts but behaves differently at every step. This report asks where that collision "
-            "hurts and what it costs."
+            "Una planta de vans en plena rampa eléctrica opera dos fábricas a la vez: la línea de combustión "
+            "optimizada durante años y una línea eléctrica creciente que comparte el mismo patio, los mismos muelles "
+            "de expedición y los mismos turnos, pero se comporta de forma distinta en cada paso. Este informe pregunta "
+            "dónde duele esa colisión y cuánto cuesta."
         )
     )
     st.append(
         p(
-            "An EV is not a combustion vehicle with a different engine from an operations point of view. It needs a "
-            "charge before it leaves, which adds a dependency that did not exist before. It carries a state-of-charge "
-            "target that has to be confirmed at dispatch. It competes for a finite set of charging slots that the plant "
-            "did not need a year ago. Each of these touches the back half of the flow, the part between end of line and "
-            "the gate, where this plant is losing reliability."
+            "Desde operaciones, un EV no es un vehículo de combustión con otro motor. Necesita carga antes de salir, "
+            "lo que añade una dependencia que no existía. Tiene un objetivo de estado de carga que debe confirmarse en "
+            "expedición. Compite por un conjunto finito de puntos de carga que la planta no necesitaba un año antes. Todo "
+            "esto afecta a la segunda mitad del flujo, entre fin de línea y puerta de salida, donde la planta pierde fiabilidad."
         )
     )
     st.append(
         p(
-            "The operating twin built for this analysis integrates five operational domains that are usually looked at "
-            "separately: production sequencing, yard movements, charging sessions, dispatch readiness and outbound "
-            "logistics. Looking at them together is the point. A late vehicle is rarely late for one reason. It is late "
-            "because a charging slot was busy, which kept it in a staging zone, which was already full, which blocked the "
-            "next vehicle. Single-domain dashboards miss that chain. The twin is designed to follow it."
+            "El gemelo operativo integra cinco dominios que suelen mirarse por separado: secuenciación de producción, "
+            "movimientos de patio, sesiones de carga, preparación para expedición y logística de salida. Verlos juntos es "
+            "el punto central. Un vehículo rara vez llega tarde por una única razón. Llega tarde porque un punto de carga estaba "
+            "ocupado, lo que lo retuvo en una zona de espera ya llena, lo que bloqueó al siguiente vehículo. Los paneles de un "
+            "solo dominio pierden esa cadena; el gemelo está diseñado para seguirla."
         )
     )
-    st.append(h2("Objectives"))
+    st.append(h2("Objetivos"))
     st.append(
         p(
-            "The analysis has four concrete objectives, and every section maps back to one of them.<br/>"
-            "<b>Locate the bottleneck.</b> Identify which area and which physical zone constrain reliable output, "
-            "with evidence rather than intuition.<br/>"
-            "<b>Quantify the EV penalty.</b> Separate what the electric mix costs from what is baseline "
-            "plant's existing operating noise.<br/>"
-            "<b>Rank the response.</b> Order the areas and the capacity levers by expected return, and test whether that "
-            "order is stable or an artefact of the chosen weights.<br/>"
-            "<b>Compare the futures.</b> Put the unmanaged ramp-up side by side with targeted interventions and a combined "
-            "package, on a consistent multi-criteria score."
+            "El análisis tiene cuatro objetivos concretos y cada sección vuelve a uno de ellos.<br/>"
+            "<b>Localizar el cuello de botella.</b> Identificar qué área y qué zona física limitan la salida fiable, "
+            "con evidencia y no con intuición.<br/>"
+            "<b>Cuantificar la penalización EV.</b> Separar lo que cuesta la cuota eléctrica del ruido operativo base "
+            "de la planta.<br/>"
+            "<b>Ordenar la respuesta.</b> Priorizar áreas y palancas de capacidad por retorno esperado, y comprobar "
+            "si ese orden es estable o un artefacto de pesos elegidos.<br/>"
+            "<b>Comparar futuros.</b> Poner la rampa no gestionada junto a intervenciones específicas y un paquete "
+            "combinado, bajo una puntuación multicriterio consistente."
         )
     )
-    st.append(h2("How to read this report"))
+    st.append(h2("Cómo leer este informe"))
     st.append(
         p(
-            "Findings are organised by question, not by data source. Each finding opens with the claim, shows the chart "
-            "that supports it, then explains what the chart does and does not prove. Scores reported on a 0 to 100 scale "
-            "are relative pressure indices, not physical units, and are defined in the methodology section. Where a number "
-            "is a modelling assumption rather than a measurement, the text says so. The recommendations in the final "
-            "section are mapped to the specific findings that justify them."
+            "Los hallazgos se organizan por pregunta, no por fuente de datos. Cada hallazgo abre con la afirmación, muestra "
+            "el gráfico que la sostiene y explica qué prueba y qué no prueba ese gráfico. Las puntuaciones de 0 a 100 son "
+            "índices relativos de presión, no unidades físicas, y se definen en la metodología. Cuando una cifra es un supuesto "
+            "de modelado en vez de una medición, el texto lo indica. Las recomendaciones finales se vinculan a los hallazgos "
+            "específicos que las justifican."
         )
     )
-    st.append(h2("Decision frame"))
+    st.append(h2("Marco de decisión"))
     st.append(
         p(
-            "The report is built around one management decision: whether the next EV ramp-up wave should be pushed through "
-            "the current operating model, slowed until exit reliability recovers, or supported by targeted capacity and "
-            "sequencing changes. The answer is not based on one metric. It requires a chain of evidence: the plant must be "
-            "shown to build volume, the exit gate must be shown to fail, the EV mix must be shown to explain a material share "
-            "of that failure, and the recommended levers must improve the failure mode without creating a larger trade-off "
-            "elsewhere."
+            "El informe gira alrededor de una decisión de gestión: si la siguiente ola de rampa EV debe pasar por el modelo "
+            "operativo actual, frenarse hasta recuperar fiabilidad de salida o apoyarse en cambios específicos de capacidad y "
+            "secuenciación. La respuesta no se basa en una métrica aislada. Requiere una cadena de evidencia: la planta debe "
+            "demostrar volumen, la puerta de salida debe fallar, la cuota EV debe explicar una parte material de ese fallo y las "
+            "palancas recomendadas deben mejorar el modo de fallo sin crear un compensación mayor en otra parte."
         )
     )
     st += data_table(
-        ["Decision test", "Evidence used", "What would change the answer"],
+        ["Prueba de decisión", "Evidencia usada", "Qué cambiaría la respuesta"],
         [
             [
-                "Is throughput the binding constraint?",
-                "Daily completions, throughput gap, scenario throughput",
-                "A material negative throughput gap or falling run-rate would shift the priority back to production flow.",
+                "¿Es el caudal productivo la restricción vinculante?",
+                "Terminaciones diarias, brecha de caudal productivo y caudal productivo de escenarios",
+                "Una brecha negativa material o una caída del ritmo devolvería la prioridad al flujo de producción.",
             ],
             [
-                "Is the EV mix creating a distinct penalty?",
-                "Readiness by propulsion and version; EV vs ICE pressure scores",
-                "If real plant data showed similar readiness for EV and ICE, the remedy would move from EV-specific gates to generic outbound discipline.",
+                "¿La cuota EV crea una penalización distinta?",
+                "Preparación por propulsión y versión; puntuaciones de presión EV vs ICE",
+                "Si los datos reales mostraran preparación similar en EV e ICE, el remedio pasaría de puertas específicas EV a disciplina genérica de salida.",
             ],
             [
-                "Is the bottleneck localised enough to act?",
-                "Yard zone dwell, OPI ranking, risk matrix and driver correlations",
-                "If congestion were evenly spread, a single staging-zone intervention would be too narrow.",
+                "¿El cuello está lo bastante localizado?",
+                "Permanencia por zona de patio, clasificación OPI, matriz de riesgo y correlaciones de factores",
+                "Si la congestión estuviera repartida uniformemente, intervenir una sola zona de espera sería demasiado estrecho.",
             ],
             [
-                "Is the recommended package stable?",
-                "Scenario comparison, base-vs-corrective deltas, Monte Carlo and sensitivity tests",
-                "If Logistics and Yard stopped leading under reasonable weights, the priority order would need rework before execution.",
+                "¿El paquete recomendado es estable?",
+                "Comparación de escenarios, deltas base-vs-correctivo, Monte Carlo y sensibilidad",
+                "Si Logística y Patio dejaran de liderar con pesos razonables, habría que rehacer el orden de prioridad antes de ejecutar.",
             ],
         ],
         [CONTENT_W * 0.25, CONTENT_W * 0.31, CONTENT_W * 0.44],
     )
     st.append(PageBreak())
 
-    # ============================================================= 3. DATA & METHOD
-    st += h1("Data and methodology", "Section 3")
+    # ============================================================= 3. DATOS Y MÉTODO
+    st += h1("Datos y metodología", "Sección 3")
     st.append(
         lead(
-            "Every figure in this report is reproducible from a single deterministic pipeline. The same commands that "
-            "regenerate the raw tables also rebuild the marts, the diagnostics and the dashboard, so the numbers here, "
-            "the numbers on the dashboard and the numbers in the source data cannot drift apart."
+            "Cada figura de este informe es reproducible desde un único canalización determinista. Los mismos comandos que "
+            "regeneran las tablas origen reconstruyen los marts, el diagnóstico y el panel, de modo que las cifras del informe, "
+            "del panel y de los datos fuente no puedan divergir."
         )
     )
-    st.append(h2("Data foundation"))
+    st.append(h2("Base de datos"))
     st.append(
         p(
-            "The analysis rests on 14 synthetic source tables covering orders, vehicles, versions, yard movements, "
-            "charging sessions, charging slots, shifts, operational resources, bottleneck events and outbound logistics. "
-            "The generator models three phases of the ramp-up, a pre-series period, the ramp itself and a stabilisation "
-            "tail, so the EV share rises over time the way it would in a real launch rather than sitting at a flat "
-            f"average. Across the period the plant handles {TOTAL:,} vehicle-orders, of which {pct(SHARE_EV)} are "
-            "electric, spread across three model families and eight versions, shipping to seven European markets."
+            "El análisis se apoya en 14 tablas sintéticas de origen que cubren órdenes, vehículos, versiones, movimientos "
+            "de patio, sesiones de carga, puntos de carga, turnos, recursos operativos, eventos de cuello y logística de salida. "
+            "El generador modela tres fases de la rampa, un periodo de pre-serie, la rampa y una cola de estabilización, por lo "
+            f"que el peso EV sube en el tiempo como en un lanzamiento real y no queda en una media plana. Durante el periodo la "
+            f"planta gestiona {TOTAL:,} órdenes-vehículo, de las cuales {pct(SHARE_EV)} son eléctricas, repartidas en tres familias "
+            "de modelo y ocho versiones, con envío a siete mercados europeos."
         )
     )
     st.append(
         p(
-            "The data is synthetic and seeded. That is a deliberate choice for a public, shareable analysis: it removes "
-            "confidentiality constraints and makes the entire chain auditable. It also sets the boundary on interpretation. "
-            "The patterns here are realistic and internally consistent, but the absolute numbers are not measurements from "
-            "a real plant and should not be read as benchmarks for one."
+            "Los datos son sintéticos y usan semilla fija. Es una elección deliberada para un análisis público y compartible: "
+            "elimina restricciones de confidencialidad y hace auditable toda la cadena. También fija el límite de interpretación. "
+            "Los patrones son realistas y consistentes internamente, pero las cifras absolutas no son mediciones de una planta real "
+            "ni deben leerse como referencia."
         )
     )
-    st.append(h2("Pipeline"))
+    st.append(h2("Canalización"))
     st.append(
         p(
-            "Raw tables are loaded into DuckDB, which builds a staging layer, integrated views across domains, the "
-            "analytical marts and a set of governed KPIs. Python then takes over for the work that SQL is poor at: "
-            "feature engineering, the area-level diagnostic, the scenario twin and the scoring framework. A release gate "
-            "runs last and checks structural integrity, metric consistency and the data contracts the dashboard depends on. "
-            "The gate is not cosmetic. A single real dispatch with no readiness record blocks publication, because that "
-            "would mean a vehicle left the plant that the data says was never ready, and the central finding of this report "
-            "depends on the readiness signal being trustworthy."
+            "Las tablas origen se cargan en DuckDB, que construye una capa de preparación de datos, vistas integradas entre dominios, marts "
+            "analíticos y KPIs gobernados. Python asume después el trabajo menos natural para SQL: ingeniería de variables, "
+            "diagnóstico por área, gemelo de escenarios y puntuación. La puerta de publicación se ejecuta al final y comprueba "
+            "integridad estructural, consistencia de métricas y contratos de datos del panel. La puerta no es cosmética: una "
+            "única expedición real sin registro de preparación bloquea la publicación, porque implicaría que salió un vehículo "
+            "que los datos dicen que nunca estuvo listo, y el hallazgo central depende de que esa señal sea fiable."
         )
     )
-    st.append(h2("Data quality"))
+    st.append(h2("Calidad de datos"))
     st.append(
         p(
-            f"{len(checks)} integrity checks run on every build, covering record cardinality, referential integrity, "
-            "invalid denominators, duplicate orders and vehicles, incoherent sequencing, impossible charging sessions, "
-            f"out-of-range state of charge and out-of-order timestamps. All {len(checks)} pass with zero failing rows. "
-            "The findings that follow sit on data that is internally clean."
+            f"En cada ejecución se corren {len(checks)} comprobaciones de integridad, cubriendo cardinalidad, integridad referencial, "
+            "denominadores inválidos, órdenes y vehículos duplicados, secuenciación incoherente, sesiones de carga imposibles, "
+            f"SOC fuera de rango y marcas temporales fuera de orden. Los {len(checks)} pasan con cero filas fallidas. Los hallazgos "
+            "siguientes se apoyan en datos internamente limpios."
         )
     )
     st += data_table(
-        ["Integrity check", "Failing rows", "Status"],
+        ["Check de integridad", "Filas fallidas", "Estado"],
         [
-            [c["check_name"].replace("_", " ").capitalize(), int(c["failed_rows"]), c["status"]]
+            [
+                label_from_code(c["check_name"], VALIDATION_CHECK_ES),
+                int(c["failed_rows"]),
+                STATUS_ES.get(c["status"], c["status"]),
+            ]
             for _, c in checks.iterrows()
         ],
         [CONTENT_W * 0.62, CONTENT_W * 0.20, CONTENT_W * 0.18],
         aligns={1: "CENTER", 2: "CENTER"},
     )
-    st.append(h2("Evidence map"))
+    st.append(h2("Mapa de evidencia"))
     st.append(
         p(
-            "The evidence base is layered by purpose. SQL marts carry the governed metrics; feature tables expose the "
-            "operating mechanisms; diagnostic outputs turn those mechanisms into area-level priorities; scenario outputs test "
-            "management choices. The report does not ask the reader to trust a black box. Each major "
-            "claim can be traced to the layer designed for that job."
+            "La base de evidencia se organiza por propósito. Los marts SQL contienen métricas gobernadas; las tablas de variables "
+            "exponen los mecanismos operativos; las salidas de diagnóstico convierten esos mecanismos en prioridades por área; "
+            "las salidas de escenarios prueban decisiones de gestión. El informe no pide confiar en una caja negra: cada afirmación "
+            "principal se puede trazar a la capa diseñada para esa función."
         )
     )
     st += data_table(
-        ["Analytical layer", "Primary role in the report", "Reader-facing use"],
+        ["Capa analítica", "Rol principal en el informe", "Uso para el lector"],
         [
             [
-                "Governed KPI mart",
-                "Single source of truth for total orders, EV share, readiness, late dispatch and dwell.",
-                "Executive summary, funnel interpretation and appendix KPI table.",
+                "Mart de KPI gobernado",
+                "Fuente única de verdad para órdenes totales, cuota EV, preparación, expedición tardía y permanencia.",
+                "Resumen ejecutivo, interpretación del funnel y tabla KPI del apéndice.",
             ],
             [
-                "Readiness mart",
-                "Version, shift and propulsion cuts for dispatch readiness and delay exposure.",
-                "EV penalty, version concentration and shift-exclusion tests.",
+                "Mart de preparación",
+                "Cortes por versión, turno y propulsión para preparación de expedición y exposición a retraso.",
+                "Penalización EV, concentración por versión y pruebas de descarte por turno.",
             ],
             [
-                "Yard and charging features",
-                "Physical mechanism behind dwell, blocking, queueing and charging-slot pressure.",
-                "Bottleneck location, staging recommendation and charging-lever logic.",
+                "Variables de patio y carga",
+                "Mecanismo físico detrás de permanencia, bloqueo, colas y presión de puntos de carga.",
+                "Localización del cuello, recomendación de espera preexpedición y lógica de palancas de carga.",
             ],
             [
-                "Scenario twin",
-                "Comparable operating futures under unmanaged ramp-up, single levers and combined package.",
-                "Recommended response, trade-offs, base-vs-corrective deltas.",
+                "Gemelo de escenarios",
+                "Futuros operativos comparables bajo rampa no gestionada, palancas individuales y paquete combinado.",
+                "Respuesta recomendada, compensacións y deltas base-vs-correctivo.",
             ],
             [
-                "Scoring governance",
-                "Dispersion, diversity, tier separation and ranking stability checks.",
-                "Confidence in prioritising Logistics and Yard first.",
+                "Gobernanza de puntuación",
+                "Comprobaciones de dispersión, diversidad, separación de niveles y estabilidad de clasificación.",
+                "Confianza para priorizar primero Logística y Patio.",
             ],
         ],
         [CONTENT_W * 0.24, CONTENT_W * 0.39, CONTENT_W * 0.37],
@@ -903,329 +961,326 @@ def build_story() -> list:
     st.append(PageBreak())
 
     # ============================================================= 4. FRAMEWORK
-    st += h1("Analytical framework", "Section 4")
+    st += h1("Marco analítico", "Sección 4")
     st.append(
         lead(
-            "Three constructs carry the analysis: a set of operational pressure scores, a single Operational Priority "
-            "Index that ranks the areas, and a scenario decision score. Each is defined here so that the findings can be "
-            "read without reverse-engineering the maths."
+            "Tres constructos sostienen el análisis: un conjunto de puntuaciones de presión operativa, un Índice de Prioridad "
+            "Operativa (OPI) que ordena las áreas y una puntuación de decisión de escenarios. Se definen aquí para que los hallazgos puedan "
+            "leerse sin reconstruir la matemática."
         )
     )
-    st.append(h2("Pressure scores"))
+    st.append(h2("Puntuaciones de presión"))
     st.append(
         p(
-            "Raw operational metrics live on incompatible scales. A dwell time is in minutes, an occupancy rate is a "
-            "fraction, a count of non-productive moves is an integer. To compare areas and propulsion types on one axis, "
-            "each driver is normalised to a 0 to 100 pressure score, where higher means more operational strain. These "
-            "scores are explicitly relative. A yard congestion score of 74 does not mean the yard is 74 percent full. It "
-            "means the yard sits high on the observed distribution of congestion pressure. The scores answer where strain "
-            "concentrates, not what the strain measures in physical units."
+            "Las métricas operativas de origen viven en escalas incompatibles. Una permanencia está en minutos, una ocupación es una fracción "
+            "y un conteo de movimientos improductivos es un entero. Para comparar áreas y tipos de propulsión en un mismo eje, "
+            "cada factor se normaliza a una puntuación de presión de 0 a 100, donde más alto significa más tensión operativa. Estos "
+            "puntuaciones son explícitamente relativos. Una puntuación de congestión de patio de 74 no significa que el patio esté lleno al "
+            "74%; significa que está alto en la distribución observada de presión de congestión. Las puntuaciones responden dónde se "
+            "concentra la tensión, no qué mide en unidades físicas."
         )
     )
-    st.append(h2("Operational Priority Index"))
+    st.append(h2("Índice de Prioridad Operativa (OPI)"))
     st.append(
         p(
-            "The OPI combines five pressure scores into one ranking number per area: throughput loss, yard risk, charging "
-            "risk, dispatch risk and launch-transition risk. It is the model's answer to a blunt management question: if we "
-            "can only stabilise one or two areas next week, which ones. The index is not a causal estimate. It is a "
-            "transparent, weighted prioritisation that can be recomputed under different weights; the ranking-stability test "
-            "does that explicitly."
+            "El OPI combina cinco puntuaciones de presión en una clasificación única por área: pérdida de caudal productivo, riesgo de patio, "
+            "riesgo de carga, riesgo de expedición y riesgo de transición de lanzamiento. Es la respuesta del modelo a una "
+            "pregunta directa de gestión: si solo podemos estabilizar una o dos áreas la próxima semana, cuáles. El índice no "
+            "es una estimación causal; es una priorización transparente y ponderada que puede recalcularse con otros pesos. La "
+            "prueba de estabilidad de la clasificación lo hace explícitamente."
         )
     )
-    st.append(h2("Decision score"))
+    st.append(h2("Puntuación de decisión"))
     st.append(
         p(
-            "Scenarios are scored on a multi-criteria function that rewards throughput, readiness and operational stability "
-            "and penalises late dispatch and congestion risk. The score avoids single-metric optimisation, because "
-            "the central finding of this report is that the plant can hit its volume target while failing its reliability "
-            "target. A score that only looked at throughput would rate the unmanaged ramp-up as a success."
+            "Los escenarios se puntúan con una función multicriterio que premia caudal productivo, preparación y estabilidad operativa, "
+            "y penaliza salidas tardías y riesgo de congestión. La puntuación evita optimizar una sola métrica, porque el hallazgo "
+            "central es que la planta puede cumplir el objetivo de volumen mientras falla el objetivo de fiabilidad. Una puntuación que "
+            "solo mirase caudal productivo calificaría la rampa no gestionada como éxito."
         )
     )
-    st.append(h2("Governance"))
+    st.append(h2("Gobernanza"))
     st.append(
         p(
-            "The prioritisation is held to five governance checks before it is allowed to drive any recommendation: the "
-            "priority index must show real dispersion across areas, the risk drivers must be diverse rather than collapsing "
-            "to one, the priority tiers must separate, and the top-ranked area must be stable under resampling. All five "
-            "pass. The standout is dispersion: the OPI standard deviation across areas is 17.8 against a floor of 1.0, which "
-            "means the ranking separates areas rather than rating them all alike."
+            "La priorización se somete a cinco comprobaciones de gobernanza antes de alimentar recomendaciones: el índice de prioridad "
+            "debe mostrar dispersión real entre áreas, los factores de riesgo deben ser diversos y no colapsar en uno, los niveles "
+            "de prioridad deben separarse y el área líder debe ser estable bajo remuestreo. Los cinco pasan. Destaca la dispersión: "
+            "la desviación estándar del OPI entre áreas es 17,8 frente a un mínimo de 1,0, lo que significa que la clasificación separa "
+            "áreas en vez de valorarlas todas igual."
         )
     )
     st += data_table(
-        ["Governance check", "Value", "Threshold", "Status"],
+        ["Check de gobernanza", "Valor", "Umbral", "Estado"],
         [
             [
-                g["check_name"].replace("_", " ").capitalize(),
+                label_from_code(g["check_name"], GOVERNANCE_CHECK_ES),
                 f"{float(g['value']):.2f}",
                 f"{float(g['threshold']):.2f}",
-                g["status"],
+                STATUS_ES.get(g["status"], g["status"]),
             ]
             for _, g in gov.iterrows()
         ],
         [CONTENT_W * 0.46, CONTENT_W * 0.18, CONTENT_W * 0.18, CONTENT_W * 0.18],
         aligns={1: "CENTER", 2: "CENTER", 3: "CENTER"},
     )
-    st.append(h2("Interpretation rules"))
+    st.append(h2("Reglas de interpretación"))
     st.append(
         p(
-            "Three rules prevent over-reading the model. First, the OPI decides sequencing of managerial attention, not budget "
-            "allocation. A score of 67 versus 65 means Logistics and Yard belong in the same intervention wave, not that one "
-            "deserves exactly 3 percent more funding. Second, scenario scores rank operating configurations under a fixed set of "
-            "assumptions; they do not forecast financial value. Third, any recommendation that depends on synthetic elasticities "
-            "is framed as a staged operational test before it becomes a capital case."
+            "Tres reglas evitan sobreinterpretar el modelo. Primero, el OPI decide la secuencia de atención directiva, no la "
+            "asignación presupuestaria. Una puntuación de 67 frente a 65 significa que Logística y Patio pertenecen a la misma ola de "
+            "intervención, no que una merezca exactamente 3% más de financiación. Segundo, las puntuaciones de escenario ordenan "
+            "configuraciones operativas bajo supuestos fijos; no pronostican valor financiero. Tercero, cualquier recomendación "
+            "que dependa de elasticidades sintéticas se formula como prueba operativa escalonada antes de convertirse en caso de inversión."
         )
     )
     st += data_table(
-        ["Model output", "Safe interpretation", "Unsafe interpretation"],
+        ["Salida del modelo", "Interpretación válida", "Interpretación inválida"],
         [
             [
-                "Operational Priority Index",
-                "Which area should be stabilised first under the observed risk profile.",
-                "Exact monetary value, root cause proof or staff productivity rating.",
+                "Índice de Prioridad Operativa (OPI)",
+                "Qué área debe estabilizarse primero bajo el perfil de riesgo observado.",
+                "Valor monetario exacto, prueba de causa raíz o rating de productividad de personal.",
             ],
             [
-                "Scenario decision score",
-                "Relative operating attractiveness across consistent futures.",
-                "Guaranteed improvement percentage or business-case NPV.",
+                "Puntuación de decisión de escenario",
+                "Atractivo operativo relativo entre futuros consistentes.",
+                "Porcentaje garantizado de mejora o VAN de caso de negocio.",
             ],
             [
-                "Pressure scores",
-                "Comparable strain across domains that use different units.",
-                "Physical utilisation percentage unless the metric is explicitly a utilisation.",
+                "Puntuaciones de presión",
+                "Tensión comparable entre dominios con unidades distintas.",
+                "Porcentaje físico de utilización salvo que la métrica sea explícitamente una utilización.",
             ],
             [
-                "Monte Carlo stability",
-                "Whether the top priority survives reasonable weight uncertainty.",
-                "Proof that the scenario elasticities are causal.",
+                "Estabilidad Monte Carlo",
+                "Si la prioridad principal sobrevive incertidumbre razonable de pesos.",
+                "Prueba de que las elasticidades de escenario son causales.",
             ],
         ],
         [CONTENT_W * 0.24, CONTENT_W * 0.38, CONTENT_W * 0.38],
     )
     st.append(PageBreak())
 
-    # ============================================================= 5. FINDINGS: THROUGHPUT
-    st += h1("Findings: the plant builds volume but cannot ship it", "Section 5")
+    # ============================================================= 5. HALLAZGOS: THROUGHPUT
+    st += h1("Hallazgos: la planta produce volumen pero no lo expide limpio", "Sección 5")
     st.append(
         lead(
-            "Start with throughput, because it clears the wrong suspect. The plant is not throughput-constrained. "
-            "It builds what it is asked to build through the entire ramp."
+            "Empezamos por caudal productivo porque descarta el sospechoso equivocado. La planta no está limitada por capacidad "
+            "de producción: fabrica lo que se le pide durante toda la rampa."
         )
     )
     st += fig(
         "01_throughput_daily.png",
-        "Figure 1. Daily completions with a 7-day moving average. Output holds around 160 vehicles per day for the full period; the weekly waves are operating rhythm, not decline.",
+        "Figura 1. Terminaciones diarias con media móvil de 7 días. La salida se mantiene cerca de 160 vehículos diarios durante todo el periodo; las ondas semanales son ritmo operativo, no deterioro.",
     )
     st.append(
         p(
-            "Daily completions sit on a flat trend at roughly 160 vehicles per day. The visible week-to-week swing is the "
-            "normal breathing of a three-shift operation, not a downward drift. The throughput gap against plan is zero: "
-            "every scheduled order was completed. If the only question were whether the plant can make the vehicles, the answer is "
-            "yes, and the EV ramp did not change that answer."
+            "Las terminaciones diarias se mantienen en una tendencia plana de unos 160 vehículos al día. La variación visible "
+            "entre semanas es la respiración normal de una operación a tres turnos, no una deriva descendente. La brecha de caudal productivo "
+            "frente al plan es cero: cada orden programada se completó. Si la única pregunta fuera si la planta puede fabricar los "
+            "vehículos, la respuesta sería sí, y la rampa EV no la cambia."
         )
     )
     st += fig(
         "02_share_ev_weekly.png",
-        "Figure 2. Weekly EV share of completed flow. The mix climbs from about 5 percent to nearly 80 percent across the ramp, a genuine transition rather than a token pilot.",
+        "Figura 2. Cuota EV semanal del flujo completado. La cuota sube de cerca del 5% a casi el 80% durante la rampa, una transición real y no un piloto simbólico.",
     )
     st.append(
         p(
-            "The second chart shows this was a real transition, not a pilot. The electric share of weekly output rises from "
-            "around 5 percent at the start to nearly 80 percent by the end. The plant absorbed that shift in mix without "
-            "losing build volume. That separates execution strength from exit failure. The problem is not making EVs; it is "
-            "getting them out cleanly."
+            "El segundo gráfico muestra que fue una transición real, no un piloto. La cuota eléctrica de la producción semanal "
+            "sube desde cerca del 5% al inicio hasta casi el 80% al final. La planta absorbió ese cambio de composición sin perder volumen "
+            "de fabricación. Eso separa la fortaleza de ejecución del fallo de salida. El problema no es fabricar EVs; es sacarlos "
+            "limpiamente."
         )
     )
     st += fig(
         "09_dispatch_funnel.png",
-        "Figure 3. From scheduled order to clean exit. Readiness removes 27 points of the plan and late dispatch removes another 31, leaving a 41 percent clean-exit rate.",
+        "Figura 3. De orden programada a salida limpia. La preparación resta 27 puntos al plan y la expedición tardía resta otros 31, dejando una tasa de salida limpia del 41%.",
     )
     st.append(
         p(
-            f"The exit funnel is where the volume story ends and the reliability story begins. All {TOTAL:,} orders are "
-            f"completed, but only {READY:,} are ready at their dispatch window, a {pct(READY_LOSS_RATE)} readiness loss. "
-            f"Of those that are ready, {pct(RATIO_LATE)} still leave late. Stack the two gates and the clean-exit rate, on "
-            f"time and ready, falls to {pct(CLEAN_EXIT_RATE)}. The plant is converting a fully-built order book into a "
-            "minority of clean exits. Every section that follows explains that collapse and sizes what "
-            "recovering it is worth."
+            f"El funnel de salida es donde termina la historia de volumen y empieza la de fiabilidad. Las {TOTAL:,} órdenes se "
+            f"completan, pero solo {READY:,} están listas en su ventana de expedición, una pérdida de preparación de {pct(READY_LOSS_RATE)}. "
+            f"De las que sí están listas, {pct(RATIO_LATE)} salen tarde. Sumadas ambas puertas, la tasa de salida limpia, a tiempo "
+            f"y lista, cae a {pct(CLEAN_EXIT_RATE)}. La planta convierte una cartera totalmente fabricada en una minoría de salidas "
+            "limpias. Las secciones siguientes explican ese colapso y dimensionan cuánto vale recuperarlo."
         )
     )
     st.append(PageBreak())
 
-    # ============================================================= 6. FINDINGS: EV PENALTY
-    st += h1("Findings: the EV penalty is real, but specific", "Section 6")
+    # ============================================================= 6. HALLAZGOS: PENALIZACIÓN EV
+    st += h1("Hallazgos: la penalización EV es real, pero específica", "Sección 6")
     st.append(
         lead(
-            "The tempting diagnosis is to blame the ramp-up as a whole. The data is narrower. The electric mix carries a "
-            "clear operational penalty, but it lands in three named places, and one obvious suspect is cleared entirely."
+            "El diagnóstico tentador es culpar a la rampa completa. Los datos son más estrechos. La cuota eléctrica trae una "
+            "penalización operativa clara, pero cae en tres lugares concretos, y un sospechoso evidente queda descartado."
         )
     )
     st += fig(
         "06_ev_vs_ice.png",
-        "Figure 4. Pressure scores by propulsion type. EV leads on sequence disruption, charging pressure and dispatch-delay risk. Yard congestion is the exception: it is structural and slightly higher for ICE.",
+        "Figura 4. Puntuaciones de presión por tipo de propulsión. EV lidera en disrupción de secuencia, presión de carga y riesgo de retraso en expedición. La congestión de patio es la excepción: es estructural y algo mayor en ICE.",
     )
     st.append(
         p(
-            "The comparison by driver is unambiguous on three fronts. Electric vehicles score higher on sequence disruption, "
-            "on charging pressure, which combustion vehicles do not generate at all, and most sharply on dispatch-delay risk, "
-            f"where EV sits near {evice.set_index('tipo_propulsion').loc['EV', 'dispatch_delay_risk_score']:.0f} against "
-            f"{evice.set_index('tipo_propulsion').loc['ICE', 'dispatch_delay_risk_score']:.0f} for combustion. These are the measured transition costs, and they cluster in "
-            "the back half of the flow, around charge and exit."
+            "La comparación por factor es inequívoca en tres frentes. Los eléctricos puntúan más alto en disrupción de secuencia, "
+            "en presión de carga, que los vehículos de combustión no generan, y con más fuerza en riesgo de retraso de expedición, "
+            f"donde EV se sitúa cerca de {evice.set_index('tipo_propulsion').loc['EV', 'dispatch_delay_risk_score']:.0f} frente a "
+            f"{evice.set_index('tipo_propulsion').loc['ICE', 'dispatch_delay_risk_score']:.0f} en combustión. Esos son los costes medidos de la transición y se concentran "
+            "en la segunda mitad del flujo, alrededor de carga y salida."
         )
     )
     st.append(
         p(
-            "The exception matters as much as the rule. Yard congestion is not an EV problem. The congestion score is "
-            "marginally higher for combustion vehicles, because the yard is a shared physical constraint that every vehicle "
-            "passes through regardless of drivetrain. The yard is congested, but blaming the EV mix for that congestion would "
-            "point the response at the wrong lever."
+            "La excepción importa tanto como la regla. La congestión de patio no es un problema EV. La puntuación de congestión es "
+            "ligeramente mayor para combustión porque el patio es una restricción física compartida por todos los vehículos, sea "
+            "cual sea su propulsión. El patio está congestionado, pero culpar a la cuota EV de esa congestión apuntaría la respuesta "
+            "a la palanca equivocada."
         )
     )
     st += fig(
         "07_readiness_cohort.png",
-        "Figure 5. Readiness rate by version, weighted by volume. Every EV version sits far below the 95 percent target; every ICE version sits comfortably above 87 percent.",
+        "Figura 5. Tasa de preparación por versión, ponderada por volumen. Todas las versiones EV quedan muy por debajo del objetivo del 95%; todas las versiones ICE se sitúan cómodamente por encima del 87%.",
     )
     st.append(
         p(
-            "Readiness by version provides the cleanest split in the report. Sorted by version, the electric and combustion "
-            f"vehicles separate into two bands with almost no overlap. EV versions are ready between "
-            f"{pct(version_readiness[version_readiness['tipo_propulsion'] == 'EV']['readiness'].min())} and "
-            f"{pct(version_readiness[version_readiness['tipo_propulsion'] == 'EV']['readiness'].max())} of the time. "
-            f"Combustion versions sit between {pct(version_readiness[version_readiness['tipo_propulsion'] == 'ICE']['readiness'].min())} and "
-            f"{pct(version_readiness[version_readiness['tipo_propulsion'] == 'ICE']['readiness'].max())}. The worst EV version is "
-            f"{worst_ev_version['version_id'].replace('_', ' ')}, at {pct(worst_ev_version['readiness'])}; the best ICE version is "
-            f"{best_ice_version['version_id'].replace('_', ' ')}, at {pct(best_ice_version['readiness'])}. No EV version comes close "
-            "to the 95 percent target line. This is not a tail problem to be managed at the margin. It is a structural readiness "
-            "deficit on the entire electric range, and because the EV share is rising toward 80 percent of output, it is a deficit "
-            "that grows with every week of the transition."
+            "La preparación por versión ofrece la separación más limpia del informe. Ordenados por versión, eléctricos y combustión "
+            f"se dividen en dos bandas con casi ningún solape. Las versiones EV están listas entre "
+            f"{pct(version_readiness[version_readiness['tipo_propulsion'] == 'EV']['readiness'].min())} y "
+            f"{pct(version_readiness[version_readiness['tipo_propulsion'] == 'EV']['readiness'].max())} del tiempo. "
+            f"Las versiones de combustión se sitúan entre {pct(version_readiness[version_readiness['tipo_propulsion'] == 'ICE']['readiness'].min())} y "
+            f"{pct(version_readiness[version_readiness['tipo_propulsion'] == 'ICE']['readiness'].max())}. La peor versión EV es "
+            f"{worst_ev_version['version_id'].replace('_', ' ')}, con {pct(worst_ev_version['readiness'])}; la mejor ICE es "
+            f"{best_ice_version['version_id'].replace('_', ' ')}, con {pct(best_ice_version['readiness'])}. Ninguna versión EV se acerca "
+            "al objetivo del 95%. No es un problema de cola gestionable en el margen; es un déficit estructural de preparación en toda "
+            "la gama eléctrica y, como la cuota EV sube hacia el 80% de la producción, crece cada semana de transición."
         )
     )
     st += fig(
         "11_delay_pareto.png",
-        "Figure 6. Concentration of total late-dispatch minutes by version. The four EV versions account for 78 percent of all delay; the cumulative curve confirms the problem is not spread across the range.",
+        "Figura 6. Concentración de minutos totales de retraso en expedición por versión. Las cuatro versiones EV concentran el 78% del retraso; la curva acumulada confirma que el problema no está repartido por toda la gama.",
     )
     st.append(
         p(
-            "If readiness is the mechanism, late-dispatch minutes are the consequence, and they concentrate where the "
-            "readiness gap predicts. The four electric versions carry 78 percent of all late-dispatch minutes. The Pareto curve "
-            "rises steeply and then flattens, which is the signature of a concentrated problem rather than a diffuse one. The "
-            "plant does not need to improve everything at once; it needs to move the readiness of four versions."
+            "Si la preparación es el mecanismo, los minutos de retraso en expedición son la consecuencia, y se concentran donde "
+            "predice la brecha de preparación. Las cuatro versiones eléctricas soportan el 78% de todos los minutos tardíos. La curva "
+            "de Pareto sube con fuerza y después se aplana, firma de un problema concentrado y no difuso. La planta no necesita "
+            "mejorarlo todo a la vez; necesita mover la preparación de cuatro versiones."
         )
     )
     st += fig(
         "10_leadtime_distribution.png",
-        "Figure 7. Internal lead-time distributions overlap almost completely, with medians of 24 and 25 hours. The EV penalty is not in cycle time.",
+        "Figura 7. Las distribuciones de tiempo de paso interno se solapan casi por completo, con medianas de 24 y 25 horas. La penalización EV no está en el tiempo de ciclo.",
     )
     st.append(
         p(
-            "The cleared suspect is cycle time. It would be reasonable to assume electric vehicles take longer to move "
-            "through the plant. They do not. The internal lead-time distributions for EV and ICE sit almost on top of each "
-            "other, with medians of 24 and 25 hours and near-identical 90th percentiles. The electric vehicles are built and "
-            "moved at the same pace as the combustion ones. What happens to them is different: they reach the end of the line on "
-            "time and then fail to leave, because the charge, the state-of-charge confirmation and the staging space are not "
-            "there when they need them. This is why the report keeps separating build performance from exit performance. They "
-            "are different problems with different owners."
+            "El sospechoso descartado es el tiempo de ciclo. Sería razonable suponer que los eléctricos tardan más en moverse "
+            "por la planta. No es así. Las distribuciones de tiempo de paso interno de EV e ICE están casi superpuestas, con medianas "
+            "de 24 y 25 horas y percentiles 90 prácticamente idénticos. Los eléctricos se fabrican y se mueven al mismo ritmo que "
+            "los de combustión. Lo que les ocurre después es distinto: llegan a fin de línea a tiempo y luego no salen, porque carga, "
+            "confirmación de SOC y espacio de espera preexpedición no están disponibles cuando los necesitan. Por eso el informe separa desempeño "
+            "de fabricación y desempeño de salida: son problemas distintos con dueños distintos."
         )
     )
     st += fig(
         "18_readiness_heatmap.png",
-        "Figure 8. Readiness by version and shift. The colour bands run horizontally, not vertically: readiness is a property of the version, not the shift that built it.",
+        "Figura 8. Preparación por versión y turno. Las bandas de color corren horizontalmente, no verticalmente: la preparación es propiedad de la versión, no del turno que la fabricó.",
     )
     st.append(
         p(
-            "One more alternative explanation deserves a direct test: maybe a particular shift is the weak link. The heatmap "
-            "rules it out. Colour varies down the chart, by version, and barely varies across it, by shift. Shifts A, B and C "
-            "produce nearly identical readiness for any given version. The deficit travels with the product, not the crew, "
-            "which means the fix is a process and capacity fix, not a training or staffing fix aimed at one shift."
+            "Otra explicación alternativa merece una prueba directa: quizá un turno concreto sea el eslabón débil. El heatmap lo "
+            "descarta. El color varía hacia abajo, por versión, y apenas varía en horizontal, por turno. Los turnos A, B y C producen "
+            "preparación casi idéntica para cada versión. El déficit viaja con el producto, no con el equipo; por tanto la corrección "
+            "es de proceso y capacidad, no de formación o dotación dirigida a un turno."
         )
     )
-    st.append(h2("What the EV penalty is, and what it is not"))
+    st.append(h2("Qué es la penalización EV y qué no es"))
     st.append(
         p(
-            f"The weighted readiness gap between EV and ICE is {READINESS_GAP_PP:.1f} percentage points across "
-            f"{EV_ORDERS:,} electric and {ICE_ORDERS:,} combustion orders. That is large enough to dominate the dispatch "
-            "funnel, but the surrounding diagnostics narrow its meaning. It is not a production-cycle penalty, because lead-time "
-            "distributions overlap. It is not a shift penalty, because A, B and C show the same version pattern. It is not a market "
-            "allocation penalty, because destination readiness is broadly flat. It is a readiness-at-exit penalty caused by charge "
-            "dependency, state-of-charge confirmation and the physical staging buffer absorbing vehicles that are not yet dispatchable."
+            f"La brecha ponderada de preparación entre EV e ICE es de {READINESS_GAP_PP:.1f} puntos porcentuales sobre "
+            f"{EV_ORDERS:,} órdenes eléctricas y {ICE_ORDERS:,} de combustión. Es suficiente para dominar el funnel de expedición, "
+            "pero el diagnóstico circundante acota su significado. No es una penalización de ciclo de producción, porque las distribuciones "
+            "de tiempo de paso se solapan. No es de turno, porque A, B y C muestran el mismo patrón por versión. No es de asignación de mercado, "
+            "porque la preparación por destino es ampliamente plana. Es una penalización de preparación en salida causada por dependencia de "
+            "carga, confirmación de SOC y un pulmón físico de espera preexpedición que absorbe vehículos aún no expedibles."
         )
     )
     st += data_table(
-        ["Hypothesis tested", "Result", "Decision implication"],
+        ["Hipótesis probada", "Resultado", "Implicación de decisión"],
         [
             [
-                "EVs take longer to build or move internally",
-                "Rejected: EV and ICE lead-time distributions overlap around the same 24-25 hour centre.",
-                "Do not attack this first through production cycle-time projects.",
+                "Los EV tardan más en fabricarse o moverse internamente",
+                "Rechazada: las distribuciones de tiempo de paso EV e ICE se solapan alrededor de las mismas 24-25 horas.",
+                "No atacar primero mediante proyectos de tiempo de ciclo de producción.",
             ],
             [
-                "A weak shift is driving poor readiness",
-                "Rejected: readiness varies by version far more than by shift.",
-                "Do not localise the fix to one crew; standardise the exit process across all shifts.",
+                "Un turno débil causa la baja preparación",
+                "Rechazada: la preparación varía mucho más por versión que por turno.",
+                "No localizar la corrección en un equipo; estandarizar el proceso de salida en todos los turnos.",
             ],
             [
-                "One destination market is creating the delay",
-                "Rejected: readiness is materially uniform across markets.",
-                "Do not solve through market allocation before fixing internal dispatch readiness.",
+                "Un mercado destino crea el retraso",
+                "Rechazada: la preparación es materialmente uniforme entre mercados.",
+                "No resolver con asignación de mercado antes de corregir la preparación interna de expedición.",
             ],
             [
-                "EV readiness is structurally below ICE readiness",
-                f"Confirmed: EV readiness is {pct(EV_READY_RATE)} against {pct(ICE_READY_RATE)} for ICE.",
-                "Prioritise charging reservation, SOC confirmation and EV-specific dispatch gates.",
+                "La preparación EV está estructuralmente por debajo de ICE",
+                f"Confirmada: la preparación EV es {pct(EV_READY_RATE)} frente a {pct(ICE_READY_RATE)} en ICE.",
+                "Priorizar reserva de carga, confirmación de SOC y puertas de expedición específicas EV.",
             ],
         ],
         [CONTENT_W * 0.28, CONTENT_W * 0.35, CONTENT_W * 0.37],
     )
     st.append(PageBreak())
 
-    # ============================================================= 7. FINDINGS: WHERE
-    st += h1("Findings: where the bottleneck physically is", "Section 7")
+    # ============================================================= 7. HALLAZGOS: DÓNDE
+    st += h1("Hallazgos: dónde está físicamente el cuello", "Sección 7")
     st.append(
         lead(
-            "The EV penalty explains who is late. It does not by itself explain where vehicles get stuck. For that the analysis "
-            "needs the physical yard view and the area-level diagnostic."
+            "La penalización EV explica quién llega tarde. No explica por sí sola dónde quedan atrapados los vehículos. Para eso "
+            "hacen falta la vista física de patio y el diagnóstico por área."
         )
     )
     st += fig(
         "13_yard_zone_congestion.png",
-        f"Figure 9. p95 dwell time by yard zone. Pre-dispatch staging dominates at roughly {pre_salida['p95_dwell'] / 60:.0f} "
-        "hours and near-total blocking; the next-highest zone, buffer charging, clears in about five hours, and the remaining "
-        "four zones all clear in under three-and-a-half.",
+        f"Figura 9. Permanencia p95 por zona de patio. La espera preexpedición domina con cerca de {pre_salida['p95_dwell'] / 60:.0f} "
+        "horas y bloqueo casi total; la siguiente zona, pulmón de carga, despeja en unas cinco horas y las cuatro restantes quedan "
+        "por debajo de tres horas y media.",
     )
     st.append(
         p(
-            "The yard is not uniformly congested. One zone carries the entire problem. The pre-dispatch staging area shows a "
-            f"mean dwell of {pre_salida['avg_dwell'] / 60:.1f} hours, a p95 observation above {pre_salida['p95_dwell'] / 60:.1f} hours "
-            f"and a blocking rate of {pct(pre_salida['blocking_rate'])}, while the next-highest zone, "
-            f"{next_yard_zone['zona_patio'].replace('_', ' ').title()}, averages {next_yard_zone['avg_dwell'] / 60:.1f} hours. "
-            "Vehicles that are not yet ready accumulate in staging, the staging area saturates, and the blockage delays vehicles "
-            f"behind them, including ready ones. The plant-level p95 dwell of {DWELL_P95_H:.0f} hours is driven by this one zone."
+            "El patio no está congestionado de forma uniforme. Una zona carga todo el problema. La espera preexpedición muestra una "
+            f"permanencia media de {pre_salida['avg_dwell'] / 60:.1f} horas, una observación p95 por encima de {pre_salida['p95_dwell'] / 60:.1f} horas "
+            f"y una tasa de bloqueo de {pct(pre_salida['blocking_rate'])}, mientras la siguiente zona, "
+            f"{yard_zone_label(next_yard_zone['zona_patio'])}, promedia {next_yard_zone['avg_dwell'] / 60:.1f} horas. "
+            "Los vehículos aún no listos se acumulan en espera preexpedición, la zona se satura y el bloqueo retrasa a los vehículos detrás, "
+            f"incluidos los que sí están listos. La permanencia p95 de planta de {DWELL_P95_H:.0f} horas está impulsada por esta única zona."
         )
     )
     st += fig(
         "03_priority_ranking_opi.png",
-        "Figure 10. Operational Priority Index by area. Logistics and Yard form a clear top tier; Charging, Production, Dispatch and Energy fall well below.",
+        "Figura 10. Índice de Prioridad Operativa (OPI) por área. Logística y Patio forman un primer nivel claro; Carga, Producción, Expedición y Energía quedan bastante por debajo.",
     )
     st.append(
         p(
-            "Lifted to the area level, the Operational Priority Index puts Logistics and Yard in a tier of their own, at 67 and "
-            "65, with the next area more than 25 points behind. This reconciles with the yard data. Logistics owns "
-            "the dispatch-readiness and outbound-window failures; Yard owns the physical staging saturation. The two are the "
-            "same failure seen from two angles, which is why they rank together and why the recommendations treat them as one "
-            "coordinated intervention rather than two separate projects."
+            "Llevado al nivel de área, el Índice de Prioridad Operativa (OPI) sitúa a Logística y Patio en un nivel propio, con 67 y 65, "
+            "mientras el área siguiente queda a más de 25 puntos. Esto encaja con los datos de patio. Logística posee los fallos "
+            "de preparación de expedición y ventana de salida; Patio posee la saturación física de la espera preexpedición. Son el mismo fallo visto "
+            "desde dos ángulos, por eso se ordenan juntas y por eso las recomendaciones las tratan como una intervención coordinada y no "
+            "como dos proyectos separados."
         )
     )
     st += data_table(
-        ["Area", "OPI", "Main risk driver", "Recommended action", "Tier"],
+        ["Área", "OPI", "Factor principal de riesgo", "Acción recomendada", "Nivel"],
         [
             [
                 r["area"],
                 f"{r['operational_priority_index']:.1f}",
-                r["main_risk_driver"].replace("_", " "),
+                label_from_code(r["main_risk_driver"], RISK_DRIVER_ES),
                 r["recommended_action"].capitalize(),
                 r["area_priority_tier"]
-                .replace("estabilizar en la siguiente ola", "Stabilise next wave")
-                .replace("mantener bajo observación", "Watch")
-                .replace("sin prioridad inmediata", "No immediate priority"),
+                .replace("estabilizar en la siguiente ola", "Estabilizar próxima ola")
+                .replace("mantener bajo observación", "Vigilar")
+                .replace("sin prioridad inmediata", "Sin prioridad inmediata"),
             ]
             for _, r in prio.sort_values("operational_priority_index", ascending=False).iterrows()
         ],
@@ -1234,118 +1289,114 @@ def build_story() -> list:
     )
     st += fig(
         "04_risk_matrix.png",
-        "Figure 11. Throughput loss against dispatch risk by area, sized by operational stress. Logistics and Yard sit in the intervene-now quadrant; Energy and Dispatch sit in the sustain quadrant.",
+        "Figura 11. Pérdida de caudal productivo frente a riesgo de expedición por área, con tamaño según estrés operativo. Logística y Patio caen en el cuadrante de intervención inmediata; Energía y Expedición quedan en sostenimiento.",
     )
     st.append(
         p(
-            "The risk matrix is the one-slide version of the priority story. Plotting throughput loss against dispatch risk, "
-            "Logistics lands in the top-right intervene-now quadrant on throughput loss, Yard sits high on the same axis with "
-            "heavy operational stress, and the remaining areas fall toward the sustain corner. Position encodes risk on both axes; "
-            "bubble size encodes stress. The two areas that require executive attention are visible without reading the table."
+            "La matriz de riesgo es la versión de una diapositiva de la historia de prioridad. Al cruzar pérdida de caudal productivo y riesgo "
+            "de expedición, Logística cae en el cuadrante superior derecho de intervención inmediata, Patio queda alto en el mismo eje con "
+            "estrés operativo elevado y el resto de áreas se desplaza hacia sostenimiento. La posición codifica riesgo en ambos ejes y el "
+            "tamaño codifica estrés. Las dos áreas que requieren atención ejecutiva se ven sin leer la tabla."
         )
     )
     st += fig(
         "17_driver_correlation.png",
-        "Figure 12. Correlation between operational drivers at area-shift level. Congestion, waiting and stress move together; throughput loss is nearly independent of them.",
+        "Figura 12. Correlación entre factores operativos a nivel área-turno. Congestión, espera y estrés se mueven juntos; la pérdida de caudal productivo es casi independiente de ellos.",
     )
     st.append(
         p(
-            "The correlation structure explains why the priority list has two distinct heads rather than one. Congestion, average "
-            "waiting time, queue pressure and operational stress form a tight cluster that moves together: these are the physical "
-            "yard family of risk. Throughput loss sits almost orthogonal to that cluster, which means it is driven by something "
-            "else, the readiness-and-dispatch family. Two independent risk families is precisely why Logistics and Yard both reach "
-            "the top tier through different drivers, and why a single-lever fix cannot resolve both."
+            "La estructura de correlación explica por qué la lista de prioridades tiene dos cabezas y no una. Congestión, espera media, "
+            "presión de cola y estrés operativo forman un clúster apretado: la familia física de riesgo de patio. La pérdida de caudal productivo "
+            "queda casi ortogonal a ese clúster, lo que indica que la impulsa otra cosa: la familia preparación-expedición. Dos familias "
+            "de riesgo independientes explican que Logística y Patio lleguen al primer nivel por factores distintos y que una palanca única "
+            "no pueda resolver ambas."
         )
     )
     st.append(PageBreak())
 
-    # ============================================================= 8. FINDINGS: TRANSITION
-    st += h1("Findings: the pressure rises with the mix", "Section 8")
+    # ============================================================= 8. HALLAZGOS: TRANSICIÓN
+    st += h1("Hallazgos: la presión sube con la cuota EV", "Sección 8")
     st.append(
         lead(
-            "A single-period snapshot can hide whether a problem is getting worse. The weekly transition series shows that it is, "
-            "and that the deterioration tracks the EV share closely."
+            "Un corte de un solo periodo puede ocultar si un problema empeora. La serie semanal de transición muestra que sí, "
+            "y que el deterioro sigue de cerca la cuota EV."
         )
     )
     st += fig(
         "08_launch_transition_trend.png",
-        "Figure 13. Weekly EV share against yard-transition stress and dispatch stability. As the mix rises, yard stress climbs from 25 to 53 and dispatch stability erodes in parallel.",
+        "Figura 13. Cuota EV semanal frente a estrés de transición de patio y estabilidad de expedición. Al subir la cuota EV, el estrés de patio pasa de 25 a 53 y la estabilidad de expedición se erosiona en paralelo.",
     )
     st.append(
         p(
-            f"The weekly series adds the time dimension. As the electric share climbs by {EV_SHARE_DELTA_PP:.1f} percentage points across the "
-            f"53 weeks, the yard-transition stress index rises by {YARD_STRESS_DELTA:.1f} points and the dispatch-stability "
-            f"index falls by {abs(DISPATCH_STABILITY_DELTA):.1f} points. The back-of-line pressure is not a fixed cost of running "
-            "EVs; it scales with how many of them are in the flow. Left unmanaged, the trend says the exit problem gets worse "
-            "as the plant succeeds at its transition target, which is the most dangerous shape a problem can take because "
-            "success in one metric manufactures failure in another."
+            f"La serie semanal añade la dimensión temporal. Al subir la cuota eléctrica {EV_SHARE_DELTA_PP:.1f} puntos porcentuales en "
+            f"53 semanas, el índice de estrés de transición de patio sube {YARD_STRESS_DELTA:.1f} puntos y el índice de estabilidad de "
+            f"expedición cae {abs(DISPATCH_STABILITY_DELTA):.1f} puntos. La presión al final de línea no es un coste fijo de operar EVs; "
+            "escala con cuántos entran en el flujo. Sin gestión, la tendencia dice que el problema de salida empeora a medida que la planta "
+            "cumple su objetivo de transición, la forma más peligrosa de un problema porque el éxito en una métrica fabrica fallo en otra."
         )
     )
     st.append(
         p(
-            f"The charging-capacity gap also moves in the wrong direction, widening by {CHARGE_GAP_DELTA:.1f} points from the "
-            "first to the final operating week. That does not mean chargers are fully utilised all year; the average utilisation "
-            f"reported in the governed KPI mart is only {pct(CHARGER_UTIL, 1)}. It means the constraint is temporal concentration: "
-            "charging demand arrives at the wrong time relative to slot availability, and that mismatch compounds as the electric "
-            "share rises. The remedy therefore has to include reservation and peak-shift capacity, not a year-average "
-            "utilisation target."
+            f"La brecha de capacidad de carga también se mueve en la dirección equivocada, ampliándose {CHARGE_GAP_DELTA:.1f} puntos desde "
+            "la primera hasta la última semana operativa. Eso no significa que los cargadores estén saturados todo el año; la utilización "
+            f"media reportada en el mart KPI gobernado es solo {pct(CHARGER_UTIL, 1)}. Significa que la restricción es concentración temporal: "
+            "la demanda de carga llega en momentos desalineados con la disponibilidad de puntos de carga, y ese desajuste se agrava al subir la cuota "
+            "eléctrico. Por tanto, el remedio debe incluir reserva y capacidad en picos de turno, no un objetivo de utilización media anual."
         )
     )
     st += fig(
         "12_market_geography.png",
-        "Figure 14. Volume and readiness by destination market. Iberia takes roughly a third of output; readiness is uniform across destinations.",
+        "Figura 14. Volumen y preparación por mercado destino. Iberia absorbe cerca de un tercio de la producción; la preparación es uniforme entre destinos.",
     )
     st.append(
         p(
-            "Geography is the second cleared suspect. Output is concentrated in Iberia, which takes around a third of volume, "
-            "followed by France and Germany, but readiness is essentially uniform across all seven destinations. No market is "
-            "structurally worse served than another. The fix is internal and operational, not a "
-            "matter of reallocating volume between destinations or renegotiating outbound windows market by market. The lever is "
-            "inside the plant."
+            "La geografía es el segundo sospechoso descartado. La salida se concentra en Iberia, que absorbe alrededor de un tercio del volumen, "
+            "seguida de Francia y Alemania, pero la preparación es esencialmente uniforme en los siete destinos. Ningún mercado está estructuralmente "
+            "peor servido que otro. La corrección es interna y operativa, no una reasignación de volumen entre destinos ni una renegociación de ventanas "
+            "de salida mercado por mercado. La palanca está dentro de la planta."
         )
     )
     st.append(PageBreak())
 
-    # ============================================================= 9. FINDINGS: SCENARIOS
-    st += h1("Findings: which response works", "Section 9")
+    # ============================================================= 9. HALLAZGOS: ESCENARIOS
+    st += h1("Hallazgos: qué respuesta funciona", "Sección 9")
     st.append(
         lead(
-            "The diagnostic says what is wrong and where. The scenario twin asks what to do about it, by simulating eight futures "
-            "on a consistent decision score and letting them compete."
+            "El diagnóstico dice qué está mal y dónde. El gemelo de escenarios pregunta qué hacer, simulando ocho futuros con "
+            "una puntuación de decisión consistente y dejándolos competir."
         )
     )
     st += fig(
         "05_scenario_decision.png",
-        "Figure 15. Decision score across eight scenarios. The combined corrective package leads; accelerating the mix without support scores worst.",
+        "Figura 15. Puntuación de decisión en ocho escenarios. El paquete correctivo combinado lidera; acelerar la cuota EV sin soporte obtiene el peor resultado.",
     )
     st.append(
         p(
-            f"The combined corrective package wins, at a decision score of {best['decision_score']:.1f}. The unmanaged base "
-            f"ramp-up scores {base['decision_score']:.1f}, and the worst option, accelerating the EV mix with no operational "
-            f"support, falls to {worst['decision_score']:.1f}. The ordering carries a clear message. Pushing more electric volume into the existing "
-            "configuration is the worst move available, because it loads the exact gate that is already failing. "
-            "The single-lever scenarios, more charging slots, better sequencing, more yard space, each help a little and cluster "
-            "in the middle. Only the package that does all three together separates from the pack."
+            f"El paquete correctivo combinado alcanza una puntuación de decisión de {best['decision_score']:.1f}. La rampa base no gestionada "
+            f"obtiene {base['decision_score']:.1f}, y la peor opción, acelerar la cuota EV sin soporte operativo, cae a {worst['decision_score']:.1f}. "
+            "El orden deja un mensaje claro: empujar más volumen eléctrico hacia la configuración existente es la peor opción disponible, porque carga "
+            "exactamente la puerta que ya falla. Los escenarios de una sola palanca, más puntos de carga, mejor secuenciación o más espacio de patio, ayudan "
+            "algo y se agrupan en el centro. Solo el paquete que combina las tres cosas se separa del resto."
         )
     )
     st += fig(
         "14_scenario_tradeoff.png",
-        "Figure 16. Throughput against late vehicles by scenario, with the x-axis inverted so better is up and to the left. The corrective package sits on the efficient frontier.",
+        "Figura 16. Caudal productivo frente a vehículos retrasados por escenario, con eje x invertido para que mejor sea arriba a la izquierda. El paquete correctivo queda en la frontera eficiente.",
     )
     st.append(
         p(
-            "The trade-off view shows why. Plotting throughput against the share of late vehicles, the scenarios trace a frontier, "
-            "and the corrective package sits at its best corner: higher throughput with fewer late vehicles at the same time. The "
-            "accelerated-mix scenario sits at the opposite corner, buying nominal throughput with a sharp rise in late exits. This "
-            "removes the volume-first option from the decision set. On this data, faster "
-            "without support moves the plant the wrong way on the metric that is already broken."
+            "La vista de compensación muestra por qué. Al cruzar caudal productivo con cuota de vehículos retrasados, los escenarios dibujan una frontera "
+            "y el paquete correctivo se sitúa en su mejor esquina: más caudal productivo con menos vehículos tardíos al mismo tiempo. El escenario de cuota EV "
+            "acelerado queda en la esquina opuesta, comprando caudal productivo nominal con un fuerte aumento de salidas tardías. Esto elimina la opción "
+            "volumen-primero del conjunto de decisión. En estos datos, ir más rápido sin soporte mueve la planta en la dirección equivocada en la "
+            "métrica que ya está rota."
         )
     )
     st += data_table(
-        ["Scenario", "Throughput", "Internal time", "Late veh.", "Stability", "Decision"],
+        ["Escenario", "Caudal productivo", "Tiempo interno", "Veh. tarde", "Estabilidad", "Decisión"],
         [
             [
-                s["escenario"].split("_", 1)[1].replace("_", " ").capitalize(),
+                label_from_code(s["escenario"], SCENARIO_NAME_ES),
                 f"{s['throughput']:.0f}",
                 f"{s['tiempo_total_interno']:.0f}",
                 pct(s["vehiculos_retrasados"]),
@@ -1359,70 +1410,70 @@ def build_story() -> list:
     )
     st += fig(
         "19_before_after.png",
-        "Figure 17. The base ramp-up against the corrective package across five metrics. Throughput, stability, internal time and late vehicles all improve; charging wait edges up as the only trade.",
+        "Figura 17. Rampa base frente al paquete correctivo en cinco métricas. Caudal productivo, estabilidad, tiempo interno y vehículos tardíos mejoran; la espera de carga sube ligeramente como única compensación.",
     )
     st.append(
         p(
-            f"Held directly against the unmanaged base, the corrective package improves throughput by {scenario_delta_by_metric.loc['throughput', 'delta_pct'] * 100:.1f} percent, lifts operational "
-            f"stability, cuts internal time by {abs(CORRECTIVE_INTERNAL_TIME_DELTA) * 100:.1f} percent and reduces late vehicles by {CORRECTIVE_LATE_PP_REDUCTION:.1f} points. "
-            f"The one metric that moves the wrong way is average charging wait, which rises by {CORRECTIVE_CHARGE_WAIT_DELTA * 100:.1f} percent. "
-            "That trade-off is material: pulling more EVs through readiness on time puts more simultaneous demand on chargers. "
-            "It is also why charging capacity is the first lever to test."
+            f"Comparado directamente con la base no gestionada, el paquete correctivo mejora el caudal productivo en {scenario_delta_by_metric.loc['throughput', 'delta_pct'] * 100:.1f}%, eleva "
+            f"la estabilidad operativa, reduce el tiempo interno en {abs(CORRECTIVE_INTERNAL_TIME_DELTA) * 100:.1f}% y baja los vehículos retrasados en {CORRECTIVE_LATE_PP_REDUCTION:.1f} puntos. "
+            f"La única métrica que se mueve en contra es la espera media de carga, que sube {CORRECTIVE_CHARGE_WAIT_DELTA * 100:.1f}%. "
+            "Esa compensación es material: hacer pasar más EVs por la preparación a tiempo genera más demanda simultánea sobre cargadores. "
+            "También explica por qué la capacidad de carga es la primera palanca a probar."
         )
     )
     st += fig(
         "15_lever_ranking.png",
-        "Figure 18. Capacity levers by expected impact. Charging capacity leads, with sequencing and yard management close behind.",
+        "Figura 18. Palancas de capacidad por impacto esperado. La capacidad de carga lidera, con secuenciación y gestión de patio muy cerca.",
     )
     st.append(
         p(
-            f"Ranked individually, charging capacity is the highest-return lever at an expected impact of "
-            f"{levers['impacto_esperado'].max():.2f}, with EV sequencing at {levers.set_index('palanca').loc['secuenciacion_ev', 'impacto_esperado']:.2f} "
-            f"and yard management at {levers.set_index('palanca').loc['gestion_patio', 'impacto_esperado']:.2f}. The gaps "
-            "between the top three are small, which is the quantitative reason the combined package beats any single move. No one lever "
-            "dominates by enough to stand alone. The impact figures are parametric assumptions inside the scenario model, not measured "
-            "elasticities, and the recommendations section treats them as a priority ordering rather than as promised percentages."
+            f"Ordenada individualmente, la capacidad de carga es la palanca de mayor retorno con impacto esperado de "
+            f"{levers['impacto_esperado'].max():.2f}, seguida por secuenciación EV con {levers.set_index('palanca').loc['secuenciacion_ev', 'impacto_esperado']:.2f} "
+            f"y gestión de patio con {levers.set_index('palanca').loc['gestion_patio', 'impacto_esperado']:.2f}. Las diferencias "
+            "entre las tres primeras son pequeñas, razón cuantitativa por la que el paquete combinado supera a cualquier movimiento aislado. Ninguna palanca domina "
+            "lo suficiente para sostenerse sola. Las cifras de impacto son supuestos paramétricos dentro del modelo de escenarios, no elasticidades medidas, y la sección "
+            "de recomendaciones las trata como orden de prioridad, no como porcentajes prometidos."
         )
     )
-    st.append(h2("Base versus corrective package"))
+    st.append(h2("Base frente a paquete correctivo"))
     st.append(
         p(
-            "The base-to-corrective comparison is the most decision-useful scenario readout because it isolates the recommended "
-            "package from the unmanaged ramp-up. The package improves the metrics that matter most to the operating thesis: "
-            "more vehicles flow through the system, internal time falls, congestion risk falls and the late-vehicle rate drops. "
-            "The increase in average charging wait is the only negative movement, and it is acceptable only if the package is paired "
-            "with peak charging reservation rather than treated as a pure yard or sequencing project."
+            "La comparación base-correctivo es la lectura de escenarios más útil para decidir porque aísla el paquete recomendado "
+            "frente a la rampa no gestionada. El paquete mejora las métricas clave de la tesis operativa: fluyen más vehículos por el "
+            "sistema, baja el tiempo interno, baja el riesgo de congestión y cae la tasa de vehículos retrasados. El aumento de espera "
+            "media de carga es el único movimiento negativo, y solo es aceptable si el paquete se acompaña de reserva de carga en picos, "
+            "no si se trata como un proyecto puro de patio o secuenciación."
         )
     )
     st += data_table(
-        ["Metric", "Base", "Corrective package", "Movement"],
+        ["Métrica", "Base", "Paquete correctivo", "Movimiento"],
         [
             [
-                "Throughput",
+                "Caudal productivo",
                 f"{scenario_delta_by_metric.loc['throughput', 'base']:.2f}",
                 f"{scenario_delta_by_metric.loc['throughput', 'mejorado']:.2f}",
                 f"+{scenario_delta_by_metric.loc['throughput', 'delta_pct'] * 100:.1f}%",
             ],
             [
-                "Internal time",
+                "Tiempo interno",
                 f"{scenario_delta_by_metric.loc['tiempo_total_interno', 'base']:.0f}",
                 f"{scenario_delta_by_metric.loc['tiempo_total_interno', 'mejorado']:.0f}",
                 f"{scenario_delta_by_metric.loc['tiempo_total_interno', 'delta_pct'] * 100:.1f}%",
             ],
             [
-                "Congestion risk",
+                "Riesgo de congestión",
                 f"{scenario_delta_by_metric.loc['riesgo_congestion', 'base']:.3f}",
                 f"{scenario_delta_by_metric.loc['riesgo_congestion', 'mejorado']:.3f}",
                 f"{scenario_delta_by_metric.loc['riesgo_congestion', 'delta_pct'] * 100:.1f}%",
             ],
             [
-                "Late vehicles",
+                "Vehículos retrasados",
                 pct(scenario_delta_by_metric.loc["vehiculos_retrasados", "base"], 1),
                 pct(scenario_delta_by_metric.loc["vehiculos_retrasados", "mejorado"], 1),
                 f"{scenario_delta_by_metric.loc['vehiculos_retrasados', 'delta_pct'] * 100:.1f}%",
             ],
             [
-                "Charging wait",
+                "Espera de carga",
                 f"{scenario_delta_by_metric.loc['espera_carga', 'base']:.1f} min",
                 f"{scenario_delta_by_metric.loc['espera_carga', 'mejorado']:.1f} min",
                 f"+{scenario_delta_by_metric.loc['espera_carga', 'delta_pct'] * 100:.1f}%",
@@ -1433,394 +1484,390 @@ def build_story() -> list:
     )
     st.append(PageBreak())
 
-    # ============================================================= 10. ROBUSTNESS
-    st += h1("Findings: is the ranking trustworthy", "Section 10")
+    # ============================================================= 10. ROBUSTEZ
+    st += h1("Hallazgos: la clasificación es fiable", "Sección 10")
     st.append(
         lead(
-            "A prioritisation that flips the moment someone questions the weights is worthless for decision-making. The scoring "
-            "framework is stress-tested so that the top of the ranking can be defended."
+            "Una priorización que cambia en cuanto alguien cuestiona los pesos no sirve para decidir. El marco de puntuación se somete "
+            "a pruebas de estrés para defender la parte alta de la clasificación."
         )
     )
     st += fig(
         "16_montecarlo_robustness.png",
-        "Figure 19. Top-ranked area across 300 Monte Carlo redraws of the scoring weights. Logistics leads 77 percent of the time and Yard takes the rest; no other area ever reaches first.",
+        "Figura 19. Área primer puesto en 300 remuestreos Monte Carlo de los pesos de puntuación. Logística lidera el 77% del tiempo y Patio toma el resto; ninguna otra área llega al primer puesto.",
     )
     st.append(
         p(
-            "The weights in the priority index are a judgement call, so the analysis redraws them 300 times from a Dirichlet "
-            "distribution and recomputes the ranking each time. Logistics comes first in 77 percent of the draws and Yard in the "
-            "remaining 23 percent. No third area ever takes the top spot. The headline conclusion of this report, that Logistics and "
-            "Yard are the two areas to stabilise, does not depend on one particular set of weights. It holds across the full range of "
-            "reasonable weightings, and the only thing that moves is the order of the top two, both of which are recommended "
-            "for coordinated action anyway."
+            "Los pesos del índice de prioridad son un juicio de gestión, por lo que el análisis los remuestrea 300 veces desde una distribución "
+            "Dirichlet y recalcula la clasificación en cada caso. Logística queda primera en el 77% de las extracciones y Patio en el 23% restante. Ninguna "
+            "tercera área toma el primer puesto. La conclusión principal, que Logística y Patio son las dos áreas a estabilizar, no depende de un conjunto "
+            "particular de pesos. Se mantiene en todo el rango de ponderaciones razonables, y lo único que cambia es el orden de las dos primeras, ambas "
+            "recomendadas para acción coordinada."
         )
     )
     st.append(
         p(
-            "The sensitivity analysis reinforces this from a different direction. Perturbing each individual risk driver up and down "
-            "by 20 percent leaves Logistics and Yard in the top two of the top-three list in every single case. The mean score shifts "
-            "only at the second decimal. A ranking this stable under both weight resampling and driver perturbation is one a plant "
-            "manager can act on without treating the recommendation as an artefact of one modelling choice."
+            "El análisis de sensibilidad lo refuerza por otra vía. Perturbar cada factor de riesgo individual arriba y abajo en 20% deja a Logística "
+            "y Patio entre los dos primeros de la lista de tres primeras áreas en todos los casos. La puntuación media se desplaza solo en el segundo decimal. Una clasificación tan "
+            "estable bajo remuestreo de pesos y perturbación de factores permite actuar sin tratar la recomendación como artefacto de una sola elección de modelado."
         )
     )
     st += data_table(
-        ["Stress test", "Observed result", "Interpretation"],
+        ["Prueba de estrés", "Resultado observado", "Interpretación"],
         [
             [
-                "Monte Carlo weight redraws",
-                f"Logistics top-1 in {pct(TOP1_LOGISTICS, 1)}; Yard top-1 in {pct(TOP1_YARD, 1)}; no other area first.",
-                "The recommended first wave is stable even if the exact order of Logistics and Yard is debated.",
+                "Remuestreo Monte Carlo de pesos",
+                f"Logística primer puesto en {pct(TOP1_LOGISTICS, 1)}; Patio primer puesto en {pct(TOP1_YARD, 1)}; ninguna otra área primera.",
+                "La primera ola recomendada es estable aunque se discuta el orden exacto de Logística y Patio.",
             ],
             [
-                "Yard-risk perturbation",
-                "Top three remains Logistics, Yard and Charging under both -20% and +20% factors.",
-                "The yard recommendation is not dependent on overstating its own risk score.",
+                "Perturbación de riesgo de patio",
+                "El tres primeras sigue siendo Logística, Patio y Carga con factores -20% y +20%.",
+                "La recomendación de patio no depende de sobredimensionar su propio puntuación de riesgo.",
             ],
             [
-                "Charging-risk perturbation",
-                "Charging and Production trade the third slot; Logistics and Yard remain first two.",
-                "The first-wave recommendation is unaffected; charging remains an enabling lever rather than the top area.",
+                "Perturbación de riesgo de carga",
+                "Carga y Producción intercambian el tercer puesto; Logística y Patio siguen primeras.",
+                "La recomendación de primera ola no cambia; carga sigue como palanca habilitadora, no como área principal.",
             ],
             [
-                "Dispatch-risk perturbation",
-                "Logistics and Yard remain first two under both directions.",
-                "The dispatch-readiness diagnosis survives uncertainty in the dispatch-risk driver.",
+                "Perturbación de riesgo de expedición",
+                "Logística y Patio siguen primeras bajo ambas direcciones.",
+                "El diagnóstico de preparación-expedición sobrevive a la incertidumbre del factor de expedición.",
             ],
         ],
         [CONTENT_W * 0.27, CONTENT_W * 0.38, CONTENT_W * 0.35],
     )
-    st.append(h2("Residual uncertainty"))
+    st.append(h2("Incertidumbre residual"))
     st.append(
         p(
-            "The remaining uncertainty is not about which two areas lead. It is about the size of the benefit after intervention. "
-            "That distinction matters. The diagnostic is strong enough to start operational changes immediately, because it is anchored "
-            "in observed synthetic flow mechanics and stable rankings. The business case for new physical chargers or yard expansion "
-            "would still require calibration on real plant data, because the scenario elasticities are assumptions. Start with "
-            "sequencing, reservation and staging discipline now; use the first implementation cycle to estimate the real "
-            "elasticity before committing irreversible capital."
+            "La incertidumbre restante no trata de qué dos áreas lideran. Trata del tamaño del beneficio después de intervenir. "
+            "La distinción importa. El diagnóstico es suficientemente fuerte para empezar cambios operativos inmediatos, porque se ancla "
+            "en mecánicas sintéticas observadas de flujo y clasificaciones estables. El caso de negocio para nuevos cargadores físicos o expansión de patio "
+            "sigue requiriendo calibración con datos reales de planta, porque las elasticidades de escenario son supuestos. Empezar ahora con "
+            "secuenciación, reserva y disciplina de espera preexpedición; usar el primer ciclo de implantación para estimar elasticidad real antes de comprometer capital irreversible."
         )
     )
     st.append(PageBreak())
 
-    # ============================================================= 11. RISKS
-    st += h1("Risks, limitations and caveats", "Section 11")
+    # ============================================================= 11. RIESGOS
+    st += h1("Riesgos, límites y advertencias", "Sección 11")
     st.append(
         lead(
-            "A credible report is explicit about where it stops. The following limitations bound how far these findings should be "
-            "pushed, and none of them is hidden in a footnote because each one changes how the results should be used."
+            "Un informe creíble explicita dónde se detiene. Los siguientes límites acotan hasta dónde deben llevarse estos hallazgos, "
+            "y ninguno queda escondido en una nota al pie porque todos cambian cómo deben usarse los resultados."
         )
     )
-    st.append(h3("The data is synthetic"))
+    st.append(h3("Los datos son sintéticos"))
     st.append(
         p(
-            "This is the first and largest caveat. The records are generated, not measured. The structure is realistic and the "
-            "relationships are internally consistent, which is enough to demonstrate the method and to show what such an analysis "
-            "would surface on real data. It is not enough to treat any absolute number here as a fact about a physical plant. The "
-            f"{pre_salida['p95_dwell'] / 60:.0f}-hour staging dwell and the {pct(CLEAN_EXIT_RATE)} clean-exit rate are properties of this "
-            "dataset, not benchmarks."
+            "Es el primer caveat y el más importante. Los registros se generan, no se miden. La estructura es realista y las relaciones "
+            "son consistentes internamente, suficiente para demostrar el método y mostrar qué emergería con datos reales. No es suficiente "
+            "para tratar ninguna cifra absoluta como hecho de una planta física. La permanencia de espera preexpedición de "
+            f"{pre_salida['p95_dwell'] / 60:.0f} horas y la tasa de salida limpia de {pct(CLEAN_EXIT_RATE)} son propiedades de este conjunto de datos, "
+            "no referencias."
         )
     )
-    st.append(h3("Scenario impacts are assumptions, not estimates"))
+    st.append(h3("Los impactos de escenario son supuestos, no estimaciones"))
     st.append(
         p(
-            "The lever impacts and the scenario outcomes come from parametric elasticities chosen to be plausible. They are not "
-            "causal estimates from an experiment or a natural intervention. The scenario results should be read as a structured way "
-            "to compare options under stated assumptions, and the ranking they produce is more trustworthy than any individual "
-            "percentage they report. Before any capital commitment, these elasticities would need calibration against the plant's "
-            "own response to past changes."
+            "Los impactos de palanca y resultados de escenario proceden de elasticidades paramétricas elegidas por plausibilidad. No son "
+            "estimaciones causales de un experimento o intervención natural. Los resultados deben leerse como una forma estructurada de comparar "
+            "opciones bajo supuestos declarados, y la clasificación que producen es más fiable que cualquier porcentaje individual. Antes de cualquier "
+            "compromiso de capital, estas elasticidades deberían calibrarse contra la respuesta histórica de la propia planta."
         )
     )
-    st.append(h3("Scores are relative, not physical"))
+    st.append(h3("Las puntuaciones son relativos, no físicos"))
     st.append(
         p(
-            "Every 0 to 100 score in this report is a position on a distribution, not a measurement in minutes, units or euros. "
-            "They are built for comparison across areas and propulsion types, which they do well. They are not built to be read as "
-            "absolute levels and should not be quoted as such outside the comparative context that gives them meaning."
+            "Cada puntuación de 0 a 100 en este informe es una posición en una distribución, no una medición en minutos, unidades o euros. "
+            "Están construidos para comparar entre áreas y tipos de propulsión, tarea que cumplen bien. No están construidos para leerse "
+            "como niveles absolutos ni deben citarse así fuera del contexto comparativo que les da sentido."
         )
     )
-    st.append(h3("The throughput-loss proxy is attribution, not causation"))
+    st.append(h3("El proxy de pérdida de caudal productivo es atribución, no causalidad"))
     st.append(
         p(
-            "The area throughput-loss figure attributes lost flow to the bottleneck events recorded against an area. It is a proxy "
-            "that apportions observed loss, not a counterfactual estimate of what output would have been without the bottleneck. It "
-            "is reliable for ranking where loss concentrates and should not be over-read as a precise recoverable-output number."
+            "La cifra de pérdida de caudal productivo por área atribuye flujo perdido a los eventos de cuello registrados contra un área. Es un proxy "
+            "que reparte pérdida observada, no una estimación contrafactual de cuál habría sido la salida sin el cuello. Es fiable para ordenar "
+            "dónde se concentra la pérdida y no debe sobreleerse como número preciso de output recuperable."
         )
     )
-    st.append(h3("Weights and thresholds need local calibration"))
+    st.append(h3("Pesos y umbrales requieren calibración local"))
     st.append(
         p(
-            "The 95 percent readiness target, the 120-minute late-dispatch threshold and the scoring weights are defaults. They are "
-            "reasonable and the conclusions hold when they move within sensible ranges, as the ranking-stability section shows, but a "
-            "real deployment would set them to the plant's own standards and service-level agreements before the numbers drive money."
+            "El objetivo de preparación del 95%, el umbral de salida tardía de 120 minutos y los pesos de puntuación son defaults. Son razonables "
+            "y las conclusiones se mantienen al moverlos dentro de rangos sensatos, como muestra la estabilidad de la clasificación, pero un despliegue "
+            "real debería fijarlos según los estándares y acuerdos de nivel de servicio de la planta antes de que las cifras guíen inversión."
         )
     )
-    st.append(h3("The dashboard needs network access"))
+    st.append(h3("El panel necesita acceso de red"))
     st.append(
         p(
-            "The companion dashboard is a single self-contained HTML file with all data embedded, but it loads its charting library "
-            "and web fonts from a content delivery network. It renders fully online and degrades gracefully offline. For a fully "
-            "air-gapped deployment those two dependencies would need to be vendored into the file."
+            "El panel complementario es un único HTML autocontenido con todos los datos embebidos, pero carga la librería de gráficos y fuentes web "
+            "desde CDN. Renderiza completo online y degrada de forma razonable offline. Para un despliegue totalmente aislado habría que vendorizar "
+            "esas dos dependencias dentro del fichero."
         )
     )
     st.append(PageBreak())
 
-    # ============================================================= 12. RECOMMENDATIONS
-    st += h1("Recommendations and action priorities", "Section 12")
+    # ============================================================= 12. RECOMENDACIONES
+    st += h1("Recomendaciones y prioridades de acción", "Sección 12")
     st.append(
         lead(
-            "The recommendation is not a broad transformation. It is a five-part control package: three operating changes that "
-            "recover the exit gate, one transition-governance decision, and one calibration step before capital approval."
+            "La recomendación no es una transformación amplia. Es un paquete de control en cinco partes: tres cambios operativos que "
+            "recuperan la puerta de salida, una decisión de gobernanza de transición y un paso de calibración antes de aprobar capital."
         )
     )
     st += data_table(
-        ["#", "Action", "Owner", "Tied to"],
+        ["#", "Acción", "Responsable", "Vinculado a"],
         [
             [
                 "1",
-                "Cap and redesign the pre-dispatch staging zone; pull-sequence into staging only against real dispatch slots",
-                "Yard / Logistics",
-                "Fig 9, 11",
+                "Limitar y rediseñar la zona de espera preexpedición; secuenciar hacia espera preexpedición solo contra ventanas reales de expedición",
+                "Patio / Logística",
+                "Fig. 9, 11",
             ],
             [
                 "2",
-                "Reserve charging slots for EV versions and add capacity at shift peaks",
-                "Energy / Charging",
-                "Fig 4, 5, 18",
+                "Reservar puntos de carga para versiones EV y añadir capacidad en picos de turno",
+                "Energía / Carga",
+                "Fig. 4, 5, 18",
             ],
             [
                 "3",
-                "Enforce a readiness window on dispatch; hold ICE out of a saturated staging area",
-                "Logistics",
-                "Fig 3, 5",
+                "Aplicar una ventana de preparación en expedición; mantener ICE fuera de una espera preexpedición saturada",
+                "Logística",
+                "Fig. 3, 5",
             ],
-            ["4", "Stop accelerating the EV mix until exit reliability recovers", "Plant / Planning", "Fig 13, 15, 16"],
+            [
+                "4",
+                "Detener la aceleración de la cuota EV hasta recuperar fiabilidad de salida",
+                "Planta / Planificación",
+                "Fig. 13, 15, 16",
+            ],
             [
                 "5",
-                "Calibrate weights, thresholds and elasticities to plant standards before capital decisions",
-                "Operations analytics",
-                "Section 11",
+                "Calibrar pesos, umbrales y elasticidades a estándares de planta antes de decisiones de capital",
+                "Analítica de operaciones",
+                "Sección 11",
             ],
         ],
         [CONTENT_W * 0.05, CONTENT_W * 0.55, CONTENT_W * 0.22, CONTENT_W * 0.18],
     )
-    st.append(h2("Priority 1. Fix the staging chokepoint"))
+    st.append(h2("Prioridad 1. Corregir el cuello de espera preexpedición"))
     st.append(
         p(
-            f"The pre-dispatch staging zone is the physical bottleneck, at {pre_salida['p95_dwell'] / 60:.0f} hours p95 dwell and "
-            "near-total blocking against five hours or less everywhere else in the yard. Treat it as a capacity-limited resource "
-            "rather than open ground. Set a hard "
-            "occupancy cap, segment the buffer by destination dispatch window, and only pull a vehicle into staging when its dispatch "
-            "slot is confirmed. This is the highest-confidence recommendation because it rests on measured dwell data, "
-            "not on a modelling assumption, and because it directly relieves the blocking that delays even ready vehicles."
+            f"La zona de espera preexpedición es el cuello físico, con {pre_salida['p95_dwell'] / 60:.0f} horas de permanencia p95 y "
+            "bloqueo casi total frente a cinco horas o menos en el resto del patio. Tratarla como un recurso de capacidad limitada, no "
+            "como suelo abierto. Fijar un límite duro de ocupación, segmentar el pulmón por ventana de expedición destino y llevar un vehículo "
+            "a espera preexpedición solo cuando su ventana de salida esté confirmada. Es la recomendación de mayor confianza porque se apoya en datos de permanencia "
+            "medidos, no en un supuesto de modelado, y porque alivia directamente el bloqueo que retrasa incluso vehículos listos."
         )
     )
-    st.append(h2("Priority 2. Unblock EV readiness through charging"))
+    st.append(h2("Prioridad 2. Desbloquear preparación EV mediante carga"))
     st.append(
         p(
-            "EV readiness is the gate, charging is its dominant input, and charging capacity is the highest-return lever in the "
-            "scenario model. Reserve slots for electric versions so they are not competing with discretionary demand, and add capacity "
-            "at the shift peaks where the queue forms. Average charger utilisation across the period is only "
-            f"{pct(CHARGER_UTIL)}, which says the constraint is timing and allocation at the peaks, not a shortage of total charging "
-            f"energy. The highest-pressure charging zone is {highest_charge_zone['zona_carga'].title()}, with "
-            f"{highest_charge_zone['sessions']:.0f} sessions and an average pressure score of {highest_charge_zone['pressure']:.1f}. "
-            "The first intervention can therefore be a slotting rule before it becomes an infrastructure programme."
+            "La preparación EV es la puerta, la carga es su entrada principal y la capacidad de carga es la palanca de mayor retorno del "
+            "modelo de escenarios. Reservar puntos de carga para versiones eléctricas para que no compitan con demanda discrecional y añadir capacidad "
+            "en los picos de turno donde se forma la cola. La utilización media de cargadores en el periodo es solo "
+            f"{pct(CHARGER_UTIL)}, lo que indica que la restricción es momento y asignación en picos, no falta de energía total de carga. "
+            f"La zona de carga con mayor presión es {highest_charge_zone['zona_carga'].title()}, con "
+            f"{highest_charge_zone['sessions']:.0f} sesiones y una puntuación media de presión de {highest_charge_zone['pressure']:.1f}. "
+            "La primera intervención puede ser una regla de asignación de puntos de carga antes de convertirse en programa de infraestructura."
         )
     )
-    st.append(h2("Priority 3. Put a readiness gate on dispatch"))
+    st.append(h2("Prioridad 3. Poner una puerta de preparación en expedición"))
     st.append(
         p(
-            "A large part of the exit problem is sequencing discipline, not capacity. Combustion vehicles, which are ready more than "
-            "90 percent of the time, are being released into a staging area already saturated with EVs waiting on charge and "
-            "state-of-charge confirmation. A readiness window that holds vehicles out of staging until their slot is real decongests "
-            "the zone without adding a single square metre or a single charger. It is the lowest-cost item in the package and it "
-            "supports the other two."
+            "Una parte grande del problema de salida es disciplina de secuenciación, no capacidad. Los vehículos de combustión, listos más del "
+            "90% del tiempo, se liberan hacia una espera preexpedición ya saturada con EVs esperando carga y confirmación de SOC. Una ventana de preparación que "
+            "mantenga vehículos fuera de espera preexpedición hasta que su ventana sea real descongestiona la zona sin añadir un metro cuadrado ni un cargador. Es "
+            "el elemento de menor coste del paquete y sostiene los otros dos."
         )
     )
-    st.append(h2("Priority 4. Do not accelerate the mix into a broken gate"))
+    st.append(h2("Prioridad 4. No acelerar la cuota EV hacia una puerta rota"))
     st.append(
         p(
-            "The transition trend and the scenario ranking agree that pushing more EV volume into the current configuration is the "
-            "worst available move. Hold the planned mix steady until the exit gate recovers. This is a sequencing decision about the "
-            "transition itself, and it costs nothing except patience, while protecting the plant from manufacturing more late exits in "
-            "the name of hitting an electrification milestone."
+            "La tendencia de transición y la clasificación de escenarios coinciden: empujar más volumen EV hacia la configuración actual es la peor opción disponible. "
+            "Mantener estable la cuota planificada hasta que la puerta de salida se recupere. Es una decisión de secuenciación sobre la propia transición, y no cuesta "
+            "más que paciencia, mientras protege a la planta de fabricar más salidas tardías en nombre de cumplir un hito de electrificación."
         )
     )
-    st.append(h2("Priority 5. Calibrate before you commit capital"))
+    st.append(h2("Prioridad 5. Calibrar antes de comprometer capital"))
     st.append(
         p(
-            "Before any of the above drives a spending decision, calibrate the model to the plant. Replace the default readiness "
-            "target and late threshold with the plant's own service levels, and fit the scenario elasticities to the plant's observed "
-            "response to past operational changes. The diagnostic and the ranking are strong enough to act on now. The scenario "
-            "magnitudes are not, and should earn their place against real history before they size an investment."
+            "Antes de que cualquiera de los puntos anteriores impulse una decisión de gasto, calibrar el modelo a la planta. Sustituir el objetivo default "
+            "de preparación y el umbral de retraso por niveles de servicio propios de la planta, y ajustar elasticidades de escenario a la respuesta observada "
+            "ante cambios operativos pasados. El diagnóstico y la clasificación son lo bastante sólidos para actuar ya. Las magnitudes de escenario no lo son y deben "
+            "ganarse su lugar frente a historial real antes de dimensionar una inversión."
         )
     )
-    st.append(h2("The size of the prize"))
+    st.append(h2("Tamaño del premio"))
     st.append(
         p(
-            f"To frame the stakes in one line: the plant already builds {TOTAL:,} vehicles to plan, but only about "
-            f"{ON_TIME_READY:,} of them leave both on time and ready today. The corrective package does not ask the plant to build "
-            "more; it focuses on shipping cleanly what the plant already builds. That is high-return operational improvement, because the "
-            "volume has already been paid for. Recovering even half of the clean-exit gap would do more for "
-            "the plant's reliability than any throughput initiative, at a fraction of the cost."
+            f"Para enmarcar el valor en una línea: la planta ya fabrica {TOTAL:,} vehículos según plan, pero solo unos "
+            f"{ON_TIME_READY:,} salen hoy listos y a tiempo. El paquete correctivo no pide fabricar más; se centra en expedir limpiamente "
+            "lo que la planta ya fabrica. Eso es mejora operativa de alto retorno, porque el volumen ya está pagado. Recuperar incluso la mitad "
+            "de la brecha de salida limpia haría más por la fiabilidad de la planta que cualquier iniciativa de caudal productivo, a una fracción del coste."
         )
     )
-    st.append(h2("Implementation roadmap"))
+    st.append(h2("Roadmap de implementación"))
     st.append(
         p(
-            "The recommendations should not be launched as one large programme. The first wave should change rules and operating "
-            "discipline, because those actions are reversible and will generate the calibration data needed for any later capital "
-            "case. Physical capacity should be the second wave, not the starting point, unless the pilot proves that the charging "
-            "or staging constraint remains binding after sequencing and reservation are enforced."
+            "Las recomendaciones no deben lanzarse como un gran programa único. La primera ola debe cambiar reglas y disciplina operativa, porque esas "
+            "acciones son reversibles y generarán los datos de calibración necesarios para cualquier caso de capital posterior. La capacidad física debe ser "
+            "segunda ola, no punto de partida, salvo que el piloto pruebe que la restricción de carga o espera preexpedición sigue siendo vinculante después de imponer "
+            "secuenciación y reserva."
         )
     )
     st += data_table(
-        ["Horizon", "Actions", "Exit criteria"],
+        ["Horizonte", "Acciones", "Criterio de salida"],
         [
             [
-                "0-2 weeks",
-                "Freeze acceleration of EV mix; define readiness window; introduce staging occupancy cap; publish daily clean-exit metric.",
-                "Clean-exit rate tracked daily; no vehicle pulled into pre-dispatch staging without confirmed dispatch slot.",
+                "0-2 semanas",
+                "Congelar aceleración de la cuota EV; definir ventana de preparación; introducir límite de ocupación en espera preexpedición; publicar métrica diaria de salida limpia.",
+                "Tasa de salida limpia monitorizada a diario; ningún vehículo entra en espera preexpedición sin ventana de expedición confirmada.",
             ],
             [
-                "2-6 weeks",
-                "Reserve EV charging slots by version and shift; rebalance pre-dispatch buffer by outbound window; run shift-level control room review.",
-                "EV readiness improves week over week; pre-dispatch blocking rate falls; no deterioration in total throughput.",
+                "2-6 semanas",
+                "Reservar puntos de carga EV por versión y turno; rebalancear el pulmón preexpedición por ventana de salida; revisar sala de control por turno.",
+                "La preparación EV mejora semana a semana; baja el bloqueo preexpedición; no se deteriora el caudal productivo total.",
             ],
             [
-                "6-12 weeks",
-                "Test peak charging capacity and staffing changes; compare observed elasticity against scenario assumptions.",
-                "Measured response supports or rejects charger expansion and yard redesign investment case.",
+                "6-12 semanas",
+                "Probar capacidad de carga en picos y cambios de dotación; comparar elasticidad observada contra supuestos de escenario.",
+                "La respuesta medida respalda o rechaza el caso de inversión en expansión de cargadores y rediseño de patio.",
             ],
             [
-                "Before capital",
-                "Recalibrate scenario model with plant history; refresh OPI weights with operations leadership; rerun release gate.",
-                "Decision pack separates confirmed operational gains from assumptions requiring investment approval.",
+                "Antes de capital",
+                "Recalibrar modelo de escenarios con historial de planta; refrescar pesos OPI con liderazgo de operaciones; reejecutar puerta de publicación.",
+                "El paquete de decisión separa ganancias operativas confirmadas de supuestos que requieren aprobación de inversión.",
             ],
         ],
         [CONTENT_W * 0.16, CONTENT_W * 0.46, CONTENT_W * 0.38],
     )
-    st.append(h2("Management controls"))
+    st.append(h2("Controles de gestión"))
     st.append(
         p(
-            "The control set should be small enough to run every day. Track clean-exit rate, EV readiness rate, pre-dispatch staging "
-            "blocking, peak charging wait, late-dispatch minutes by version and OPI top-two stability. The first four metrics tell "
-            "the plant whether the intervention is working; the last two prevent the organisation from declaring victory because "
-            "one symptom improved while the root bottleneck moved somewhere else."
+            "El set de control debe ser lo bastante pequeño para ejecutarse cada día. Seguir tasa de salida limpia, tasa de preparación EV, bloqueo "
+            "de espera preexpedición, espera de carga en pico, minutos de retraso por versión y estabilidad de las dos primeras áreas del OPI. Las primeras cuatro métricas "
+            "dicen si la intervención funciona; las dos últimas evitan declarar victoria porque mejora un síntoma mientras el cuello raíz se mueve a otro sitio."
         )
     )
     st += data_table(
-        ["Control", "Owner", "Operating trigger"],
+        ["Control", "Responsable", "Disparador operativo"],
         [
             [
-                "Clean-exit rate",
-                "Plant manager",
-                "Daily rate fails to improve for five operating days after staging and readiness rules go live.",
+                "Tasa de salida limpia",
+                "Director de planta",
+                "La tasa diaria no mejora durante cinco días operativos tras activar reglas de espera preexpedición y preparación.",
             ],
             [
-                "EV readiness rate",
-                "Logistics / Charging",
-                "EV versions remain below the agreed target after reserved slots are introduced.",
+                "Tasa de preparación EV",
+                "Logística / Carga",
+                "Las versiones EV siguen por debajo del objetivo acordado tras introducir puntos de carga reservados.",
             ],
             [
-                "Pre-dispatch blocking",
-                "Yard",
-                "Blocking does not fall after occupancy caps and destination-window segmentation are enforced.",
+                "Bloqueo preexpedición",
+                "Patio",
+                "El bloqueo no baja tras aplicar límites de ocupación y segmentación por ventana de destino.",
             ],
             [
-                "Peak charging wait",
-                "Energy / Charging",
-                "Wait time rises while readiness improves, signalling the point where slotting is no longer enough.",
+                "Espera de carga en pico",
+                "Energía / Carga",
+                "La espera sube mientras mejora la preparación, señal de que la asignación de puntos de carga ya no basta.",
             ],
             [
-                "Late minutes by version",
-                "Operations analytics",
-                "Delay concentration shifts away from the four EV versions, indicating the bottleneck has moved.",
+                "Minutos tardíos por versión",
+                "Analítica de operaciones",
+                "La concentración de retraso se desplaza fuera de las cuatro versiones EV, indicando que el cuello se ha movido.",
             ],
             [
-                "OPI top-two stability",
-                "Operations analytics",
-                "Logistics and Yard stop ranking in the top two under the latest operating data.",
+                "Estabilidad de las dos primeras áreas OPI",
+                "Analítica de operaciones",
+                "Logística y Patio dejan de estar entre las dos primeras con los últimos datos operativos.",
             ],
         ],
         [CONTENT_W * 0.26, CONTENT_W * 0.24, CONTENT_W * 0.50],
     )
     st.append(PageBreak())
 
-    # ============================================================= 13. FURTHER QUESTIONS
-    st += h1("Further questions for real deployment", "Section 13")
+    # ============================================================= 13. PREGUNTAS ABIERTAS
+    st += h1("Preguntas adicionales para despliegue real", "Sección 13")
     st.append(
         lead(
-            "The report is decision-ready for a synthetic operating twin and method demonstration. A real plant deployment would "
-            "need five additional answers before the analysis could support capital approval or contractual commitments."
+            "El informe está listo para decisión como gemelo operativo sintético y demostración metodológica. Un despliegue en planta real necesitaría "
+            "cinco respuestas adicionales antes de apoyar aprobación de capital o compromisos contractuales."
         )
     )
     st += data_table(
-        ["Question", "Why it matters", "Evidence needed"],
+        ["Pregunta", "Por qué importa", "Evidencia necesaria"],
         [
             [
-                "What is the plant's true service-level definition of a clean exit?",
-                "The report uses readiness plus a two-hour late threshold; the plant may manage to different customer windows.",
-                "Outbound SLA, carrier window rules, customer penalty logic and accepted exception codes.",
+                "¿Cuál es la definición real de nivel de servicio para una salida limpia?",
+                "El informe usa preparación más umbral de dos horas; la planta puede gestionar ventanas cliente distintas.",
+                "SLA de salida, reglas de ventanas de transportista, lógica de penalizaciones cliente y códigos de excepción aceptados.",
             ],
             [
-                "Which charging failures are capacity, scheduling or SOC-confirmation failures?",
-                "The operating response differs: add hardware, reserve slots or change inspection/sign-off process.",
-                "Session timestamps, charger availability, SOC target misses, interruption reasons and manual override logs.",
+                "¿Qué fallos de carga son de capacidad, programación o confirmación de SOC?",
+                "La respuesta operativa cambia: añadir equipamiento, reservar puntos de carga o modificar inspección/firma.",
+                "Marcas temporales de sesión, disponibilidad de cargadores, incumplimientos de SOC objetivo, causas de interrupción y registros de excepciones manuales.",
             ],
             [
-                "How much staging dwell is avoidable versus policy-driven?",
-                "Some dwell may be intentional batching for outbound routes; only avoidable dwell should drive a redesign case.",
-                "Dispatch-slot assignment, destination grouping, carrier arrival records and yard movement intent codes.",
+                "¿Cuánta permanencia de espera preexpedición es evitable frente a inducido por política?",
+                "Parte de la permanencia puede ser batching intencional para rutas de salida; solo la permanencia evitable debe impulsar un rediseño.",
+                "Asignación de ventanas de expedición, agrupación por destino, llegadas de transportistas y códigos de intención de movimiento de patio.",
             ],
             [
-                "What elasticity does each intervention show in practice?",
-                "Scenario impacts are assumptions until observed on the plant's own process.",
-                "Pilot design with pre/post windows, stable demand mix and measured response on readiness, dwell and late exits.",
+                "¿Qué elasticidad muestra cada intervención en la práctica?",
+                "Los impactos de escenario son supuestos hasta observarse en el proceso propio de la planta.",
+                "Diseño piloto con ventanas antes/después, composición de demanda estable y respuesta medida en preparación, permanencia y salidas tardías.",
             ],
             [
-                "How should the scorecard weight cost, capex and service penalties?",
-                "The current model ranks operational outcomes, not financial return.",
-                "Cost of chargers, yard changes, overtime, carrier penalties, working-capital impact and customer-service penalties.",
+                "¿Cómo debe ponderar la cuadro de mando coste, capex y penalizaciones de servicio?",
+                "El modelo actual ordena resultados operativos, no retorno financiero.",
+                "Coste de cargadores, cambios de patio, horas extra, penalizaciones de transportista, impacto en capital circulante y penalizaciones cliente.",
             ],
         ],
         [CONTENT_W * 0.29, CONTENT_W * 0.34, CONTENT_W * 0.37],
     )
     st.append(
         p(
-            "None of these questions blocks the operating recommendations. They do block a capital business case. That is the "
-            "right governance boundary: use the diagnostic to fix rule-based leakage now, and use the implementation period to "
-            "turn the synthetic scenario twin into a calibrated investment model."
+            "Ninguna de estas preguntas bloquea las recomendaciones operativas. Sí bloquean un caso de negocio de capital. Ese es el límite correcto "
+            "de gobernanza: usar el diagnóstico para corregir ahora fugas basadas en reglas y usar el periodo de implantación para convertir el gemelo "
+            "sintético de escenarios en un modelo de inversión calibrado."
         )
     )
     st.append(PageBreak())
 
-    # ============================================================= 14. APPENDIX
-    st += h1("Appendix", "Section 14")
-    bottleneck_cause_en = {"BLOQUEO_INTERNO_Y_REUBICACION": "Internal blocking and relocation"}
+    # ============================================================= 14. APÉNDICE
+    st += h1("Apéndice", "Sección 14")
+    bottleneck_cause_es = {"BLOQUEO_INTERNO_Y_REUBICACION": "Bloqueo interno y reubicación"}
     st += h2_table(
-        "A. Operational KPI summary",
-        ["Metric", "Value"],
+        "A. Resumen de KPI operativos",
+        ["Métrica", "Valor"],
         [
-            ["Total vehicle-orders", f"{TOTAL:,}"],
-            ["Throughput gap to plan", f"{int(kpi['throughput_gap'])}"],
-            ["EV share of flow", pct(SHARE_EV, 1)],
-            ["Mean yard dwell", f"{DWELL_MEAN_H:.1f} h"],
-            ["p95 yard dwell", f"{DWELL_P95_H:.1f} h"],
-            ["Mean charging wait", f"{WAIT_CHARGE:.0f} min"],
-            ["Mean charger utilisation", pct(CHARGER_UTIL, 1)],
-            ["Vehicles not ready at dispatch", f"{NO_READY:,}"],
-            ["Late-dispatch ratio", pct(RATIO_LATE, 1)],
-            ["Clean-exit rate (on time and ready)", pct(CLEAN_EXIT_RATE, 1)],
-            ["Global readiness score", f"{READINESS_GLOBAL:.1f}"],
+            ["Órdenes-vehículo totales", f"{TOTAL:,}"],
+            ["Brecha de caudal productivo frente al plan", f"{int(kpi['throughput_gap'])}"],
+            ["Cuota EV del flujo", pct(SHARE_EV, 1)],
+            ["Permanencia media en patio", f"{DWELL_MEAN_H:.1f} h"],
+            ["Permanencia p95 en patio", f"{DWELL_P95_H:.1f} h"],
+            ["Espera media de carga", f"{WAIT_CHARGE:.0f} min"],
+            ["Utilización media de cargadores", pct(CHARGER_UTIL, 1)],
+            ["Vehículos no listos en expedición", f"{NO_READY:,}"],
+            ["Ratio de expedición tardía", pct(RATIO_LATE, 1)],
+            ["Tasa de salida limpia (a tiempo y lista)", pct(CLEAN_EXIT_RATE, 1)],
+            ["Puntuación global de preparación", f"{READINESS_GLOBAL:.1f}"],
             [
-                "Principal bottleneck cause",
-                bottleneck_cause_en.get(
+                "Causa principal de cuello",
+                bottleneck_cause_es.get(
                     str(kpi["causa_principal_cuello"]), str(kpi["causa_principal_cuello"]).replace("_", " ").title()
                 ),
             ],
             [
-                "Area of greatest throughput loss",
-                AREA_NAME_EN.get(
+                "Área de mayor pérdida de caudal productivo",
+                AREA_NAME_ES.get(
                     str(kpi["area_mayor_perdida_throughput"]), str(kpi["area_mayor_perdida_throughput"]).title()
                 ),
             ],
@@ -1829,31 +1876,31 @@ def build_story() -> list:
         aligns={1: "RIGHT"},
     )
     st += h2_table(
-        "B. EV versus ICE pressure scores",
-        ["Driver", "EV", "ICE"],
+        "B. Puntuaciones de presión EV frente a ICE",
+        ["Factor", "EV", "ICE"],
         [
             [
-                "Sequence disruption",
+                "Disrupción de secuencia",
                 f"{evice.set_index('tipo_propulsion').loc['EV', 'sequence_disruption_score']:.1f}",
                 f"{evice.set_index('tipo_propulsion').loc['ICE', 'sequence_disruption_score']:.1f}",
             ],
             [
-                "Yard congestion",
+                "Congestión de patio",
                 f"{evice.set_index('tipo_propulsion').loc['EV', 'yard_congestion_score']:.1f}",
                 f"{evice.set_index('tipo_propulsion').loc['ICE', 'yard_congestion_score']:.1f}",
             ],
             [
-                "Charging pressure",
+                "Presión de carga",
                 f"{evice.set_index('tipo_propulsion').loc['EV', 'charging_pressure_score']:.1f}",
                 f"{evice.set_index('tipo_propulsion').loc['ICE', 'charging_pressure_score']:.1f}",
             ],
             [
-                "Dispatch-delay risk",
+                "Riesgo de retraso en expedición",
                 f"{evice.set_index('tipo_propulsion').loc['EV', 'dispatch_delay_risk_score']:.1f}",
                 f"{evice.set_index('tipo_propulsion').loc['ICE', 'dispatch_delay_risk_score']:.1f}",
             ],
             [
-                "Launch-transition stress",
+                "Estrés de transición de lanzamiento",
                 f"{evice.set_index('tipo_propulsion').loc['EV', 'launch_transition_stress_score']:.1f}",
                 f"{evice.set_index('tipo_propulsion').loc['ICE', 'launch_transition_stress_score']:.1f}",
             ],
@@ -1862,8 +1909,8 @@ def build_story() -> list:
         aligns={1: "CENTER", 2: "CENTER"},
     )
     st += h2_table(
-        "C. Readiness by version",
-        ["Propulsion", "Version", "Orders", "Readiness"],
+        "C. Preparación por versión",
+        ["Propulsión", "Versión", "Órdenes", "Preparación"],
         [
             [
                 r["tipo_propulsion"],
@@ -1876,19 +1923,19 @@ def build_story() -> list:
         [CONTENT_W * 0.18, CONTENT_W * 0.38, CONTENT_W * 0.22, CONTENT_W * 0.22],
         aligns={2: "RIGHT", 3: "RIGHT"},
     )
-    lever_name_en = {
-        "capacidad_carga": "Charging capacity",
-        "secuenciacion_ev": "EV sequencing",
-        "gestion_patio": "Yard management",
-        "disciplina_expedicion": "Dispatch discipline",
-        "resiliencia_turno": "Shift resilience",
+    lever_name_es = {
+        "capacidad_carga": "Capacidad de carga",
+        "secuenciacion_ev": "Secuenciación EV",
+        "gestion_patio": "Gestión de patio",
+        "disciplina_expedicion": "Disciplina de expedición",
+        "resiliencia_turno": "Resiliencia de turno",
     }
     st += h2_table(
-        "D. Capacity levers by expected impact",
-        ["Lever", "Expected impact"],
+        "D. Palancas de capacidad por impacto esperado",
+        ["Palanca", "Impacto esperado"],
         [
             [
-                lever_name_en.get(lv["palanca"], lv["palanca"].replace("_", " ").capitalize()),
+                lever_name_es.get(lv["palanca"], lv["palanca"].replace("_", " ").capitalize()),
                 f"{lv['impacto_esperado']:.2f}",
             ]
             for _, lv in levers.sort_values("impacto_esperado", ascending=False).iterrows()
@@ -1896,17 +1943,17 @@ def build_story() -> list:
         [CONTENT_W * 0.62, CONTENT_W * 0.38],
         aligns={1: "RIGHT"},
     )
-    # (English label, display as a percentage of its own value rather than a raw score)
+    # Etiqueta en español; algunas métricas se muestran como porcentaje de su valor.
     delta_metric_labels = {
-        "throughput": ("Throughput", False),
-        "tiempo_total_interno": ("Internal time", False),
-        "ocupacion_media_patio": ("Average yard occupancy", True),
-        "ocupacion_pico_patio": ("Peak yard occupancy", True),
-        "espera_carga": ("Charging wait (min)", False),
-        "riesgo_salida_baja_readiness": ("Low-readiness dispatch risk", False),
-        "riesgo_congestion": ("Congestion risk", False),
-        "vehiculos_retrasados": ("Late vehicles", True),
-        "estabilidad_operativa": ("Operational stability", False),
+        "throughput": ("Caudal productivo", False),
+        "tiempo_total_interno": ("Tiempo interno", False),
+        "ocupacion_media_patio": ("Ocupación media de patio", True),
+        "ocupacion_pico_patio": ("Ocupación pico de patio", True),
+        "espera_carga": ("Espera de carga (min)", False),
+        "riesgo_salida_baja_readiness": ("Riesgo de salida con baja preparación", False),
+        "riesgo_congestion": ("Riesgo de congestión", False),
+        "vehiculos_retrasados": ("Vehículos retrasados", True),
+        "estabilidad_operativa": ("Estabilidad operativa", False),
     }
 
     def _delta_value(x: float, as_pct: bool) -> str:
@@ -1915,8 +1962,8 @@ def build_story() -> list:
         return f"{x:.3f}" if abs(x) < 10 else f"{x:.1f}"
 
     st += h2_table(
-        "E. Corrective package delta summary",
-        ["Metric", "Base", "Corrective", "Delta"],
+        "E. Resumen de deltas del paquete correctivo",
+        ["Métrica", "Base", "Correctivo", "Delta"],
         [
             [
                 delta_metric_labels.get(r["metrica"], (r["metrica"].replace("_", " ").capitalize(), False))[0],
@@ -1930,18 +1977,18 @@ def build_story() -> list:
         aligns={1: "RIGHT", 2: "RIGHT", 3: "RIGHT"},
     )
     st += h2_table(
-        "F. Ranking stability detail",
-        ["Test", "Result"],
+        "F. Detalle de estabilidad de la clasificación",
+        ["Prueba", "Resultado"],
         [
-            ["Monte Carlo top-1: Logistics", pct(TOP1_LOGISTICS, 1)],
-            ["Monte Carlo top-1: Yard", pct(TOP1_YARD, 1)],
-            ["Sensitivity cases tested", f"{len(sensitivity)}"],
+            ["Monte Carlo: primer puesto: Logística", pct(TOP1_LOGISTICS, 1)],
+            ["Monte Carlo: primer puesto: Patio", pct(TOP1_YARD, 1)],
+            ["Casos de sensibilidad probados", f"{len(sensitivity)}"],
             [
-                "Top-three pattern across sensitivity",
+                "Patrón de las tres primeras áreas en sensibilidad",
                 "; ".join(
                     sorted(
                         {
-                            ", ".join(AREA_NAME_EN.get(a, a.title()) for a in areas.split(","))
+                            ", ".join(AREA_NAME_ES.get(a, a.title()) for a in areas.split(","))
                             for areas in sensitivity["top3_areas"]
                         }
                     )
@@ -1951,38 +1998,42 @@ def build_story() -> list:
         [CONTENT_W * 0.42, CONTENT_W * 0.58],
     )
     figs = [
-        "Fig 1 Daily throughput",
-        "Fig 2 Weekly EV share",
-        "Fig 3 Dispatch funnel",
-        "Fig 4 EV vs ICE pressure",
-        "Fig 5 Readiness cohort",
-        "Fig 6 Delay concentration",
-        "Fig 7 Lead-time distribution",
-        "Fig 8 Readiness heatmap",
-        "Fig 9 Yard zone congestion",
-        "Fig 10 OPI ranking",
-        "Fig 11 Risk matrix",
-        "Fig 12 Driver correlation",
-        "Fig 13 Transition trend",
-        "Fig 14 Market geography",
-        "Fig 15 Scenario decision",
-        "Fig 16 Scenario trade-off",
-        "Fig 17 Before vs after",
-        "Fig 18 Lever ranking",
-        "Fig 19 Monte Carlo stability",
+        "Fig. 1 Caudal productivo diario",
+        "Fig. 2 Cuota EV semanal",
+        "Fig. 3 Funnel de expedición",
+        "Fig. 4 Presión EV vs ICE",
+        "Fig. 5 Cohorte de preparación",
+        "Fig. 6 Concentración de retraso",
+        "Fig. 7 Distribución de tiempo de paso",
+        "Fig. 8 Heatmap de preparación",
+        "Fig. 9 Congestión por zona de patio",
+        "Fig. 10 Ranking OPI",
+        "Fig. 11 Matriz de riesgo",
+        "Fig. 12 Correlación de factores",
+        "Fig. 13 Tendencia de transición",
+        "Fig. 14 Geografía de mercado",
+        "Fig. 15 Decisión de escenario",
+        "Fig. 16 Trade-off de escenario",
+        "Fig. 17 Antes vs después",
+        "Fig. 18 Ranking de palancas",
+        "Fig. 19 Estabilidad Monte Carlo",
     ]
     rows = [[figs[i], figs[i + 1] if i + 1 < len(figs) else ""] for i in range(0, len(figs), 2)]
     st += h2_table(
-        "G. Figure index", ["Figure", "Figure"], rows, [CONTENT_W * 0.5, CONTENT_W * 0.5], highlight_first_col=False
+        "G. Índice de figuras",
+        ["Figura", "Figura"],
+        rows,
+        [CONTENT_W * 0.5, CONTENT_W * 0.5],
+        highlight_first_col=False,
     )
     return st
 
 
 def main() -> None:
-    doc = Report(str(PDF), title="Operating Twin for the EV Van Transition", author="Operations Analytics")
+    doc = Report(str(PDF), title="Gemelo operativo para la transición a vans EV", author="Analítica de operaciones")
     story = build_story()
     doc.multiBuild(story)
-    print(f"OK - report at {PDF.relative_to(ROOT)}")
+    print(f"OK - informe en {PDF.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

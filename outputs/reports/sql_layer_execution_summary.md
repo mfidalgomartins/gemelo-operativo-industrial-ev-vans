@@ -1,7 +1,7 @@
-# SQL Layer Execution Summary (DuckDB)
+# Resumen de Ejecución de la Capa SQL (DuckDB)
 
 - Base de datos: `data/processed/gemelo_operativo_ev.duckdb`
-- Fuente raw EV: `data/raw/ev_factory`
+- Fuente EV de origen: `data/raw/ev_factory`
 - Scripts ejecutados: 11
 
 ## Orden de ejecución

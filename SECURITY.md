@@ -1,36 +1,27 @@
-# Security Policy
+# Seguridad
 
-## Scope
+## Alcance
 
-This repository is a **decision-support analytics project built entirely on
-synthetic data**. It contains no production systems, no real operational data,
-and no secrets. The main security surface is the software supply chain and the
-code that builds the published artifacts.
+Este repositorio es un proyecto analítico de apoyo a decisión construido íntegramente con datos sintéticos. No contiene sistemas productivos, datos operativos reales ni secretos. La superficie principal de seguridad es la cadena de suministro de software y el código que genera los artefactos publicados.
 
-CI enforces two automated checks on every push and pull request:
+CI ejecuta dos comprobaciones automatizadas en cada push y pull request:
 
-- **bandit** — static security analysis of `src/`.
-- **pip-audit** — dependency vulnerability audit (`--strict`).
+- **bandit**: análisis estático de seguridad sobre `src/`.
+- **pip-audit**: auditoría estricta de vulnerabilidades de dependencias.
 
-## Supported versions
+## Versiones soportadas
 
-The latest release on `main` is the only supported version.
+La última versión en `main` es la única soportada.
 
-| Version | Supported |
+| Versión | Soporte |
 |---|---|
-| 1.x (latest on `main`) | ✅ |
-| older | ❌ |
+| `main` | Sí |
+| Otras ramas | No |
 
-## Reporting a vulnerability
+## Reporte de vulnerabilidades
 
-If you find a security issue (for example a vulnerable dependency, a code path
-that could execute untrusted input, or a supply-chain concern):
+Si encuentras un problema de seguridad, por ejemplo una dependencia vulnerable, una ruta de código explotable o exposición accidental de secretos:
 
-1. **Do not** open a public issue for anything exploitable.
-2. Use GitHub's **private vulnerability reporting** (the *Report a vulnerability*
-   button under the repository's **Security** tab), or contact the maintainer
-   directly via the email on the GitHub profile.
-3. Please include reproduction steps and the affected version/commit.
-
-You can expect an acknowledgement within a few days. Fixes for confirmed issues
-are prioritised on `main`.
+1. No abras una incidencia pública para nada explotable.
+2. Usa el reporte privado de vulnerabilidades de GitHub en la pestaña **Security**, o contacta al mantenedor mediante el correo del perfil de GitHub.
+3. Incluye pasos de reproducción y la versión o commit afectado.

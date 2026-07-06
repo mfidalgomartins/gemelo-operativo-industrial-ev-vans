@@ -348,8 +348,8 @@ def _write_validation_summary(
     checks: list[dict[str, object]],
     cardinalidades: dict[str, int],
 ) -> dict[str, object]:
-    period_start_label = "N/A" if pd.isna(period_start) else str(period_start.date())
-    period_end_label = "N/A" if pd.isna(period_end) else str(period_end.date())
+    period_start_label = "Sin dato" if pd.isna(period_start) else str(period_start.date())
+    period_end_label = "Sin dato" if pd.isna(period_end) else str(period_end.date())
 
     summary = {
         "status_global": status_global,

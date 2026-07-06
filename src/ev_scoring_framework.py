@@ -26,6 +26,29 @@ AREA_REQUIRED_COLUMNS = [
 DIAGNOSTIC_REQUIRED_COLUMNS = ["area", "main_bottleneck_driver"]
 LAUNCH_REQUIRED_COLUMNS = ["share_ev", "charging_capacity_gap", "yard_transition_stress_index"]
 
+RISK_DRIVER_LABELS = {
+    "throughput_loss_score": "pérdida de caudal productivo",
+    "yard_risk_score": "riesgo de patio",
+    "charging_risk_score": "riesgo de carga",
+    "dispatch_risk_score": "riesgo de expedición",
+    "launch_transition_risk_score": "riesgo de transición",
+    "readiness_score": "preparación de salida",
+}
+
+GOVERNANCE_LABELS = {
+    "opi_diversity": "diversidad del OPI",
+    "risk_driver_diversity": "diversidad de factores de riesgo",
+    "tier_diversity": "diversidad de niveles",
+    "opi_dispersion": "dispersión del OPI",
+    "rank_stability_top1_share": "estabilidad del primer puesto",
+}
+
+STATUS_LABELS = {
+    "PASS": "OK",
+    "WARN": "ALERTA",
+    "FAIL": "FALLO",
+}
+
 
 @dataclass
 class ScoringResult:
@@ -55,7 +78,7 @@ def _normalize_percentile(series: pd.Series, q_hi: float = 0.95) -> pd.Series:
 def _map_action(driver: str) -> str:
     mapping = {
         "charging_risk_score": "ampliar infraestructura de carga",
-        "yard_risk_score": "revisar política de buffer en patio",
+        "yard_risk_score": "revisar política de pulmón en patio",
         "dispatch_risk_score": "priorizar expedición selectiva",
         "throughput_loss_score": "ajustar turnos o recursos",
         "readiness_score": "cambiar lógica de secuenciación",
@@ -98,7 +121,7 @@ def run_ev_scoring_framework() -> ScoringResult:
         operational_stress_score=("operational_stress_score", "mean"),
     )
 
-    # Normalizaciones robustas a escala del dataset para evitar colapso de scores.
+    # Normalizaciones robustas a escala del dataset para evitar colapso de puntuaciones.
     n_wait = _normalize_percentile(base["avg_wait_time"].clip(lower=0), 0.95)
     n_congestion = _normalize_percentile(base["congestion_index"].clip(lower=0), 0.95)
     n_slot = _normalize_percentile(base["slot_utilization"].clip(lower=0), 0.95)
@@ -177,8 +200,8 @@ def run_ev_scoring_framework() -> ScoringResult:
             + w["readiness_score"] * (100 - df["readiness_score"])
         )
 
-    # Find the driver with highest weighted OPI contribution.
-    # readiness_score is a quality score (high = good), so its contribution is inverted.
+    # Identifica el factor con mayor contribución ponderada al OPI.
+    # readiness_score es una señal de calidad (alto = bueno), por eso se invierte.
     opi_contribs = pd.DataFrame(
         {
             "yard_risk_score": weights["yard_risk_score"] * base["yard_risk_score"],
@@ -194,16 +217,19 @@ def run_ev_scoring_framework() -> ScoringResult:
     base["recommended_action"] = base["main_risk_driver"].map(_map_action)
     base["area_priority_tier"] = base["operational_priority_index"].apply(_map_tier)
 
-    # Añade lectura diagnóstica (modo de bottleneck driver)
+    # Añade lectura diagnóstica (factor dominante del cuello).
     diag_driver = diagnostic.groupby("area", as_index=False).agg(
-        main_bottleneck_driver=("main_bottleneck_driver", lambda s: s.mode().iat[0] if not s.mode().empty else "N/A")
+        main_bottleneck_driver=(
+            "main_bottleneck_driver",
+            lambda s: s.mode().iat[0] if not s.mode().empty else "sin clasificar",
+        )
     )
     out = base.merge(diag_driver, on="area", how="left")
     out = out.sort_values("operational_priority_index", ascending=False)
 
     out.to_csv(EV_DIR / "operational_prioritization_table.csv", index=False)
 
-    # Sensibilidad: variación +/-20% de pesos de cada driver
+    # Sensibilidad: variación +/-20% de pesos de cada factor.
     sensitivity_rows: list[dict[str, object]] = []
     for col in [
         "yard_risk_score",
@@ -333,34 +359,38 @@ def run_ev_scoring_framework() -> ScoringResult:
     top_actions.to_csv(OUTPUT_REPORTS_DIR / "top_acciones_recomendadas.csv", index=False)
 
     summary_lines = [
-        "# Scoring y Priorización - Resumen",
+        "# Puntuación y Priorización - Resumen",
         "",
-        "## Top áreas críticas",
+        "## Principales áreas críticas",
     ]
     for row in top_areas.itertuples(index=False):
         summary_lines.append(
-            f"- {row.area}: OPI={row.operational_priority_index:.1f}, tier={row.area_priority_tier}, driver={row.main_risk_driver}, acción={row.recommended_action}"
+            f"- {row.area}: OPI={row.operational_priority_index:.1f}, nivel={row.area_priority_tier}, "
+            f"factor={RISK_DRIVER_LABELS.get(row.main_risk_driver, row.main_risk_driver)}, "
+            f"acción={row.recommended_action}"
         )
-    summary_lines.extend(["", "## Top acciones"])
+    summary_lines.extend(["", "## Principales acciones"])
     for row in top_actions.head(8).itertuples(index=False):
         summary_lines.append(
-            f"- {row.recommended_action}: prioridad_media={row.prioridad_media:.1f}, áreas_afectadas={int(row.areas_afectadas)}"
+            f"- {row.recommended_action}: prioridad media={row.prioridad_media:.1f}, áreas afectadas={int(row.areas_afectadas)}"
         )
     summary_lines.extend(
         [
             "",
-            "## Governance checks",
+            "## Comprobaciones de gobernanza",
         ]
     )
     for row in governance_df.itertuples(index=False):
-        summary_lines.append(f"- {row.check_name}: {row.status} (valor={row.value:.2f}, umbral={row.threshold:.2f})")
+        label = GOVERNANCE_LABELS.get(row.check_name, row.check_name)
+        status_label = STATUS_LABELS.get(row.status, row.status)
+        summary_lines.append(f"- {label}: {status_label} (valor={row.value:.2f}, umbral={row.threshold:.2f})")
     if not rank_stability.empty:
         summary_lines.extend(
             [
                 "",
-                "## Estabilidad Monte Carlo (top-1)",
+                "## Estabilidad Monte Carlo (primer puesto)",
                 f"- Área dominante: {rank_stability.iloc[0]['top1_area']}",
-                f"- Frecuencia top-1: {rank_stability.iloc[0]['freq_share']:.2%}",
+                f"- Frecuencia del primer puesto: {rank_stability.iloc[0]['freq_share']:.2%}",
             ]
         )
 
@@ -371,6 +401,6 @@ def run_ev_scoring_framework() -> ScoringResult:
 
 if __name__ == "__main__":
     res = run_ev_scoring_framework()
-    print("Scoring framework EV completado")
+    print("Marco de puntuación EV completado")
     print(f"- áreas evaluadas: {res.areas}")
     print(f"- área top: {res.top_area}")

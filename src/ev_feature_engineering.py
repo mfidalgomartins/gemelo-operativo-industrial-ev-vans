@@ -297,7 +297,7 @@ def run_ev_feature_engineering() -> FeatureBuildResult:
         counts[name] = int(df.shape[0])
 
     summary_lines = [
-        "# Feature Engineering Summary",
+        "# Resumen de Ingeniería de Variables",
         "",
         "## Tablas generadas",
     ]
@@ -307,8 +307,8 @@ def run_ev_feature_engineering() -> FeatureBuildResult:
     summary_lines.extend(
         [
             "",
-            "## Features clave",
-            "- `readiness_risk_score_input`: base interpretable para scoring de readiness.",
+            "## Variables clave",
+            "- `readiness_risk_score_input`: base interpretable para puntuación de preparación.",
             "- `operational_stress_score`: señal sintética de estrés área-turno.",
             "- `charger_pressure_score`: cuantifica presión real de carga.",
             "- `yard_saturation_score`: captura congestión estructural del patio.",
@@ -323,6 +323,6 @@ def run_ev_feature_engineering() -> FeatureBuildResult:
 
 if __name__ == "__main__":
     result = run_ev_feature_engineering()
-    print("Feature engineering EV completado")
+    print("Ingeniería de variables EV completada")
     for table_name, rows in result.tables.items():
         print(f"- {table_name}: {rows}")

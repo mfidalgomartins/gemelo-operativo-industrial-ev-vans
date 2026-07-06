@@ -20,8 +20,8 @@ from src.ev_build_dashboard import (
 @pytest.mark.integration
 def test_ev_dashboard_official_build_manifest_and_single_html() -> None:
     OUTPUT_DASHBOARD_DIR.mkdir(parents=True, exist_ok=True)
-    legacy_candidate = OUTPUT_DASHBOARD_DIR / "legacy_dashboard_tmp.html"
-    legacy_candidate.write_text("<html><body>legacy</body></html>", encoding="utf-8")
+    inherited_candidate = OUTPUT_DASHBOARD_DIR / "panel_heredado_tmp.html"
+    inherited_candidate.write_text("<html><body>heredado</body></html>", encoding="utf-8")
 
     result = run_ev_build_dashboard()
     output_path = Path(result.path)
@@ -32,7 +32,7 @@ def test_ev_dashboard_official_build_manifest_and_single_html() -> None:
     assert len(html_files) == 1
     assert html_files[0].name == OFFICIAL_DASHBOARD_NAME
 
-    assert not legacy_candidate.exists()
+    assert not inherited_candidate.exists()
 
     manifest_path = OUTPUT_REPORTS_DIR / "dashboard_build_manifest.json"
     assert manifest_path.exists()

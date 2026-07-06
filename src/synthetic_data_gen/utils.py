@@ -26,7 +26,7 @@ def shift_from_timestamp(ts: pd.Timestamp) -> str:
 
 def clamp(value: float, low: float, high: float) -> float:
     if low > high:
-        raise ValueError("low no puede ser mayor que high.")
+        raise ValueError("El límite inferior no puede ser mayor que el superior.")
     return float(np.clip(value, low, high))
 
 

@@ -569,7 +569,7 @@ def generate_operational_tables(
         if fecha_real_salida > last_reference_ts and rng.random() < 0.60:
             fecha_real_salida = pd.NaT
 
-        # Un vehículo sin readiness queda retenido; no se simulan salidas en falso.
+        # Un vehículo sin preparación queda retenido; no se simulan salidas en falso.
         if readiness_flag == 0:
             fecha_real_salida = pd.NaT
 

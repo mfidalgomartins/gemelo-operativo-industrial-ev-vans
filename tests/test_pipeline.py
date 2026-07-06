@@ -85,7 +85,7 @@ def test_run_pipeline_executes_stages_in_order_and_writes_portable_summary(
     )
     monkeypatch.setattr(
         "src.run_pipeline.run_release_gate",
-        lambda: SimpleNamespace(approved=False, reason="Release bloqueado por validación"),
+        lambda: SimpleNamespace(approved=False, reason="Publicación bloqueada por validación"),
     )
 
     result = run_pipeline(generate_data=False)
@@ -103,7 +103,7 @@ def test_run_pipeline_executes_stages_in_order_and_writes_portable_summary(
         "dashboard_path": "outputs/dashboard/test-dashboard.html",
         "release_grade": "screening-grade only",
         "release_approved": False,
-        "release_reason": "Release bloqueado por validación",
+        "release_reason": "Publicación bloqueada por validación",
         "explore_report": "outputs/reports/explore_data_audit.md",
         "validation_status": "WARN",
     }
@@ -144,7 +144,7 @@ def test_run_pipeline_generation_uses_requested_seed_months_and_output_dirs(
     )
     monkeypatch.setattr(
         "src.run_pipeline.run_release_gate",
-        lambda: SimpleNamespace(approved=True, reason="Release apto para publicación"),
+        lambda: SimpleNamespace(approved=True, reason="Publicación apta"),
     )
 
     result = run_pipeline(generate_data=True, seed=99, months=3)

@@ -5,43 +5,43 @@
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Gemelo operativo reproducible que identifica dónde se rompe el flujo durante un ramp-up EV, cuánto cuesta y qué levers lo recuperan.
+Gemelo operativo reproducible que identifica dónde se rompe el flujo durante una rampa EV, cuánto cuesta y qué palancas lo recuperan.
 
 | | |
 |---|---|
-| **Dashboard interactivo** | [Abrir dashboard](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/) |
+| **Panel interactivo** | [Abrir panel](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/) |
 | **Informe analítico (PDF)** | [Descargar informe](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/reports/ev_transition_operating_twin_report.pdf) |
 
 ![Comparación del escenario base y el paquete de medidas correctivas](outputs/graphs/19_before_after.png)
 
 ## Alcance analítico
 
-El snapshot publicado cubre **58.697 vehículos**, **14 tablas operativas** y **13 meses**, desde el **1 de enero de 2025** hasta el **1 de enero de 2026**. Los datos sintéticos modelan tres fases de transición, desde pre-serie hasta estabilización, y conectan cada orden con su recorrido por producción, patio, carga, readiness y salida.
+El corte publicado cubre **58.697 vehículos**, **14 tablas operativas** y **13 meses**, desde el **1 de enero de 2025** hasta el **1 de enero de 2026**. Los datos sintéticos modelan tres fases de transición, desde pre-serie hasta estabilización, y conectan cada orden con su recorrido por producción, patio, carga, preparación y salida.
 
 | Pregunta de decisión | Salida principal |
 |---|---|
 | ¿Dónde se rompe el flujo? | Diagnóstico por área, turno, versión y vehículo |
-| ¿Qué presión introduce el mix EV? | Comparación EV/ICE y tendencia de transición |
+| ¿Qué presión introduce la cuota EV? | Comparación EV/ICE y tendencia de transición |
 | ¿Qué intervención priorizar? | Operational Priority Index, sensibilidad y Monte Carlo |
 | ¿Qué capacidad o regla cambiar? | Comparador paramétrico de escenarios |
-| ¿Se puede publicar el resultado? | Release gate con contratos de datos, KPI y dashboard |
+| ¿Se puede publicar el resultado? | Puerta de publicación con contratos de datos, KPI y panel |
 
 ## Resultados publicados
 
-- El throughput se mantiene cerca del plan, pero readiness y expedición concentran el riesgo operativo.
+- El caudal productivo se mantiene cerca del plan, pero la preparación y la expedición concentran el riesgo operativo.
 - `LOGISTICA` y `PATIO` lideran la priorización OPI; el ranking top-1 es estable en **77,33%** de las simulaciones Monte Carlo.
-- El paquete correctivo combina secuenciación, carga y gestión de patio para mejorar throughput, estabilidad y tiempo interno.
-- El release actual está en **PASS**, sin issues materiales, y limitado explícitamente a **decision-support only**.
+- El paquete correctivo combina secuenciación, carga y gestión de patio para mejorar caudal productivo, estabilidad y tiempo interno.
+- La publicación actual está **aprobada** (`PASS`), sin incidencias materiales, y limitada explícitamente a **apoyo a decisión**.
 
 ## Metodología
 
 1. Un generador determinista crea órdenes, activos, restricciones y eventos operativos sintéticos.
-2. Once scripts DuckDB construyen staging, vistas integradas, marts, KPI y checks de negocio.
-3. Python calcula features, diagnóstico, escenarios paramétricos y el Operational Priority Index.
+2. Once scripts DuckDB construyen preparación SQL, vistas integradas, marts, KPI y comprobaciones de negocio.
+3. Python calcula variables, diagnóstico, escenarios paramétricos y el Índice de Prioridad Operativa (OPI).
 4. Sensibilidad de pesos y Monte Carlo prueban la estabilidad del ranking.
-5. El release gate valida integridad, consistencia de métricas y contratos del dashboard.
+5. La puerta de publicación valida integridad, consistencia de métricas y contratos del panel.
 
-Los KPI oficiales provienen de `data/processed/ev_factory/kpi_operativos.csv`. `area_throughput_loss_proxy` atribuye impacto a eventos de bottleneck, pero no representa una estimación causal.
+Los KPI oficiales provienen de `data/processed/ev_factory/kpi_operativos.csv`. `area_throughput_loss_proxy` atribuye impacto a eventos de cuello de botella, pero no representa una estimación causal.
 
 ## Ejecución local
 
@@ -57,9 +57,9 @@ python scripts/generate_report.py
 python -m src.ev_release_gate
 ```
 
-El repositorio incluye un snapshot canónico de los CSV raw, marts y la base DuckDB. Los comandos anteriores regeneran los datos y artefactos de forma determinista.
+El repositorio incluye un corte canónico de los CSV de origen, marts y la base DuckDB. Los comandos anteriores regeneran los datos y artefactos de forma determinista.
 
-Para una guía operativa con orden real del pipeline, comandos parciales, outputs esperados y troubleshooting: [operator_quickstart.md](docs/operator_quickstart.md).
+Para una guía operativa con orden real de la canalización, comandos parciales, salidas esperadas y resolución de problemas: [operator_quickstart.md](docs/operator_quickstart.md).
 
 ## Verificación
 
@@ -80,27 +80,27 @@ salida canónica.
 
 ```text
 data/raw/ev_factory/          14 tablas sintéticas de origen
-data/processed/ev_factory/    marts, features, scores y KPI gobernados
+data/processed/ev_factory/    marts, variables, puntuaciones y KPI gobernados
 sql/ev_factory/               11 transformaciones DuckDB ordenadas
-src/                          pipeline, diagnóstico, escenarios y release gate
+src/                          canalización, diagnóstico, escenarios y puerta de publicación
 scripts/                      generación de 19 gráficos y del informe PDF
-tests/                        tests unitarios, integración y contratos públicos
+tests/                        pruebas unitarias, integración y contratos públicos
 docs/                         arquitectura, métricas, metodología y gobernanza
-outputs/dashboard/            dashboard HTML publicado en GitHub Pages
+outputs/dashboard/            panel HTML publicado en GitHub Pages
 outputs/graphs/               gráficos analíticos curados
-outputs/reports/              informe, manifests y validaciones
+outputs/reports/              informe, manifiestos y validaciones
 ```
 
-## Outputs principales
+## Salidas principales
 
-| Output | Ruta |
+| Salida | Ruta |
 |---|---|
-| Dashboard oficial | `outputs/dashboard/industrial-ev-operating-command-center.html` |
+| Panel oficial | `outputs/dashboard/industrial-ev-operating-command-center.html` |
 | Informe PDF | `outputs/reports/ev_transition_operating_twin_report.pdf` |
 | KPI gobernados | `data/processed/ev_factory/kpi_operativos.csv` |
 | Priorización OPI | `data/processed/ev_factory/operational_prioritization_table.csv` |
 | Escenarios | `data/processed/ev_factory/scenario_table.csv` |
-| Release readiness | `outputs/reports/release_readiness.json` |
+| Preparación de publicación | `outputs/reports/release_readiness.json` |
 
 ## Límites de uso
 
@@ -108,8 +108,8 @@ outputs/reports/              informe, manifests y validaciones
 - Las elasticidades de escenarios son supuestos paramétricos, no estimaciones causales.
 - Pesos, umbrales, restricciones y capacidad requieren calibración antes de uso operacional.
 - El sistema sirve para arquitectura analítica, diagnóstico y apoyo a decisión; no para compromisos de inversión sin validación independiente.
-- El dashboard es estático, pero carga Chart.js y fuentes web desde CDN.
+- El panel es estático, pero carga Chart.js y fuentes web desde CDN.
 
-Detalles técnicos: [quickstart operativo](docs/operator_quickstart.md), [contratos de datos y caveats](docs/data_contracts_and_caveats.md), [arquitectura SQL](docs/sql_architecture.md), [definiciones de métricas](docs/sql_metric_definitions.md), [scoring](docs/scoring_framework.md), [gobernanza de KPI](docs/governance/kpi_governance_contract.md) y [release gates](docs/governance/release_gates.md).
+Detalles técnicos: [arranque operativo](docs/operator_quickstart.md), [contratos de datos y advertencias](docs/data_contracts_and_caveats.md), [arquitectura SQL](docs/sql_architecture.md), [definiciones de métricas](docs/sql_metric_definitions.md), [puntuación](docs/scoring_framework.md), [gobernanza de KPI](docs/governance/kpi_governance_contract.md) y [puertas de publicación](docs/governance/release_gates.md).
 
 Licencia: [MIT](LICENSE).

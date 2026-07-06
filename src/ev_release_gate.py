@@ -14,6 +14,19 @@ class ReleaseGateResult:
     reason: str
 
 
+RELEASE_GRADE_LABELS = {
+    "decision-support only": "solo apoyo a decisión",
+    "screening-grade only": "solo screening",
+    "publish-blocked": "publicación bloqueada",
+    "not committee-grade": "no apto para comité",
+    "unknown": "desconocido",
+}
+
+
+def _release_grade_label(value: str) -> str:
+    return RELEASE_GRADE_LABELS.get(value, value)
+
+
 def _read_json_object(path: Path, label: str) -> tuple[dict[str, object] | None, str | None]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -48,24 +61,26 @@ def run_release_gate() -> ReleaseGateResult:
     publish_blocked = bool(readiness.get("publish_blocked", True))
     checks = manifest.get("checks", {})
     if not isinstance(checks, dict):
-        return ReleaseGateResult(False, release_grade, "Dashboard manifest sin objeto checks válido")
+        return ReleaseGateResult(False, release_grade, "Manifiesto del panel sin objeto de comprobaciones válido")
     dashboard_checks_ok = all(bool(v) for v in checks.values())
     kpi_ssot_ok = bool(readiness.get("kpi_single_source_of_truth", False))
 
     if publish_blocked:
-        return ReleaseGateResult(False, release_grade, "Release bloqueado por validación")
+        return ReleaseGateResult(False, release_grade, "Publicación bloqueada por validación")
     if not kpi_ssot_ok:
-        return ReleaseGateResult(False, release_grade, "KPI source of truth inconsistente (artefacto legacy detectado)")
+        return ReleaseGateResult(
+            False, release_grade, "Fuente única de verdad KPI inconsistente (artefacto heredado detectado)"
+        )
     if not dashboard_checks_ok:
-        return ReleaseGateResult(False, release_grade, "Dashboard manifest con checks en WARN")
+        return ReleaseGateResult(False, release_grade, "Manifiesto del panel con comprobaciones en alerta")
 
-    return ReleaseGateResult(True, release_grade, "Release apto para publicación")
+    return ReleaseGateResult(True, release_grade, "Publicación apta")
 
 
 if __name__ == "__main__":
     result = run_release_gate()
-    print("Release gate EV")
-    print(f"- approved: {result.approved}")
-    print(f"- release_grade: {result.release_grade}")
-    print(f"- reason: {result.reason}")
+    print("Puerta de publicación EV")
+    print(f"- aprobado: {result.approved}")
+    print(f"- grado_publicacion: {_release_grade_label(result.release_grade)}")
+    print(f"- motivo: {result.reason}")
     raise SystemExit(0 if result.approved else 1)

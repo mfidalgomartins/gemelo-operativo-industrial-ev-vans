@@ -98,7 +98,7 @@ class DashboardResult:
 
 def _read_csv(path: Path, parse_dates: list[str] | None = None) -> pd.DataFrame:
     if not path.exists():
-        raise FileNotFoundError(f"Falta dataset para dashboard: {path}")
+        raise FileNotFoundError(f"Falta conjunto de datos para el panel: {path}")
     return pd.read_csv(path, parse_dates=parse_dates)
 
 
@@ -186,7 +186,7 @@ def _build_meta(
     return {
         "coverage": f"{coverage_min.date()} a {coverage_max.date()}"
         if pd.notna(coverage_min) and pd.notna(coverage_max)
-        else "N/A",
+        else "Sin dato",
         "orders": int(flow["orden_id"].nunique()),
         "vehicles": int(flow["vehiculo_id"].nunique()),
         "yard_zones": int(yard["zona_patio"].nunique()),
@@ -194,9 +194,9 @@ def _build_meta(
         "kpi_official": kpi_row,
         "kpi_validation": kpi_validation,
         "executive_snapshot": {
-            "top_area": str(top_area["area"].iloc[0]) if not top_area.empty else "N/A",
-            "top_action": str(top_area["recommended_action"].iloc[0]) if not top_area.empty else "N/A",
-            "top_scenario": str(top_scenario["escenario"].iloc[0]) if not top_scenario.empty else "N/A",
+            "top_area": str(top_area["area"].iloc[0]) if not top_area.empty else "Sin dato",
+            "top_action": str(top_area["recommended_action"].iloc[0]) if not top_area.empty else "Sin dato",
+            "top_scenario": str(top_scenario["escenario"].iloc[0]) if not top_scenario.empty else "Sin dato",
         },
     }
 
@@ -406,7 +406,7 @@ def _build_html(payload: dict[str, object], version: str) -> str:
 <meta charset=\"utf-8\" />
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
 <meta name=\"dashboard-version\" content=\"{version}\" />
-<title>Gemelo Operativo EV · Dashboard Oficial</title>
+<title>Gemelo Operativo EV · Panel Oficial</title>
 <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\" />
 <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin />
 <link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap\" />
@@ -445,9 +445,9 @@ def _build_html(payload: dict[str, object], version: str) -> str:
   --series-8:#0e7490;
   --series-9:#a8a29e;
 
-  /* Semantic series aliases consumed by chart JS (themeColors).
-     Mapped to the sober editorial palette so charts share the dashboard's
-     visual language and remain legible in both themes. */
+  /* Alias semánticos de series consumidos por Chart.js (themeColors).
+     Mapeados a la paleta editorial sobria para que los gráficos compartan
+     lenguaje visual y sean legibles en ambos temas. */
   --series-plan:#a8a29e;
   --series-real:#1c1917;
   --series-ev:#1d4ed8;
@@ -528,7 +528,7 @@ body {{
   overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
 }}
 
-/* ───── Top bar ───── */
+/* ───── Barra superior ───── */
 .topbar {{
   position:sticky; top:0; z-index:50;
   display:flex; align-items:center; justify-content:space-between;
@@ -1034,7 +1034,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
     <div class=\"brand-mark\" aria-hidden=\"true\">ev</div>
     <div class=\"brand-title\">Gemelo Operativo EV</div>
     <div class=\"brand-sep\"></div>
-    <div class=\"brand-context\">Dashboard de transición industrial</div>
+    <div class=\"brand-context\">Panel de transición industrial</div>
   </div>
   <div class=\"topbar-right\">
     <button id=\"btn_toggle_filters\" class=\"icon-btn\" type=\"button\" aria-expanded=\"true\" aria-controls=\"filters_shell\">Ocultar filtros</button>
@@ -1061,7 +1061,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
   </div>
 </section>
 
-<div id=\"filters_shell\" class=\"filter-strip\" role=\"group\" aria-label=\"Filtros del dashboard\">
+<div id=\"filters_shell\" class=\"filter-strip\" role=\"group\" aria-label=\"Filtros del panel\">
   <span class=\"label\">Vista:</span>
   <span class=\"filter-chip\"><strong>De</strong><input id=\"f_date_from\" type=\"date\" /></span>
   <span class=\"filter-chip\"><strong>A</strong><input id=\"f_date_to\" type=\"date\" /></span>
@@ -1083,28 +1083,28 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
 <section class=\"flow-section\">
   <div class=\"section-head\">
     <div>
-      <span class=\"section-num\">01 / Flujo &amp; Mix</span>
-      <h2>Plan vs ejecución, y la presión que introduce el mix EV</h2>
+      <span class=\"section-num\">01 / Flujo &amp; Cuota EV</span>
+      <h2>Plan vs ejecución, y la presión que introduce la cuota EV</h2>
       <p class=\"desc\">Si plan y real divergen y la curva EV sube, la pérdida de capacidad es estructural, no incidental.</p>
     </div>
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Throughput planificado vs real</h3><p class=\"hint\">Ritmo diario; cualquier divergencia sostenida señala pérdida de capacidad.</p></div></div>
+      <div class=\"card-head\"><div><h3>Caudal planificado vs real</h3><p class=\"hint\">Ritmo diario; cualquier divergencia sostenida señala pérdida de capacidad.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_throughput\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Share EV semanal</h3><p class=\"hint\">Mix que explica la presión incremental sobre carga, patio y expedición.</p></div></div>
+      <div class=\"card-head\"><div><h3>Cuota EV semanal</h3><p class=\"hint\">Cuota que explica la presión incremental sobre carga, patio y expedición.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_ev_share\"></canvas></div></div>
     </div>
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Gap de secuencia plan–real</h3><p class=\"hint\">Desviación del orden objetivo; señal temprana antes de que la cola se rompa.</p></div></div>
+      <div class=\"card-head\"><div><h3>Brecha de secuencia plan–real</h3><p class=\"hint\">Desviación del orden objetivo; señal temprana antes de que la cola se rompa.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_seq_gap\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Lead time por versión</h3><p class=\"hint\">Versiones con mayor tiempo interno: candidatas a arrastrar congestión.</p></div></div>
+      <div class=\"card-head\"><div><h3>Tiempo interno por versión</h3><p class=\"hint\">Versiones con mayor tiempo interno: candidatas a arrastrar congestión.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_lead_version\"></canvas></div></div>
     </div>
   </div>
@@ -1115,16 +1115,16 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
     <div>
       <span class=\"section-num\">02 / Patio &amp; Carga</span>
       <h2>Dónde se está bloqueando físicamente el flujo</h2>
-      <p class=\"desc\">Ocupación, dwell extremo, utilización de carga y SOC: las cuatro señales que precipitan el cuello de salida.</p>
+      <p class=\"desc\">Ocupación, permanencia extrema, utilización de carga y SOC: las cuatro señales que precipitan el cuello de salida.</p>
     </div>
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Ocupación de patio y dwell p95</h3><p class=\"hint\">Saturación + cola extrema = bloqueo físico inminente.</p></div></div>
+      <div class=\"card-head\"><div><h3>Ocupación de patio y permanencia p95</h3><p class=\"hint\">Saturación + cola extrema = bloqueo físico inminente.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_yard_occ\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Dwell por zona</h3><p class=\"hint\">Buffers improductivos y movimientos sin valor por zona física.</p></div></div>
+      <div class=\"card-head\"><div><h3>Permanencia por zona</h3><p class=\"hint\">Pulmones improductivos y movimientos sin valor por zona física.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_yard_zone\"></canvas></div></div>
     </div>
   </div>
@@ -1140,7 +1140,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>SOC objetivo vs real</h3><p class=\"hint\">Gap de energía antes de expedir: clave para asignación de slots.</p></div></div>
+      <div class=\"card-head\"><div><h3>SOC objetivo vs real</h3><p class=\"hint\">Brecha de energía antes de expedir: clave para asignación de puntos de carga.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_soc\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
@@ -1164,13 +1164,13 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_delay_cause\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Delay y readiness por turno</h3><p class=\"hint\">Distingue tensión localizada de problema estructural por turno.</p></div></div>
+      <div class=\"card-head\"><div><h3>Retraso y preparación por turno</h3><p class=\"hint\">Distingue tensión localizada de problema estructural por turno.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_shift_readiness\"></canvas></div></div>
     </div>
   </div>
   <div class=\"grid grid-3\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Impacto de cuellos por área</h3><p class=\"hint\">Throughput perdido por área en tensión.</p></div></div>
+      <div class=\"card-head\"><div><h3>Impacto de cuellos por área</h3><p class=\"hint\">Caudal perdido por área en tensión.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_bneck_area\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
@@ -1184,12 +1184,12 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
   </div>
   <div class=\"grid grid-2\">
     <div class=\"card tall\">
-      <div class=\"card-head\"><div><h3>Comparativa EV vs ICE</h3><p class=\"hint\">Dónde se concentra la carga incremental del mix EV.</p></div></div>
+      <div class=\"card-head\"><div><h3>Comparativa EV vs ICE</h3><p class=\"hint\">Dónde se concentra la carga incremental de la cuota EV.</p></div></div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_ev_vs_ice\"></canvas></div></div>
     </div>
     <div class=\"card tall\">
       <div class=\"card-head\">
-        <div><h3>Comparador de escenarios</h3><p class=\"hint\">Qué palanca da mejor equilibrio entre throughput y riesgo.</p></div>
+        <div><h3>Comparador de escenarios</h3><p class=\"hint\">Qué palanca da mejor equilibrio entre caudal y riesgo.</p></div>
         <div class=\"scenario-head\"><select id=\"scenario_select\" aria-label=\"Seleccionar escenario\"></select></div>
       </div>
       <div class=\"card-body\"><div class=\"canvas-wrap\"><canvas id=\"ch_scenarios\"></canvas></div></div>
@@ -1202,18 +1202,18 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
     <div>
       <span class=\"section-num\">04 / Priorización operativa</span>
       <h2>Ranking de áreas y acciones para esta semana</h2>
-      <p class=\"desc\">Ordenado por Operational Priority Index (OPI). Buscar por área o driver; exportar como CSV para iterar.</p>
+      <p class=\"desc\">Ordenado por Índice de Prioridad Operativa (OPI). Buscar por área o factor; exportar como CSV para iterar.</p>
     </div>
   </div>
   <div class=\"card table-card\">
     <div class=\"table-head-row\">
       <div>
         <h3>Áreas críticas por OPI</h3>
-        <p class=\"desc\">Cada fila empareja el driver dominante con la acción recomendada.</p>
+        <p class=\"desc\">Cada fila empareja el factor dominante con la acción recomendada.</p>
       </div>
       <div class=\"table-tools\">
         <label class=\"sr-only\" for=\"table_search\">Buscar</label>
-        <input id=\"table_search\" class=\"input\" type=\"text\" placeholder=\"Buscar área, driver, acción…\" />
+        <input id=\"table_search\" class=\"input\" type=\"text\" placeholder=\"Buscar área, factor, acción…\" />
         <button id=\"btn_export\" class=\"btn\" type=\"button\">Exportar CSV</button>
       </div>
     </div>
@@ -1224,8 +1224,8 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
             <th class=\"rank\">#</th>
             <th>Área</th>
             <th class=\"num\">OPI</th>
-            <th>Tier</th>
-            <th>Driver dominante</th>
+            <th>Nivel</th>
+            <th>Factor dominante</th>
             <th>Acción recomendada</th>
             <th>Cuello asociado</th>
           </tr>
@@ -1244,7 +1244,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {{
   </div>
   <div class=\"decision-stat text\"><span>Área</span><strong id=\"decision_area\">—</strong></div>
   <div class=\"decision-stat text\"><span>Acción</span><strong id=\"decision_action\">—</strong></div>
-  <div class=\"decision-stat text\"><span>Driver</span><strong id=\"decision_driver\">—</strong></div>
+  <div class=\"decision-stat text\"><span>Factor</span><strong id=\"decision_driver\">—</strong></div>
   <div class=\"decision-stat\"><span>OPI</span><strong id=\"decision_opi\">—</strong></div>
 </section>
 
@@ -1283,6 +1283,31 @@ const state = {{ sortCol: 'operational_priority_index', sortAsc: false, scenario
 let tableRows = [];
 const charts = {{}};
 const THEME_KEY = 'ev_dashboard_theme';
+const RISK_DRIVER_LABELS = {{
+  throughput_loss_score: 'Pérdida de caudal',
+  yard_risk_score: 'Riesgo de patio',
+  charging_risk_score: 'Riesgo de carga',
+  dispatch_risk_score: 'Riesgo de expedición',
+  launch_transition_risk_score: 'Riesgo de transición',
+  readiness_score: 'Preparación de salida',
+  PRESION_CARGA: 'Presión de carga',
+  CONGESTION_PATIO: 'Congestión de patio',
+  RIESGO_EXPEDICION: 'Riesgo de expedición'
+}};
+const SCENARIO_LABELS = {{
+  '1_ramp_up_ev_base': 'Rampa EV base',
+  '2_acelerar_mix_ev': 'Acelerar cuota EV',
+  '3_reforzar_carga': 'Reforzar carga',
+  '4_reducir_dwell_patio': 'Reducir permanencia en patio',
+  '5_priorizar_expedicion': 'Priorizar expedición',
+  '6_suavizar_secuencia': 'Suavizar secuencia',
+  '7_estabilizar_mix': 'Estabilizar cuota',
+  '8_combinacion_medidas_correctivas': 'Combinación de medidas correctivas'
+}};
+const YARD_ZONE_LABELS = {{
+  BUFFER_CARGA: 'Pulmón de carga',
+  PRE_SALIDA: 'Preexpedición'
+}};
 
 function n(v) {{ const x = Number(v); return Number.isFinite(x) ? x : 0; }}
 function pct(v) {{ return (n(v)*100).toFixed(1) + '%'; }}
@@ -1303,6 +1328,13 @@ function escapeHtml(v) {{
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }}
+function labelLookup(map, value) {{
+  const key = String(value ?? '');
+  return map[key] || key.replace(/_/g, ' ');
+}}
+function riskDriverLabel(value) {{ return labelLookup(RISK_DRIVER_LABELS, value); }}
+function scenarioLabel(value) {{ return labelLookup(SCENARIO_LABELS, value); }}
+function yardZoneLabel(value) {{ return labelLookup(YARD_ZONE_LABELS, value); }}
 function dstr(v) {{
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return '';
@@ -1342,14 +1374,14 @@ function hexToRgba(hex, alpha) {{
 
 function setMeta() {{
   const k = META.kpi_official || {{}};
-  document.getElementById('meta_coverage').textContent = META.coverage || 'N/A';
+  document.getElementById('meta_coverage').textContent = META.coverage || 'Sin dato';
   document.getElementById('meta_orders').textContent = (META.orders || 0).toLocaleString('es-ES');
   document.getElementById('meta_vehicles').textContent = (META.vehicles || 0).toLocaleString('es-ES');
   document.getElementById('meta_yard_zones').textContent = (META.yard_zones || 0).toLocaleString('es-ES');
   document.getElementById('meta_charge_zones').textContent = (META.charge_zones || 0).toLocaleString('es-ES');
-  document.getElementById('meta_top_area').textContent = META.executive_snapshot.top_area || 'N/A';
-  document.getElementById('meta_top_action').textContent = META.executive_snapshot.top_action || 'N/A';
-  document.getElementById('meta_top_scenario').textContent = META.executive_snapshot.top_scenario || 'N/A';
+  document.getElementById('meta_top_area').textContent = META.executive_snapshot.top_area || 'Sin dato';
+  document.getElementById('meta_top_action').textContent = META.executive_snapshot.top_action || 'Sin dato';
+  document.getElementById('meta_top_scenario').textContent = scenarioLabel(META.executive_snapshot.top_scenario || 'Sin dato');
   document.getElementById('meta_yard_zones_card').textContent = (META.yard_zones || 0).toLocaleString('es-ES');
   document.getElementById('meta_charge_zones_card').textContent = (META.charge_zones || 0).toLocaleString('es-ES');
   const footCov = document.getElementById('foot_coverage');
@@ -1358,23 +1390,23 @@ function setMeta() {{
   if (footRows) footRows.textContent = (META.orders || 0).toLocaleString('es-ES');
 
   const list = [
-    'Área con mayor presión actual: ' + (META.executive_snapshot.top_area || 'N/A') + '.',
+    'Área con mayor presión actual: ' + (META.executive_snapshot.top_area || 'Sin dato') + '.',
     'Utilización media de carga: ' + pct(k.utilizacion_media_cargadores || 0) + ' con cola media de ' + n(k.tiempo_medio_espera_carga_min || 0).toFixed(1) + ' min.',
-    'Patio en pico: ' + pct(k.ocupacion_pico_patio || 0) + ' y dwell p95 de ' + n(k.dwell_p95_min || 0).toFixed(0) + ' min.',
-    'Escenario con mejor balance actual: ' + (META.executive_snapshot.top_scenario || 'N/A') + '.'
+    'Patio en pico: ' + pct(k.ocupacion_pico_patio || 0) + ' y permanencia p95 de ' + n(k.dwell_p95_min || 0).toFixed(0) + ' min.',
+    'Escenario con mejor balance actual: ' + scenarioLabel(META.executive_snapshot.top_scenario || 'Sin dato') + '.'
   ];
   document.getElementById('executive_list').innerHTML = list.map(x => '<li>' + escapeHtml(x) + '</li>').join('');
 
   const opList = [
-    'Reservar carga para unidades con salida inmediata cuando el readiness real quede por debajo del objetivo.',
-    'Reducir dwell en las zonas con mayor p95 antes de ampliar físicamente patio.',
+    'Reservar carga para unidades con salida inmediata cuando la preparación real quede por debajo del objetivo.',
+    'Reducir permanencia en las zonas con mayor p95 antes de ampliar físicamente patio.',
     'Tratar la desviación de secuencia como señal temprana de rotura, no solo como efecto de la congestión.'
   ];
   document.getElementById('operational_list').innerHTML = opList.map(x => '<li>' + escapeHtml(x) + '</li>').join('');
 
-  const topArea = META.executive_snapshot.top_area || 'N/A';
-  const topAction = META.executive_snapshot.top_action || 'N/A';
-  const topScenario = META.executive_snapshot.top_scenario || 'N/A';
+  const topArea = META.executive_snapshot.top_area || 'Sin dato';
+  const topAction = META.executive_snapshot.top_action || 'Sin dato';
+  const topScenario = META.executive_snapshot.top_scenario || 'Sin dato';
   document.getElementById('hero_message').textContent =
     'La presión operativa se concentra en ' + topArea + '. El cuello ya no es la línea: es patio, carga y expedición.';
   const subEl = document.getElementById('verdict_sub');
@@ -1392,17 +1424,17 @@ function setMeta() {{
     dotEl.className = 'dot ' + (ratio > 0.12 ? 'bad' : (ratio > 0.05 ? 'warn' : ''));
   }}
 
-  document.getElementById('command_matter').textContent = 'Proteger readiness de salida';
+  document.getElementById('command_matter').textContent = 'Proteger preparación de salida';
   document.getElementById('command_matter_note').textContent = 'El riesgo visible no es volumen total, sino vehículos que llegan a expedición sin preparación suficiente.';
   document.getElementById('command_critical').textContent = pct(k.ratio_salida_retrasada || 0) + ' de salidas retrasadas';
-  document.getElementById('command_critical_note').textContent = 'Con este nivel, la prioridad es reducir cola y secuencia rota antes de perseguir más throughput.';
-  document.getElementById('command_action').textContent = META.executive_snapshot.top_action || 'N/A';
-  document.getElementById('command_action_note').textContent = 'Acción táctica sugerida por el ranking OPI, aplicable primero en ' + (META.executive_snapshot.top_area || 'N/A') + '.';
-  document.getElementById('command_impact').textContent = Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES') + ' no ready';
-  document.getElementById('command_impact_note').textContent = 'Backlog operativo que conecta carga, patio y expedición; si no baja, el ramp-up EV amplifica el cuello.';
+  document.getElementById('command_critical_note').textContent = 'Con este nivel, la prioridad es reducir cola y secuencia rota antes de perseguir más caudal.';
+  document.getElementById('command_action').textContent = META.executive_snapshot.top_action || 'Sin dato';
+  document.getElementById('command_action_note').textContent = 'Acción táctica sugerida por el ranking OPI, aplicable primero en ' + (META.executive_snapshot.top_area || 'Sin dato') + '.';
+  document.getElementById('command_impact').textContent = Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES') + ' no preparados';
+  document.getElementById('command_impact_note').textContent = 'Atraso operativo que conecta carga, patio y expedición; si no baja, la rampa EV amplifica el cuello.';
 }}
 
-function fillSelect(id, values, label) {{
+function fillSelect(id, values, label, labelFn) {{
   const el = document.getElementById(id);
   el.innerHTML = '';
   const all = document.createElement('option');
@@ -1412,7 +1444,7 @@ function fillSelect(id, values, label) {{
   (values || []).forEach(v => {{
     const o = document.createElement('option');
     o.value = String(v);
-    o.textContent = String(v);
+    o.textContent = labelFn ? labelFn(v) : String(v);
     el.appendChild(o);
   }});
 }}
@@ -1422,7 +1454,7 @@ function setupFilters() {{
   fillSelect('f_prop', FILTERS.propulsion, 'propulsión');
   fillSelect('f_version', FILTERS.version, 'versión');
   fillSelect('f_area', FILTERS.area, 'área');
-  fillSelect('f_yard', FILTERS.zona_patio, 'zona patio');
+  fillSelect('f_yard', FILTERS.zona_patio, 'zona patio', yardZoneLabel);
   fillSelect('f_charge', FILTERS.zona_carga, 'zona carga');
   fillSelect('f_severity', FILTERS.severidad, 'severidad');
 
@@ -1442,7 +1474,7 @@ function setupFilters() {{
   DATA.scenarios.forEach((s, i) => {{
     const op = document.createElement('option');
     op.value = s.escenario;
-    op.textContent = s.escenario;
+    op.textContent = scenarioLabel(s.escenario);
     scen.appendChild(op);
     if (!state.scenario && i === 0) state.scenario = s.escenario;
   }});
@@ -1485,7 +1517,7 @@ function updateFilterSummary() {{
     describeFilter(f.area, 'Todas las áreas'),
   ];
   document.getElementById('filter_summary_text').textContent = parts.join(' · ');
-  document.getElementById('scenario_summary_text').textContent = state.scenario || 'N/A';
+  document.getElementById('scenario_summary_text').textContent = scenarioLabel(state.scenario || 'Sin dato');
 }}
 
 function setFilterPanelCollapsed(collapsed) {{
@@ -1534,7 +1566,7 @@ function groupMean(rows, key, value) {{
 function aggregateBy(rows, key, specs) {{
   const m = new Map();
   rows.forEach(r => {{
-    const k = String(r[key] ?? 'N/A');
+    const k = String(r[key] ?? 'Sin dato');
     if (!m.has(k)) {{
       const seed = {{}};
       specs.forEach(s => {{ seed[s.name] = {{ sum: 0, count: 0 }}; }});
@@ -1616,7 +1648,7 @@ function calculateVisibleKpis(ctx) {{
     tiempo_medio_patio_min: yardDwell || n(official.tiempo_medio_patio_min),
     dwell_p95_min: yardDwellP95 || n(official.dwell_p95_min),
     score_readiness_global: readinessRate * 100,
-    causa_principal_cuello: official.causa_principal_cuello || 'N/A',
+    causa_principal_cuello: official.causa_principal_cuello || 'Sin dato',
     tiempo_medio_espera_carga_min: chargeWait || n(official.tiempo_medio_espera_carga_min),
   }};
 }}
@@ -1648,17 +1680,17 @@ function tone(key, value) {{
 }}
 
 function renderOfficialKpis(k = META.kpi_official || {{}}) {{
-  // 7 KPIs above the fold — selected for executive decision-making
+  // 7 KPI de primer vistazo, seleccionados para decisión ejecutiva.
   const cells = [
     {{
       key:'throughput_real',
-      label:'Throughput real',
+      label:'Caudal real',
       value:compactNumber(k.throughput_real || 0),
       foot:'unidades · período completo',
     }},
     {{
       key:'throughput_gap',
-      label:'Gap vs plan',
+      label:'Brecha vs plan',
       value:signedCompact(k.throughput_gap || 0),
       foot:n(k.throughput_gap || 0) < 0 ? 'déficit operativo' : 'sin déficit neto',
     }},
@@ -1670,9 +1702,9 @@ function renderOfficialKpis(k = META.kpi_official || {{}}) {{
     }},
     {{
       key:'vehiculos_no_ready',
-      label:'No-ready a expedición',
+      label:'No preparados a expedición',
       value:compactNumber(k.vehiculos_no_ready || 0),
-      foot:'backlog accionable',
+      foot:'atraso accionable',
     }},
     {{
       key:'tiempo_medio_espera_carga_min',
@@ -1689,9 +1721,9 @@ function renderOfficialKpis(k = META.kpi_official || {{}}) {{
     }},
     {{
       key:'share_ev',
-      label:'Share EV',
+      label:'Cuota EV',
       value:pctCompact(k.share_ev || 0),
-      foot:'mix actual del flujo',
+      foot:'cuota actual del flujo',
     }},
   ];
   document.getElementById('kpi_cards').innerHTML = cells.map(c => {{
@@ -1835,7 +1867,7 @@ function updateCharts() {{
     operational_priority_index: r.operational_priority_index,
   }}));
 
-  // Throughput
+  // Caudal
   const tPlan = groupMean(fThrough, 'fecha', 'throughput_plan');
   const tReal = groupMean(fThrough, 'fecha', 'throughput_real');
   const dsT = downsample(tPlan.labels, [tPlan.vals, tReal.vals], 50);
@@ -1846,32 +1878,32 @@ function updateCharts() {{
   ];
   charts.ch_throughput.update();
 
-  // EV share weekly
+  // Cuota EV semanal
   charts.ch_ev_share.data.labels = DATA.ev_share_week.map(r => dstr(r.week));
   charts.ch_ev_share.data.datasets = [
-    {{ label:'Share EV', data:DATA.ev_share_week.map(r => n(r.share_ev)*100), borderColor:c.ev, backgroundColor:hexToRgba(c.ev, .15), fill:true, tension:.25, pointRadius:0 }}
+    {{ label:'Cuota EV', data:DATA.ev_share_week.map(r => n(r.share_ev)*100), borderColor:c.ev, backgroundColor:hexToRgba(c.ev, .15), fill:true, tension:.25, pointRadius:0 }}
   ];
   charts.ch_ev_share.update();
 
-  // Sequence gap
+  // Brecha de secuencia
   const sg = groupMean(fSeq, 'fecha', 'sequence_gap');
   const dsSG = downsample(sg.labels, [sg.vals], 50);
   charts.ch_seq_gap.data.labels = dsSG.labels;
   charts.ch_seq_gap.data.datasets = [
-    {{ label:'Gap secuencia', data:dsSG.seriesList[0], borderColor:c.gap, tension:.25, pointRadius:0 }},
+    {{ label:'Brecha secuencia', data:dsSG.seriesList[0], borderColor:c.gap, tension:.25, pointRadius:0 }},
     {{ label:'Objetivo', data:dsSG.seriesList[0].map(() => 0), borderColor:c.aux, borderDash:[4,4], pointRadius:0 }}
   ];
   charts.ch_seq_gap.update();
 
-  // Lead by version
+  // Tiempo interno por versión
   const leadTop = [...fLead].sort((a,b) => n(b.lead_time)-n(a.lead_time)).slice(0,12);
   charts.ch_lead_version.data.labels = truncLabels(leadTop.map(r => r.version_id), 20);
   charts.ch_lead_version.data.datasets = [
-    {{ label:'Lead time (min)', data:leadTop.map(r => n(r.lead_time)), backgroundColor:c.priority }}
+    {{ label:'Tiempo interno (min)', data:leadTop.map(r => n(r.lead_time)), backgroundColor:c.priority }}
   ];
   charts.ch_lead_version.update();
 
-  // Yard occ
+  // Ocupación de patio
   const yOcc = groupMean(fYard, 'fecha', 'occupancy');
   const yP95 = groupMean(fYard, 'fecha', 'dwell_p95');
   const dsY = downsample(yOcc.labels, [yOcc.vals.map(v => v*100), yP95.vals], 50);
@@ -1889,7 +1921,7 @@ function updateCharts() {{
     y1: {{
       beginAtZero:true,
       position:'right',
-      title:{{display:true,text:'Dwell p95 (min)', color:c.muted}},
+      title:{{display:true,text:'Permanencia p95 (min)', color:c.muted}},
       ticks: {{ color:c.muted }},
       grid:{{drawOnChartArea:false}}
     }}
@@ -1897,7 +1929,7 @@ function updateCharts() {{
   charts.ch_yard_occ.data.labels = dsY.labels;
   charts.ch_yard_occ.data.datasets = [
     {{ label:'Ocupación %', data:dsY.seriesList[0], borderColor:c.yard, tension:.2, yAxisID:'y', pointRadius:0 }},
-    {{ label:'Dwell p95', data:dsY.seriesList[1], borderColor:c.priority, tension:.2, yAxisID:'y1', pointRadius:0 }}
+    {{ label:'Permanencia p95', data:dsY.seriesList[1], borderColor:c.priority, tension:.2, yAxisID:'y1', pointRadius:0 }}
   ];
   charts.ch_yard_occ.update();
 
@@ -1905,10 +1937,10 @@ function updateCharts() {{
     {{ name:'dwell', src:'dwell', mode:'avg' }},
     {{ name:'blocking', src:'blocking', mode:'avg' }},
   ]).sort((a,b) => n(b.dwell) - n(a.dwell));
-  charts.ch_yard_zone.data.labels = truncLabels(yardZone.map(r => r.zona_patio), 20);
+  charts.ch_yard_zone.data.labels = truncLabels(yardZone.map(r => yardZoneLabel(r.zona_patio)), 20);
   charts.ch_yard_zone.data.datasets = [
-    {{ label:'Dwell medio', data:yardZone.map(r => n(r.dwell)), backgroundColor:c.priority }},
-    {{ label:'Blocking %', data:yardZone.map(r => n(r.blocking)*100), backgroundColor:c.gap }}
+    {{ label:'Permanencia media', data:yardZone.map(r => n(r.dwell)), backgroundColor:c.priority }},
+    {{ label:'Bloqueo %', data:yardZone.map(r => n(r.blocking)*100), backgroundColor:c.gap }}
   ];
   charts.ch_yard_zone.update();
 
@@ -1920,7 +1952,7 @@ function updateCharts() {{
   charts.ch_charge_util.data.labels = truncLabels(chargeZone.map(r => r.zona_carga), 18);
   charts.ch_charge_util.data.datasets = [
     {{ label:'Utilización %', data:chargeZone.map(r => n(r.utilization)*100), backgroundColor:c.load }},
-    {{ label:'Target miss %', data:chargeZone.map(r => n(r.target_miss)*100), backgroundColor:c.warn }}
+    {{ label:'Incumplimiento objetivo %', data:chargeZone.map(r => n(r.target_miss)*100), backgroundColor:c.warn }}
   ];
   charts.ch_charge_util.update();
 
@@ -1969,8 +2001,8 @@ function updateCharts() {{
     }};
   }});
   charts.ch_shift_readiness.data.datasets = [
-    {{ label:'Delay rate %', data:shiftRows.map(x => x.d*100), backgroundColor:c.gap }},
-    {{ label:'Readiness rate %', data:shiftRows.map(x => x.r*100), backgroundColor:c.ev }}
+    {{ label:'Tasa de retraso %', data:shiftRows.map(x => x.d*100), backgroundColor:c.gap }},
+    {{ label:'Tasa de preparación %', data:shiftRows.map(x => x.r*100), backgroundColor:c.ev }}
   ];
   charts.ch_shift_readiness.update();
 
@@ -1980,7 +2012,7 @@ function updateCharts() {{
   ]).sort((a,b) => n(b.throughput_impact) - n(a.throughput_impact));
   charts.ch_bneck_area.data.labels = truncLabels(bArea.map(r => r.area), 18);
   charts.ch_bneck_area.data.datasets = [
-    {{ label:'Impacto throughput', data:bArea.map(r => n(r.throughput_impact)), backgroundColor:c.priority }},
+    {{ label:'Impacto en caudal', data:bArea.map(r => n(r.throughput_impact)), backgroundColor:c.priority }},
     {{ label:'Impacto salida', data:bArea.map(r => n(r.output_impact)), backgroundColor:c.yard }}
   ];
   charts.ch_bneck_area.update();
@@ -1991,7 +2023,7 @@ function updateCharts() {{
     backgroundColor:hexToRgba(c.gap, .42),
     borderColor:c.gap
   }}];
-  charts.ch_risk_matrix.options.plugins.tooltip = {{ callbacks: {{ label: (ctx) => {{ const p = ctx.raw || {{}}; return (p.area || 'Área') + ' · TLoss ' + n(p.x).toFixed(1) + ' · DRisk ' + n(p.y).toFixed(1); }} }} }};
+  charts.ch_risk_matrix.options.plugins.tooltip = {{ callbacks: {{ label: (ctx) => {{ const p = ctx.raw || {{}}; return (p.area || 'Área') + ' · pérdida ' + n(p.x).toFixed(1) + ' · riesgo ' + n(p.y).toFixed(1); }} }} }};
   charts.ch_risk_matrix.update();
 
   const act = aggregateBy(fPrio, 'recommended_action', [
@@ -2001,7 +2033,7 @@ function updateCharts() {{
   charts.ch_actions.data.datasets = [{{ label:'OPI medio', data:act.map(r => n(r.priority_index)), backgroundColor:c.priority }}];
   charts.ch_actions.update();
 
-  charts.ch_ev_vs_ice.data.labels = ['Lead time','Yard wait','Charge wait','Delay'];
+  charts.ch_ev_vs_ice.data.labels = ['Tiempo interno','Espera patio','Espera carga','Retraso'];
   const evIce = aggregateBy(fFlowProp, 'tipo_propulsion', [
     {{ name:'lead_time', src:'lead_time', mode:'avg' }},
     {{ name:'yard_wait', src:'yard_wait', mode:'avg' }},
@@ -2017,9 +2049,9 @@ function updateCharts() {{
   charts.ch_ev_vs_ice.update();
 
   const scenarioRows = DATA.scenarios;
-  charts.ch_scenarios.data.labels = truncLabels(scenarioRows.map(r => r.escenario), 22);
+  charts.ch_scenarios.data.labels = truncLabels(scenarioRows.map(r => scenarioLabel(r.escenario)), 22);
   charts.ch_scenarios.data.datasets = [
-    {{ label:'Decision Score', data:scenarioRows.map(r => n(r.decision_score)), backgroundColor:c.priority }},
+    {{ label:'Puntuación de decisión', data:scenarioRows.map(r => n(r.decision_score)), backgroundColor:c.priority }},
     {{ label:'Estabilidad', data:scenarioRows.map(r => n(r.estabilidad_operativa)), backgroundColor:c.ev }}
   ];
   charts.ch_scenarios.update();
@@ -2044,12 +2076,12 @@ function renderPriorityTable(rows) {{
   body.innerHTML = data.map((r, idx) =>
     '<tr>' +
     '<td><span class="score-badge">' + (idx + 1) + '</span></td>' +
-    '<td>' + escapeHtml(r.area || 'N/A') + '</td>' +
+    '<td>' + escapeHtml(r.area || 'Sin dato') + '</td>' +
     '<td><span class="score-badge">' + n(r.operational_priority_index).toFixed(1) + '</span></td>' +
-    '<td><span class="tier-badge ' + tierClass(r.area_priority_tier) + '">' + escapeHtml(r.area_priority_tier || 'N/A') + '</span></td>' +
-    '<td>' + escapeHtml(r.main_risk_driver || 'N/A') + '</td>' +
-    '<td class="action-cell"><strong>' + escapeHtml(r.recommended_action || 'N/A') + '</strong><span>Riesgo: ' + escapeHtml(r.main_risk_driver || 'N/A') + '</span></td>' +
-    '<td>' + escapeHtml(r.main_bottleneck_driver || 'N/A') + '</td>' +
+    '<td><span class="tier-badge ' + tierClass(r.area_priority_tier) + '">' + escapeHtml(r.area_priority_tier || 'Sin dato') + '</span></td>' +
+    '<td>' + escapeHtml(riskDriverLabel(r.main_risk_driver || 'Sin dato')) + '</td>' +
+    '<td class="action-cell"><strong>' + escapeHtml(r.recommended_action || 'Sin dato') + '</strong><span>Riesgo: ' + escapeHtml(riskDriverLabel(r.main_risk_driver || 'Sin dato')) + '</span></td>' +
+    '<td>' + escapeHtml(riskDriverLabel(r.main_bottleneck_driver || 'Sin dato')) + '</td>' +
     '</tr>'
   ).join('');
 
@@ -2057,22 +2089,22 @@ function renderPriorityTable(rows) {{
 
   const top = data[0];
   if (top) {{
-    document.getElementById('decision_area').textContent = top.area || 'N/A';
-    document.getElementById('decision_action').textContent = top.recommended_action || 'N/A';
-    document.getElementById('decision_driver').textContent = top.main_risk_driver || 'N/A';
+    document.getElementById('decision_area').textContent = top.area || 'Sin dato';
+    document.getElementById('decision_action').textContent = top.recommended_action || 'Sin dato';
+    document.getElementById('decision_driver').textContent = riskDriverLabel(top.main_risk_driver || 'Sin dato');
     document.getElementById('decision_opi').textContent = n(top.operational_priority_index).toFixed(1);
-    document.getElementById('decision_scenario').textContent = 'Escenario recomendado: ' + (state.scenario || 'N/A');
+    document.getElementById('decision_scenario').textContent = 'Escenario recomendado: ' + scenarioLabel(state.scenario || 'Sin dato');
     document.getElementById('decision_text').textContent =
       'La intervención inicial debe concentrarse en ' + top.area + '. '
-      + 'La palanca con mejor retorno operativo inmediato es ' + (top.recommended_action || 'N/A')
-      + ', porque ataca el driver dominante (' + (top.main_risk_driver || 'N/A') + ') '
+      + 'La palanca con mejor retorno operativo inmediato es ' + (top.recommended_action || 'Sin dato')
+      + ', porque ataca el factor dominante (' + riskDriverLabel(top.main_risk_driver || 'Sin dato') + ') '
       + 'sin exigir una expansión indiscriminada de capacidad.';
   }} else {{
-    document.getElementById('decision_area').textContent = 'N/A';
-    document.getElementById('decision_action').textContent = 'N/A';
-    document.getElementById('decision_driver').textContent = 'N/A';
-    document.getElementById('decision_opi').textContent = 'N/A';
-    document.getElementById('decision_scenario').textContent = 'Escenario recomendado: N/A';
+    document.getElementById('decision_area').textContent = 'Sin dato';
+    document.getElementById('decision_action').textContent = 'Sin dato';
+    document.getElementById('decision_driver').textContent = 'Sin dato';
+    document.getElementById('decision_opi').textContent = 'Sin dato';
+    document.getElementById('decision_scenario').textContent = 'Escenario recomendado: Sin dato';
     document.getElementById('decision_text').textContent = 'No hay filas con los filtros actuales.';
   }}
 }}
@@ -2088,7 +2120,7 @@ function exportCsv() {{
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'dashboard_prioridades_filtradas.csv';
+  a.download = 'panel_prioridades_filtradas.csv';
   a.click();
   URL.revokeObjectURL(url);
 }}
@@ -2174,13 +2206,13 @@ def _write_manifest_and_qc(
     html = output_path.read_text(encoding="utf-8", errors="ignore")
 
     priorities = payload["data"].get("priorities", [])
-    top_priority_area = "N/A"
+    top_priority_area = "Sin dato"
     if priorities:
         top_priority_area = sorted(
             priorities,
             key=lambda r: float(r.get("operational_priority_index") or 0.0),
             reverse=True,
-        )[0].get("area", "N/A")
+        )[0].get("area", "Sin dato")
 
     html_size = output_path.stat().st_size
     canvas_count = html.count("<canvas id=")
@@ -2258,7 +2290,7 @@ def run_ev_build_dashboard() -> DashboardResult:
 
 if __name__ == "__main__":
     result = run_ev_build_dashboard()
-    print("Dashboard EV oficial generado")
-    print(f"- path: {result.path}")
+    print("Panel EV oficial generado")
+    print(f"- ruta: {result.path}")
     print(f"- version: {result.version}")
-    print(f"- payload bytes: {result.payload_size_bytes}")
+    print(f"- bytes_payload: {result.payload_size_bytes}")

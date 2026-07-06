@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Security vulnerability
+  - name: Vulnerabilidad de seguridad
     url: https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans/security/advisories/new
-    about: Please report security issues privately, not as public issues. See SECURITY.md.
+    about: Reporta problemas de seguridad de forma privada, no como incidencias públicas. Ver SECURITY.md.

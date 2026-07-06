@@ -6,7 +6,7 @@ ROOT_INDEX = Path("index.html")
 
 
 def test_single_final_dashboard_artifact() -> None:
-    assert OFFICIAL_DASHBOARD.exists(), "No existe dashboard oficial en outputs/dashboard"
+    assert OFFICIAL_DASHBOARD.exists(), "No existe panel oficial en outputs/dashboard"
     assert not DUPLICATED_DASHBOARD.exists(), "Existe una copia duplicada en docs/"
 
 
@@ -48,7 +48,7 @@ def test_github_pages_dashboard_contracts() -> None:
 
 
 def test_github_pages_entry_is_in_sync_with_official_dashboard_size() -> None:
-    assert OFFICIAL_DASHBOARD.exists(), "No existe dashboard oficial en outputs/dashboard"
+    assert OFFICIAL_DASHBOARD.exists(), "No existe panel oficial en outputs/dashboard"
     official_size = OFFICIAL_DASHBOARD.stat().st_size
     assert official_size > 100_000
 

@@ -18,8 +18,8 @@ def test_table_temporal_coverage_returns_na_without_valid_temporal_data() -> Non
     no_time = pd.DataFrame({"orden_id": ["O1"]})
     all_null_time = pd.DataFrame({"fecha": pd.to_datetime([None])})
 
-    assert _table_temporal_coverage(no_time) == "N/A"
-    assert _table_temporal_coverage(all_null_time) == "N/A"
+    assert _table_temporal_coverage(no_time) == "Sin dato"
+    assert _table_temporal_coverage(all_null_time) == "Sin dato"
 
 
 def test_table_temporal_coverage_spans_all_datetime_columns() -> None:
@@ -34,7 +34,7 @@ def test_table_temporal_coverage_spans_all_datetime_columns() -> None:
 
 
 def test_build_recommendations_md_adds_critical_priority_when_needed() -> None:
-    issues = pd.DataFrame({"severity": ["medium", "critical"]})
+    issues = pd.DataFrame({"severidad": ["media", "critica"]})
 
     md = _build_recommendations_md(issues)
 

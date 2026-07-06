@@ -1,9 +1,9 @@
-# Scoring Framework - Priorización Operativa EV
+# Marco de Puntuación - Priorización Operativa EV
 
 ## Objetivo
-Priorizar acciones de secuenciación, patio, carga, expedición y capacidad para sostener el ramp-up EV.
+Priorizar acciones de secuenciación, patio, carga, expedición y capacidad para sostener la rampa EV.
 
-## Scores mínimos
+## Puntuaciones mínimas
 - `readiness_score`
 - `yard_risk_score`
 - `charging_risk_score`
@@ -23,8 +23,8 @@ Priorizar acciones de secuenciación, patio, carga, expedición y capacidad para
 - <35: sin prioridad inmediata
 
 ## Lógica de decisión
-El `operational_priority_index` combina riesgo de patio, carga, expedición, impacto de throughput atribuido al área y tensión de transición EV. `throughput_loss_score` usa `area_throughput_loss_proxy`; no repite el gap global de planta ni pretende estimar causalidad.
+El `operational_priority_index` combina riesgo de patio, carga, expedición, impacto de caudal atribuido al área y tensión de transición EV. `throughput_loss_score` usa `area_throughput_loss_proxy`; no repite la brecha global de planta ni pretende estimar causalidad.
 
 ## Sensibilidad
 Se aplica perturbación de pesos (+/-20%) para verificar estabilidad del ranking de áreas críticas.
-Se añade test Monte Carlo de estabilidad de top-1 bajo ruido de pesos.
+Se añade prueba Monte Carlo de estabilidad del primer puesto bajo ruido de pesos.

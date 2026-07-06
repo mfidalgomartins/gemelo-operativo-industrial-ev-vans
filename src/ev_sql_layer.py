@@ -86,7 +86,7 @@ def _resolve_raw_csv(table: str) -> Path:
     if primary.exists():
         return primary
 
-    raise FileNotFoundError(f"Falta tabla raw requerida en la ruta oficial EV: {primary}")
+    raise FileNotFoundError(f"Falta tabla de origen requerida en la ruta oficial EV: {primary}")
 
 
 def _quote_identifier(identifier: str) -> str:
@@ -180,10 +180,10 @@ def run_ev_sql_layer(*, deterministic: bool = True, threads: int | None = None) 
 
     summary_path = OUTPUT_REPORTS_DIR / "sql_layer_execution_summary.md"
     lines = [
-        "# SQL Layer Execution Summary (DuckDB)",
+        "# Resumen de Ejecución de la Capa SQL (DuckDB)",
         "",
         f"- Base de datos: `{DB_PATH.relative_to(PROJECT_ROOT).as_posix()}`",
-        f"- Fuente raw EV: `{EV_DATA_RAW_DIR.relative_to(PROJECT_ROOT).as_posix()}`",
+        f"- Fuente EV de origen: `{EV_DATA_RAW_DIR.relative_to(PROJECT_ROOT).as_posix()}`",
         f"- Scripts ejecutados: {len(executed)}",
         "",
         "## Orden de ejecución",

@@ -37,6 +37,13 @@ AREA_REQUIRED_COLUMNS = [
 
 LAUNCH_REQUIRED_COLUMNS = ["week", "share_ev", "charging_capacity_gap", "yard_transition_stress_index"]
 
+BOTTLENECK_LABELS = {
+    "PRESION_CARGA": "presión de carga",
+    "CONGESTION_PATIO": "congestión de patio",
+    "RIESGO_EXPEDICION": "riesgo de expedición",
+    "sin clasificar": "sin clasificar",
+}
+
 
 @dataclass
 class DiagnosticResult:
@@ -54,13 +61,13 @@ def _score_to_100(series: pd.Series, upper: float) -> pd.Series:
 
 def _initial_action(row: pd.Series) -> str:
     if row["charging_pressure_score"] >= 70:
-        return "Reservar slots de carga EV y ampliar ventana de pre-carga"
+        return "Reservar puntos de carga EV y ampliar ventana de pre-carga"
     if row["yard_congestion_score"] >= 70:
-        return "Reducir dwell y limpiar movimientos no productivos en patio"
+        return "Reducir permanencia y limpiar movimientos no productivos en patio"
     if row["sequence_disruption_score"] >= 65:
         return "Rebalancear secuencia y limitar clúster EV en turno"
     if row["dispatch_delay_risk_score"] >= 65:
-        return "Priorizar expedición selectiva por readiness"
+        return "Priorizar expedición selectiva por preparación"
     return "Monitorizar y mantener configuración actual"
 
 
@@ -74,7 +81,7 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
     require_columns(area, AREA_REQUIRED_COLUMNS, "area_shift_features")
     require_columns(launch, LAUNCH_REQUIRED_COLUMNS, "launch_transition_features")
 
-    # Scores a nivel vehículo
+    # Puntuaciones a nivel vehículo
     vehicle_diag = vehicle.copy()
     vehicle_diag["sequence_disruption_score"] = 0.6 * _score_to_100(
         vehicle_diag["planned_to_actual_sequence_gap"].abs(), upper=20
@@ -103,15 +110,15 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
             vehicle_diag["dispatch_delay_risk_score"] >= 65,
         ],
         [
-            "Reservar slots de carga EV y ampliar ventana de pre-carga",
-            "Reducir dwell y limpiar movimientos no productivos en patio",
+            "Reservar puntos de carga EV y ampliar ventana de pre-carga",
+            "Reducir permanencia y limpiar movimientos no productivos en patio",
             "Rebalancear secuencia y limitar clúster EV en turno",
-            "Priorizar expedición selectiva por readiness",
+            "Priorizar expedición selectiva por preparación",
         ],
         default="Monitorizar y mantener configuración actual",
     )
 
-    # Área crítica y driver principal
+    # Área crítica y factor principal
     area_diag = area.copy()
     area_diag["area_criticality_score"] = (
         0.25 * _score_to_100(area_diag["area_throughput_loss_proxy"], upper=5)
@@ -135,9 +142,9 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
             area_diag["main_bottleneck_driver"] == "RIESGO_EXPEDICION",
         ],
         [
-            "Reservar slots EV y reforzar capacidad en horas punta",
-            "Reducir dwell y rediseñar buffer por zona de patio",
-            "Priorizar expedición selectiva y ventana de readiness",
+            "Reservar puntos de carga EV y reforzar capacidad en horas punta",
+            "Reducir permanencia y rediseñar pulmón por zona de patio",
+            "Priorizar expedición selectiva y ventana de preparación",
         ],
         default="Monitorizar",
     )
@@ -185,11 +192,11 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
             avg_wait_time=("avg_wait_time", "mean"),
             main_bottleneck_driver=(
                 "main_bottleneck_driver",
-                lambda s: s.mode().iat[0] if not s.mode().empty else "N/A",
+                lambda s: s.mode().iat[0] if not s.mode().empty else "sin clasificar",
             ),
             recommended_action_initial=(
                 "recommended_action_initial",
-                lambda s: s.mode().iat[0] if not s.mode().empty else "N/A",
+                lambda s: s.mode().iat[0] if not s.mode().empty else "Sin acción definida",
             ),
         )
         .sort_values("area_criticality_score", ascending=False)
@@ -221,18 +228,20 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
     lines = [
         "# Diagnóstico Operativo - Hallazgos Priorizados",
         "",
-        "## Top áreas críticas",
+        "## Principales áreas críticas",
     ]
     for row in top_areas_ranked.itertuples(index=False):
         lines.append(
-            f"- {row.area}: score={row.area_criticality_score:.1f}, driver={row.main_bottleneck_driver}, acción={row.recommended_action_initial}"
+            f"- {row.area}: puntuación={row.area_criticality_score:.1f}, "
+            f"factor={BOTTLENECK_LABELS.get(row.main_bottleneck_driver, row.main_bottleneck_driver)}, "
+            f"acción={row.recommended_action_initial}"
         )
 
     lines.extend(
         [
             "",
             "## Lecturas clave",
-            f"- Diferencia EV vs no EV (stress): {ev_compare.loc[ev_compare['tipo_propulsion'] == 'EV', 'launch_transition_stress_score'].mean() - ev_compare.loc[ev_compare['tipo_propulsion'] != 'EV', 'launch_transition_stress_score'].mean():.2f} puntos.",
+            f"- Diferencia EV vs no EV (tensión): {ev_compare.loc[ev_compare['tipo_propulsion'] == 'EV', 'launch_transition_stress_score'].mean() - ev_compare.loc[ev_compare['tipo_propulsion'] != 'EV', 'launch_transition_stress_score'].mean():.2f} puntos.",
             f"- Áreas clasificadas como estructurales: {int((area_persistence['tipo_cuello'] == 'ESTRUCTURAL').sum())}.",
         ]
     )
