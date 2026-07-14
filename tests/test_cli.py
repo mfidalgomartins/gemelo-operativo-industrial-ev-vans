@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -129,6 +131,17 @@ def test_cli_ingest_and_calibrate(tmp_path: Path, monkeypatch, capsys) -> None:
     assert cli._execute(calibrate_args) == 0
     assert output.exists()
     assert '"status": "PASS"' in capsys.readouterr().out
+
+
+def test_report_import_does_not_read_marts(monkeypatch) -> None:
+    module_name = "gemelo_operativo_ev.reporting.report"
+    sys.modules.pop(module_name, None)
+
+    def fail_on_read(*args, **kwargs):
+        raise AssertionError("El módulo no debe leer marts durante el import")
+
+    monkeypatch.setattr(pd, "read_csv", fail_on_read)
+    importlib.import_module(module_name)
 
 
 def test_cli_artifact_commands_delegate(monkeypatch) -> None:

@@ -37,7 +37,6 @@ ROOT = PROJECT_ROOT
 DATA = DATA_PROCESSED_DIR / "ev_factory"
 GRAPHS = OUTPUT_GRAPHS_DIR
 OUT = OUTPUT_REPORTS_DIR
-OUT.mkdir(parents=True, exist_ok=True)
 PDF = OUT / "ev_transition_operating_twin_report.pdf"
 
 # ── Paleta (alineada con el paquete de gráficos)
@@ -56,43 +55,6 @@ PAGE_W, PAGE_H = A4
 MARGIN = 2.2 * cm
 CONTENT_W = PAGE_W - 2 * MARGIN
 
-# ── Cifras cargadas una vez desde los marts (fuente única de verdad)
-kpi = pd.read_csv(DATA / "kpi_operativos.csv").iloc[0]
-prio = pd.read_csv(DATA / "operational_prioritization_table.csv")
-scen = pd.read_csv(DATA / "scenario_decision_comparison.csv")
-levers = pd.read_csv(DATA / "scenario_lever_ranking.csv")
-checks = pd.read_csv(DATA / "validation_checks.csv")
-evice = pd.read_csv(DATA / "diagnostic_ev_vs_non_ev.csv")
-gov = pd.read_csv(DATA / "scoring_governance_checks.csv")
-ranking = pd.read_csv(DATA / "diagnostic_area_ranking.csv")
-readiness = pd.read_csv(DATA / "kpi_readiness_shift_version.csv")
-yard = pd.read_csv(DATA / "yard_features.csv")
-charging = pd.read_csv(DATA / "charging_features.csv")
-transition = pd.read_csv(DATA / "launch_transition_features.csv")
-scenario_delta = pd.read_csv(DATA / "scenario_base_vs_mejorado.csv")
-rank_stability = pd.read_csv(DATA / "scoring_rank_stability.csv")
-sensitivity = pd.read_csv(DATA / "scoring_sensitivity_analysis.csv")
-
-TOTAL = int(kpi["total_ordenes"])
-SHARE_EV = float(kpi["share_ev"])
-NO_READY = int(kpi["vehiculos_no_ready"])
-READY = TOTAL - NO_READY
-RATIO_LATE = float(kpi["ratio_salida_retrasada"])
-READINESS_GLOBAL = float(kpi["score_readiness_global"])
-DWELL_MEAN_H = float(kpi["tiempo_medio_patio_min"]) / 60
-DWELL_P95_H = float(kpi["dwell_p95_min"]) / 60
-WAIT_CHARGE = float(kpi["tiempo_medio_espera_carga_min"])
-CHARGER_UTIL = float(kpi["utilizacion_media_cargadores"])
-ON_TIME_READY = int(round(READY * (1 - RATIO_LATE)))
-CLEAN_EXIT_RATE = ON_TIME_READY / TOTAL
-CLEAN_EXIT_GAP = TOTAL - ON_TIME_READY
-READY_LOSS_RATE = NO_READY / TOTAL
-LATE_GATE_LOSS_RATE = READY * RATIO_LATE / TOTAL
-
-best = scen.sort_values("decision_score", ascending=False).iloc[0]
-base = scen.set_index("escenario").loc["1_ramp_up_ev_base"]
-worst = scen.sort_values("decision_score", ascending=True).iloc[0]
-
 
 def weighted_avg(df: pd.DataFrame, value_col: str, weight_col: str) -> float:
     weight = df[weight_col].sum()
@@ -101,70 +63,133 @@ def weighted_avg(df: pd.DataFrame, value_col: str, weight_col: str) -> float:
     return float((df[value_col] * df[weight_col]).sum() / weight)
 
 
-ev_readiness = readiness[readiness["tipo_propulsion"] == "EV"]
-ice_readiness = readiness[readiness["tipo_propulsion"] == "ICE"]
-EV_READY_RATE = weighted_avg(ev_readiness, "readiness_rate", "total_vehiculos")
-ICE_READY_RATE = weighted_avg(ice_readiness, "readiness_rate", "total_vehiculos")
-EV_ORDERS = int(ev_readiness["total_vehiculos"].sum())
-ICE_ORDERS = int(ice_readiness["total_vehiculos"].sum())
-READINESS_GAP_PP = (ICE_READY_RATE - EV_READY_RATE) * 100
+def _load_report_data() -> None:
+    """Carga los marts únicamente cuando se solicita construir el informe."""
+    global kpi, prio, scen, levers, checks, evice, gov, ranking, readiness
+    global yard, charging, transition, scenario_delta, rank_stability, sensitivity
+    global TOTAL, SHARE_EV, NO_READY, READY, RATIO_LATE, READINESS_GLOBAL
+    global DWELL_MEAN_H, DWELL_P95_H, WAIT_CHARGE, CHARGER_UTIL, ON_TIME_READY
+    global CLEAN_EXIT_RATE, CLEAN_EXIT_GAP, READY_LOSS_RATE, LATE_GATE_LOSS_RATE
+    global best, base, worst, ev_readiness, ice_readiness, EV_READY_RATE, ICE_READY_RATE
+    global EV_ORDERS, ICE_ORDERS, READINESS_GAP_PP, version_readiness
+    global worst_ev_version, best_ice_version, yard_zone, pre_salida, next_yard_zone
+    global charging_zone, highest_charge_zone, transition_start, transition_end
+    global EV_SHARE_DELTA_PP, YARD_STRESS_DELTA, DISPATCH_STABILITY_DELTA, CHARGE_GAP_DELTA
+    global scenario_delta_by_metric, DECISION_SCORE_UPLIFT, ACCELERATION_SCORE_PENALTY
+    global CORRECTIVE_THROUGHPUT_DELTA, CORRECTIVE_INTERNAL_TIME_DELTA
+    global CORRECTIVE_LATE_PP_REDUCTION, CORRECTIVE_CHARGE_WAIT_DELTA
+    global TOP1_LOGISTICS, TOP1_YARD
 
-version_readiness = (
-    readiness.groupby(["tipo_propulsion", "version_id"], as_index=False)
-    .apply(
-        lambda g: pd.Series(
-            {"vehicles": g["total_vehiculos"].sum(), "readiness": weighted_avg(g, "readiness_rate", "total_vehiculos")}
+    kpi = pd.read_csv(DATA / "kpi_operativos.csv").iloc[0]
+    prio = pd.read_csv(DATA / "operational_prioritization_table.csv")
+    scen = pd.read_csv(DATA / "scenario_decision_comparison.csv")
+    levers = pd.read_csv(DATA / "scenario_lever_ranking.csv")
+    checks = pd.read_csv(DATA / "validation_checks.csv")
+    evice = pd.read_csv(DATA / "diagnostic_ev_vs_non_ev.csv")
+    gov = pd.read_csv(DATA / "scoring_governance_checks.csv")
+    ranking = pd.read_csv(DATA / "diagnostic_area_ranking.csv")
+    readiness = pd.read_csv(DATA / "kpi_readiness_shift_version.csv")
+    yard = pd.read_csv(DATA / "yard_features.csv")
+    charging = pd.read_csv(DATA / "charging_features.csv")
+    transition = pd.read_csv(DATA / "launch_transition_features.csv")
+    scenario_delta = pd.read_csv(DATA / "scenario_base_vs_mejorado.csv")
+    rank_stability = pd.read_csv(DATA / "scoring_rank_stability.csv")
+    sensitivity = pd.read_csv(DATA / "scoring_sensitivity_analysis.csv")
+
+    TOTAL = int(kpi["total_ordenes"])
+    SHARE_EV = float(kpi["share_ev"])
+    NO_READY = int(kpi["vehiculos_no_ready"])
+    READY = TOTAL - NO_READY
+    RATIO_LATE = float(kpi["ratio_salida_retrasada"])
+    READINESS_GLOBAL = float(kpi["score_readiness_global"])
+    DWELL_MEAN_H = float(kpi["tiempo_medio_patio_min"]) / 60
+    DWELL_P95_H = float(kpi["dwell_p95_min"]) / 60
+    WAIT_CHARGE = float(kpi["tiempo_medio_espera_carga_min"])
+    CHARGER_UTIL = float(kpi["utilizacion_media_cargadores"])
+    ON_TIME_READY = int(round(READY * (1 - RATIO_LATE)))
+    CLEAN_EXIT_RATE = ON_TIME_READY / TOTAL
+    CLEAN_EXIT_GAP = TOTAL - ON_TIME_READY
+    READY_LOSS_RATE = NO_READY / TOTAL
+    LATE_GATE_LOSS_RATE = READY * RATIO_LATE / TOTAL
+
+    best = scen.sort_values("decision_score", ascending=False).iloc[0]
+    base = scen.set_index("escenario").loc["1_ramp_up_ev_base"]
+    worst = scen.sort_values("decision_score", ascending=True).iloc[0]
+
+    ev_readiness = readiness[readiness["tipo_propulsion"] == "EV"]
+    ice_readiness = readiness[readiness["tipo_propulsion"] == "ICE"]
+    EV_READY_RATE = weighted_avg(ev_readiness, "readiness_rate", "total_vehiculos")
+    ICE_READY_RATE = weighted_avg(ice_readiness, "readiness_rate", "total_vehiculos")
+    EV_ORDERS = int(ev_readiness["total_vehiculos"].sum())
+    ICE_ORDERS = int(ice_readiness["total_vehiculos"].sum())
+    READINESS_GAP_PP = (ICE_READY_RATE - EV_READY_RATE) * 100
+
+    version_readiness = (
+        readiness.groupby(["tipo_propulsion", "version_id"], as_index=False)
+        .apply(
+            lambda group: pd.Series(
+                {
+                    "vehicles": group["total_vehiculos"].sum(),
+                    "readiness": weighted_avg(group, "readiness_rate", "total_vehiculos"),
+                }
+            )
         )
+        .reset_index(drop=True)
     )
-    .reset_index(drop=True)
-)
-worst_ev_version = version_readiness[version_readiness["tipo_propulsion"] == "EV"].sort_values("readiness").iloc[0]
-best_ice_version = (
-    version_readiness[version_readiness["tipo_propulsion"] == "ICE"].sort_values("readiness", ascending=False).iloc[0]
-)
-
-yard_zone = (
-    yard.groupby("zona_patio")
-    .agg(
-        avg_dwell=("avg_dwell_time", "mean"),
-        p95_dwell=("p95_dwell_time", "mean"),
-        blocking_rate=("blocking_rate", "mean"),
-        avg_occupancy=("yard_occupancy_rate", "mean"),
+    worst_ev_version = version_readiness[version_readiness["tipo_propulsion"] == "EV"].sort_values("readiness").iloc[0]
+    best_ice_version = (
+        version_readiness[version_readiness["tipo_propulsion"] == "ICE"]
+        .sort_values("readiness", ascending=False)
+        .iloc[0]
     )
-    .reset_index()
-)
-pre_salida = yard_zone[yard_zone["zona_patio"] == "PRE_SALIDA"].iloc[0]
-next_yard_zone = yard_zone[yard_zone["zona_patio"] != "PRE_SALIDA"].sort_values("avg_dwell", ascending=False).iloc[0]
 
-charging_zone = (
-    charging.groupby("zona_carga")
-    .agg(
-        sessions=("sessions_per_shift", "sum"),
-        avg_wait=("avg_wait_to_charge", "mean"),
-        interruption_rate=("interruption_rate", "mean"),
-        target_miss_rate=("target_soc_miss_rate", "mean"),
-        pressure=("charger_pressure_score", "mean"),
+    yard_zone = (
+        yard.groupby("zona_patio")
+        .agg(
+            avg_dwell=("avg_dwell_time", "mean"),
+            p95_dwell=("p95_dwell_time", "mean"),
+            blocking_rate=("blocking_rate", "mean"),
+            avg_occupancy=("yard_occupancy_rate", "mean"),
+        )
+        .reset_index()
     )
-    .reset_index()
-)
-highest_charge_zone = charging_zone.sort_values("pressure", ascending=False).iloc[0]
+    pre_salida = yard_zone[yard_zone["zona_patio"] == "PRE_SALIDA"].iloc[0]
+    next_yard_zone = (
+        yard_zone[yard_zone["zona_patio"] != "PRE_SALIDA"].sort_values("avg_dwell", ascending=False).iloc[0]
+    )
 
-transition_start = transition.iloc[0]
-transition_end = transition.iloc[-1]
-EV_SHARE_DELTA_PP = (transition_end["share_ev"] - transition_start["share_ev"]) * 100
-YARD_STRESS_DELTA = transition_end["yard_transition_stress_index"] - transition_start["yard_transition_stress_index"]
-DISPATCH_STABILITY_DELTA = transition_end["dispatch_stability_index"] - transition_start["dispatch_stability_index"]
-CHARGE_GAP_DELTA = transition_end["charging_capacity_gap"] - transition_start["charging_capacity_gap"]
+    charging_zone = (
+        charging.groupby("zona_carga")
+        .agg(
+            sessions=("sessions_per_shift", "sum"),
+            avg_wait=("avg_wait_to_charge", "mean"),
+            interruption_rate=("interruption_rate", "mean"),
+            target_miss_rate=("target_soc_miss_rate", "mean"),
+            pressure=("charger_pressure_score", "mean"),
+        )
+        .reset_index()
+    )
+    highest_charge_zone = charging_zone.sort_values("pressure", ascending=False).iloc[0]
 
-scenario_delta_by_metric = scenario_delta.set_index("metrica")
-DECISION_SCORE_UPLIFT = float(best["decision_score"] - base["decision_score"])
-ACCELERATION_SCORE_PENALTY = float(base["decision_score"] - worst["decision_score"])
-CORRECTIVE_THROUGHPUT_DELTA = float(scenario_delta_by_metric.loc["throughput", "delta_abs"])
-CORRECTIVE_INTERNAL_TIME_DELTA = float(scenario_delta_by_metric.loc["tiempo_total_interno", "delta_pct"])
-CORRECTIVE_LATE_PP_REDUCTION = -float(scenario_delta_by_metric.loc["vehiculos_retrasados", "delta_abs"]) * 100
-CORRECTIVE_CHARGE_WAIT_DELTA = float(scenario_delta_by_metric.loc["espera_carga", "delta_pct"])
-TOP1_LOGISTICS = float(rank_stability.set_index("top1_area").loc["LOGISTICA", "freq_share"])
-TOP1_YARD = float(rank_stability.set_index("top1_area").loc["PATIO", "freq_share"])
+    transition_start = transition.iloc[0]
+    transition_end = transition.iloc[-1]
+    EV_SHARE_DELTA_PP = (transition_end["share_ev"] - transition_start["share_ev"]) * 100
+    YARD_STRESS_DELTA = (
+        transition_end["yard_transition_stress_index"] - transition_start["yard_transition_stress_index"]
+    )
+    DISPATCH_STABILITY_DELTA = transition_end["dispatch_stability_index"] - transition_start["dispatch_stability_index"]
+    CHARGE_GAP_DELTA = transition_end["charging_capacity_gap"] - transition_start["charging_capacity_gap"]
+
+    scenario_delta_by_metric = scenario_delta.set_index("metrica")
+    DECISION_SCORE_UPLIFT = float(best["decision_score"] - base["decision_score"])
+    ACCELERATION_SCORE_PENALTY = float(base["decision_score"] - worst["decision_score"])
+    CORRECTIVE_THROUGHPUT_DELTA = float(scenario_delta_by_metric.loc["throughput", "delta_abs"])
+    CORRECTIVE_INTERNAL_TIME_DELTA = float(scenario_delta_by_metric.loc["tiempo_total_interno", "delta_pct"])
+    CORRECTIVE_LATE_PP_REDUCTION = -float(scenario_delta_by_metric.loc["vehiculos_retrasados", "delta_abs"]) * 100
+    CORRECTIVE_CHARGE_WAIT_DELTA = float(scenario_delta_by_metric.loc["espera_carga", "delta_pct"])
+    TOP1_LOGISTICS = float(rank_stability.set_index("top1_area").loc["LOGISTICA", "freq_share"])
+    TOP1_YARD = float(rank_stability.set_index("top1_area").loc["PATIO", "freq_share"])
+
 
 AREA_NAME_ES = {
     "LOGISTICA": "Logística",
@@ -2099,6 +2124,8 @@ def build_story() -> list:
 
 
 def main() -> None:
+    _load_report_data()
+    OUT.mkdir(parents=True, exist_ok=True)
     doc = Report(
         str(PDF),
         title="Gemelo operativo para la transición a vans EV",
