@@ -1,31 +1,25 @@
-# Objetivo del Repositorio
+# Estándar de Calidad del Repositorio
 
-## Objetivo activo
+## Objetivo
 
-Asegurar que el informe, el panel, los informes generados, la documentación y los textos visibles del repositorio estén en español, manteniendo la canalización reproducible y los contratos técnicos intactos.
+Mantener un gemelo operativo reproducible, auditable y defendible en una entrevista técnica, con separación explícita entre datos sintéticos, supuestos paramétricos y resultados observados en la simulación.
 
-## Estado de referencia
+## Criterios de aceptación
 
-| Área | Estado |
-|---|---|
-| Pruebas unitarias | Suite completa en CI |
-| Cobertura combinada | Umbral CI mínimo del 85% |
-| Artefactos | Panel HTML, paquete de gráficos e informe PDF |
-| Datos | Sintéticos, deterministas y regenerables |
-| Gobierno | Puerta de publicación, validaciones y contratos de KPI |
+- La generación sintética es determinista para una semilla y un horizonte dados.
+- La capa SQL valida claves, calendario operativo, balances de patio, capacidad física y coherencia temporal.
+- KPI, escenarios y puntuaciones declaran fórmula, grano, denominador y límites de uso.
+- La publicación queda bloqueada ante fallos críticos o artefactos que no coincidan con su manifiesto.
+- Lint, formato, pruebas, cobertura combinada, empaquetado y escáneres de seguridad pasan en CI.
+- Panel, gráficos e informe se regeneran desde código sin cambios manuales sobre los artefactos.
+- La ingesta conectada valida contratos, soporta incremental idempotente y registra checkpoint y linaje.
+- Cada ejecución deja duración por etapa, resultado de SLA y error tipado sin exponer secretos.
+- El wheel contiene SQL y plantilla del panel, se instala en un entorno aislado y expone CLI estables.
+- La API opcional aplica autenticación fail-closed, RBAC, contratos de respuesta y límites de exposición.
+- La calibración solo se activa con cobertura completa, soporte identificador y coeficientes aprobados.
+- Datos y bases reconstruibles quedan fuera de Git; el portfolio conserva solo artefactos finales de revisión.
+- La documentación es breve, específica y coherente con el comportamiento ejecutable.
 
-## Criterios de finalización
+## Límite de uso
 
-- Documentación principal en español.
-- Plantillas GitHub y documentos de comunidad en español.
-- Informe PDF generado desde código fuente en español.
-- Informes Markdown generados sin cabeceras ni narrativa en inglés.
-- Panel HTML con etiquetas, ayudas, filtros y mensajes en español.
-- Código funcional sin cambiar nombres de columnas, rutas o contratos que consume la canalización.
-- Validación con `ruff`, pruebas relevantes y puerta de publicación.
-
-## Notas de alcance
-
-Los nombres técnicos de columnas, ficheros, paquetes, comandos, claves YAML, rutas y estados contractuales como `PASS` pueden mantenerse cuando forman parte de una API, un estándar o un contrato de datos.
-
-El texto dirigido a lectores, operadores o revisores debe estar en español claro, directo y sin relleno artificial.
+El máximo nivel de decisión permitido es `decision-support only`. Los datos sintéticos y las elasticidades paramétricas no sustentan compromisos de inversión ni inferencia causal sin calibración externa.

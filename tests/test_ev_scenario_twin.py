@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from src.ev_scenario_twin import _simulate
+import pandas as pd
+import pytest
+
+from gemelo_operativo_ev import ev_scenario_twin as scenario_twin
+from gemelo_operativo_ev.ev_scenario_twin import _base_metrics, _simulate
 
 
 def _make_base() -> dict[str, float]:
@@ -129,3 +133,56 @@ def test_simulate_risk_values_clamped_to_unit_interval() -> None:
     assert 0 <= result["riesgo_congestion"] <= 1
     assert 0 <= result["vehiculos_retrasados"] <= 1
     assert 0 <= result["estabilidad_operativa"] <= 100
+
+
+@pytest.mark.parametrize(
+    "key, value",
+    [
+        ("share_ev_delta", -0.1),
+        ("sequencing_gain", 1.1),
+        ("charging_gain", float("nan")),
+    ],
+)
+def test_simulate_rejects_invalid_parameters(key: str, value: float) -> None:
+    params = {**_neutral_params(), key: value}
+
+    with pytest.raises(ValueError, match="no finitos|fuera del intervalo"):
+        _simulate(_make_base(), params)
+
+
+def test_simulate_rejects_invalid_base_metric() -> None:
+    base = {**_make_base(), "share_ev": 1.2}
+
+    with pytest.raises(ValueError, match="Métricas base fuera de rango"):
+        _simulate(base, _neutral_params())
+
+
+def test_simulate_rejects_non_numeric_input() -> None:
+    params = {**_neutral_params(), "yard_gain": "alto"}
+
+    with pytest.raises(TypeError, match="Inputs de escenario no numéricos"):
+        _simulate(_make_base(), params)  # type: ignore[arg-type]
+
+
+def test_base_metrics_measures_observed_readiness_gap(monkeypatch: pytest.MonkeyPatch) -> None:
+    tables = {
+        "vehicle_readiness_features": pd.DataFrame(
+            {"fecha_real": ["2025-01-01"] * 4, "total_internal_lead_time": [100, 110, 120, 130]}
+        ),
+        "yard_features": pd.DataFrame({"yard_occupancy_rate": [0.4, 0.6], "yard_saturation_score": [20.0, 80.0]}),
+        "charging_features": pd.DataFrame({"avg_wait_to_charge": [20.0, 40.0]}),
+        "vw_dispatch_readiness": pd.DataFrame(
+            {
+                "readiness_final_flag": [True, True, True, False],
+                "departed_flag": [True, True, True, False],
+                "delayed_flag": [False, True, False, False],
+            }
+        ),
+        "launch_transition_features": pd.DataFrame({"share_ev": [0.4, 0.5]}),
+    }
+
+    monkeypatch.setattr(scenario_twin, "_read", lambda name, parse_dates=None: tables[name])
+
+    metrics = _base_metrics()
+
+    assert metrics["riesgo_salida_baja_readiness"] == pytest.approx(0.25)

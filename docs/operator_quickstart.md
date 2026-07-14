@@ -5,7 +5,7 @@ Guía breve para instalar, regenerar el corte analítico, validar y localizar sa
 ## Requisitos
 
 - Python 3.10+
-- Acceso de escritura a `data/processed/` y `outputs/`
+- Acceso de escritura a la raíz definida por `EV_TWIN_HOME`
 - Red solo para visualizar el panel con fuentes y Chart.js desde CDN
 
 ## Instalación
@@ -13,20 +13,19 @@ Guía breve para instalar, regenerar el corte analítico, validar y localizar sa
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[dev]"
+python -m pip install -e ".[dev,service]"
 ```
 
 ## Ejecución recomendada
 
 ```bash
-generate-data --seed 20260328 --start-date 2025-01-01 --months 12
-python -m src.run_pipeline
-python scripts/generate_chart_pack.py
-python scripts/generate_report.py
-python -m src.ev_release_gate
+ev-twin run --generate-data --seed 20260328 --months 12
+ev-twin artifacts
+ev-twin release-check
+ev-twin status
 ```
 
-`python -m src.run_pipeline` usa por defecto los CSV de origen existentes. Para regenerar datos de origen dentro de la canalización desde Python, usar `run_pipeline(generate_data=True, seed=20260328, months=12)`.
+`ev-twin run` usa por defecto los CSV de origen existentes. `--generate-data` reconstruye primero el corte sintético canónico. Para fuentes conectadas, ejecutar `ev-twin ingest` antes de `ev-twin run`; la configuración y recuperación están en [production_operations.md](production_operations.md).
 
 ## Orden real de la canalización
 
@@ -52,6 +51,8 @@ python -m src.ev_release_gate
 | Manifiesto del panel | `outputs/reports/dashboard_build_manifest.json` | Contratos UI/build |
 | Preparación de publicación | `outputs/reports/release_readiness.json` | Estado de publicación |
 | Resumen de canalización | `outputs/reports/pipeline_run_summary.json` | Resultado agregado de la ejecución |
+| Estado operacional | `.ev_twin/observability/latest_pipeline_run.json` | Duraciones, fallos y SLA |
+| Linaje de ingesta | `.ev_twin/lineage/latest_ingestion.json` | Fuente, cardinalidad, watermark y hash |
 
 ## Pruebas y calidad
 
@@ -66,19 +67,19 @@ Notas:
 
 - `pytest -q` excluye pruebas de integración por defecto.
 - `pytest -q -m integration` escribe en `data/` y `outputs/`.
-- `tests/test_ev_governance.py` regenera datos y restaura el corte canónico al final.
+- Las pruebas unitarias usan directorios temporales; las de integración regeneran el corte canónico.
 
 ## Comandos parciales útiles
 
 ```bash
-python -m src.ev_sql_layer
-python -m src.ev_feature_engineering
-python -m src.ev_diagnostic_analysis
-python -m src.ev_scenario_twin
-python -m src.ev_scoring_framework
-python -m src.ev_build_dashboard
-python -m src.ev_validate_project
-python -m src.ev_release_gate
+python -m gemelo_operativo_ev.ev_sql_layer
+python -m gemelo_operativo_ev.ev_feature_engineering
+python -m gemelo_operativo_ev.ev_diagnostic_analysis
+python -m gemelo_operativo_ev.ev_scenario_twin
+python -m gemelo_operativo_ev.ev_scoring_framework
+python -m gemelo_operativo_ev.ev_build_dashboard
+python -m gemelo_operativo_ev.ev_validate_project
+python -m gemelo_operativo_ev.ev_release_gate
 ```
 
 Ejecutar comandos parciales solo cuando las entradas anteriores ya existen. Ejemplo: `ev_build_dashboard` requiere CSV procesados como `vw_vehicle_flow_timeline.csv`, `charging_features.csv`, `yard_features.csv`, `operational_prioritization_table.csv` y `scenario_table.csv`.
@@ -89,3 +90,4 @@ Ejecutar comandos parciales solo cuando las entradas anteriores ya existen. Ejem
 - Panel sin estilos o gráficos: abrir con red disponible, porque Chart.js y fuentes usan CDN.
 - Falla la puerta de publicación: revisar `outputs/reports/validation_report.md`, `validation_issues_found.csv` y `dashboard_build_manifest.json`.
 - Salidas no deterministas: usar semilla canónica `20260328`; la capa SQL fuerza DuckDB con `PRAGMA threads=1`.
+- API no preparada: ejecutar la canalización y comprobar `ev-twin status`; release y SLA deben estar en `PASS`.

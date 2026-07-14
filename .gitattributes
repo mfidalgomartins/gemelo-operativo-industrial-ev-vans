@@ -1,3 +1,7 @@
 *.duckdb binary
 *.pdf binary
 *.png binary
+outputs/dashboard/** linguist-generated=true
+outputs/graphs/** linguist-generated=true
+outputs/reports/** linguist-generated=true
+data/** linguist-generated=true

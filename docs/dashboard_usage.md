@@ -2,7 +2,7 @@
 
 ## Apertura
 
-1. Ejecutar la canalización oficial: `python -m src.run_pipeline`
+1. Ejecutar la canalización oficial: `python -m gemelo_operativo_ev.run_pipeline`
 2. Abrir `outputs/dashboard/industrial-ev-operating-command-center.html` en el navegador.
 
 O usar el enlace público si el repositorio está desplegado en GitHub Pages (ver README).

@@ -6,10 +6,10 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src import ev_build_dashboard as dashboard
-from src import ev_validate_project as validation
-from src.ev_release_gate import _read_json_object
-from src.utils import require_columns, to_markdown_safe, write_json_utf8
+from gemelo_operativo_ev import ev_build_dashboard as dashboard
+from gemelo_operativo_ev import ev_validate_project as validation
+from gemelo_operativo_ev.ev_release_gate import _read_json_object
+from gemelo_operativo_ev.utils import require_columns, to_markdown_safe, write_json_utf8
 
 
 def test_require_columns_lists_missing_columns_in_context() -> None:

@@ -19,13 +19,13 @@
 
 ## Filas exportadas
 - vw_vehicle_flow_timeline: 58697
-- vw_charging_utilization: 18980
-- vw_yard_congestion: 46155
+- vw_charging_utilization: 19478
+- vw_yard_congestion: 52938
 - vw_dispatch_readiness: 58697
-- vw_shift_bottleneck_summary: 1331
+- vw_shift_bottleneck_summary: 1261
 - mart_vehicle_day: 58697
 - mart_area_shift: 6570
-- mart_dispatch_readiness: 8302
+- mart_dispatch_readiness: 8304
 - kpi_operativos: 1
 - kpi_readiness_shift_version: 24
-- validation_checks: 15
+- validation_checks: 20

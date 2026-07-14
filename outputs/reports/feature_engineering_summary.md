@@ -3,8 +3,8 @@
 ## Tablas generadas
 - vehicle_readiness_features: 58697 filas
 - area_shift_features: 6570 filas
-- charging_features: 18980 filas
-- yard_features: 46155 filas
+- charging_features: 19478 filas
+- yard_features: 52938 filas
 - launch_transition_features: 53 filas
 
 ## Variables clave

@@ -10,7 +10,7 @@
 - Mejor secuenciación reduce tiempo interno, pero no elimina riesgo si falta capacidad de carga.
 - Expandir patio estabiliza picos, pero sin disciplina de salida puede cronificar inventario interno.
 
-## Ranking de palancas
+## Ranking de palancas (supuesto parametrico no calibrado)
 - capacidad de carga: impacto esperado 0.37
 - secuenciación EV: impacto esperado 0.31
 - gestión de patio: impacto esperado 0.29

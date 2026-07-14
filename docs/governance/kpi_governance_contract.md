@@ -14,7 +14,7 @@ Definir fuente, fórmula y validación mínima de KPI críticos para evitar deri
 - `score_readiness_global`: `kpi_operativos.csv`
 
 Definiciones:
-- `score_readiness_global`: porcentaje de vehículos con preparación final, escala 0-100.
+- `score_readiness_global`: porcentaje de vehículos preparados dentro de la ventana planificada, escala 0-100.
 - `ratio_salida_retrasada`: porcentaje de vehículos despachados con atraso superior a 120 minutos.
 
 ## Reglas de consistencia obligatorias
@@ -25,7 +25,7 @@ Definiciones:
 3. KPI fuera de rango:
    - proporciones deben estar en [0, 1].
    - puntuaciones en [0, 100].
-4. Ninguna salida real puede tener `readiness_final_flag = false`.
+4. Ninguna salida real puede preceder a `timestamp_readiness`; una salida tardía puede tener `readiness_final_flag = false` si no estuvo preparada dentro de la ventana planificada.
 
 ## Uso permitido
 - Panel ejecutivo: permitido.

@@ -44,7 +44,7 @@ No se detectaron problemas materiales en esta ejecución.
 
 ## Advertencias Obligatorias
 - Dato sintético: útil para arquitectura y lógica, no para comparación real de planta.
-- Las elasticidades del gemelo operativo son supuestos calibrados, no estimación causal.
+- Las elasticidades del gemelo operativo son supuestos paramétricos no calibrados, no estimaciones causales.
 - La criticidad por área depende de pesos de puntuación; revisar sensibilidad antes de uso real.
 - No incorpora variabilidad externa real (suministro, clima, huelgas, etc.).
 

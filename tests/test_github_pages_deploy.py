@@ -46,6 +46,27 @@ def test_github_pages_dashboard_contracts() -> None:
     assert "__PAYLOAD__" not in html
     assert "cdn.jsdelivr.net/npm/chart.js" in html
 
+    # La vista de escenarios debe usar etiquetas de negocio y distinguir el
+    # escenario seleccionado del recomendado por la puntuación multiobjetivo.
+    for label in [
+        "Rampa EV acelerada",
+        "Aumentar slots de carga",
+        "Mejorar secuenciación EV",
+        "Optimizar uso de patio",
+        "Mayor presión logística",
+        "Turno con menor disponibilidad",
+    ]:
+        assert label in html
+    assert "Mejor escenario modelado:" in html
+    assert "Escenario recomendado: ' + scenarioLabel(state.scenario" not in html
+    assert "selectedScenario" in html
+    assert '<details class="advanced-filters">' in html
+    assert html.count('role="img" aria-label=') == 17
+    assert '<caption class="sr-only">' in html
+    assert html.count('scope="col"') == 7
+    assert "score-badge" not in html
+    assert "tier-badge" not in html
+
 
 def test_github_pages_entry_is_in_sync_with_official_dashboard_size() -> None:
     assert OFFICIAL_DASHBOARD.exists(), "No existe panel oficial en outputs/dashboard"
@@ -56,4 +77,6 @@ def test_github_pages_entry_is_in_sync_with_official_dashboard_size() -> None:
 def test_root_index_redirects_to_official_dashboard() -> None:
     assert ROOT_INDEX.exists(), "Falta index.html en la raíz para entrada GitHub Pages"
     html = ROOT_INDEX.read_text(encoding="utf-8")
-    assert "/outputs/dashboard/industrial-ev-operating-command-center.html" in html
+    relative_dashboard = "./outputs/dashboard/industrial-ev-operating-command-center.html"
+    assert relative_dashboard in html
+    assert "/gemelo-operativo-industrial-ev-vans/outputs/" not in html

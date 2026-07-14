@@ -27,6 +27,10 @@ outputs/reports/synthetic_data_plausibility.md
 outputs/reports/synthetic_data_validation.json
 outputs/reports/synthetic_generation_run.json
 
+# Dados reconstruíveis; CI e execução local regeneram o corte canónico
+data/raw/ev_factory/*.csv
+data/processed/ev_factory/*.csv
+
 # Cobertura e build local
 .coverage
 .coverage.*
@@ -42,6 +46,8 @@ coverage.xml
 !.env.example
 !.env.template
 .envrc
+.ev_twin/
+skill-observations/
 *.pem
 *.key
 *.p12

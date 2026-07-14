@@ -16,7 +16,7 @@
 - `02_staging_charging.sql`: preparación de estado de batería, puntos de carga y sesiones.
 - `03_staging_yard.sql`: preparación de instantáneas de patio, movimientos, recursos y restricciones.
 - `04_staging_dispatch.sql`: preparación de expedición y escenarios de transición.
-- `05_integrated_vehicle_flow.sql`: crea `vw_vehicle_flow_timeline`, `vw_charging_utilization`, `vw_yard_congestion`.
+- `05_integrated_vehicle_flow.sql`: crea `vw_vehicle_flow_timeline`, `vw_charging_utilization`, `vw_yard_congestion` y materializa internamente los intervalos y la ocupación horaria de patio para evitar recalcularlos en cada mart o validación.
 - `06_integrated_shift_operations.sql`: crea `vw_shift_bottleneck_summary`.
 - `07_analytical_mart_vehicle_day.sql`: crea `mart_vehicle_day` (nivel vehículo-día).
 - `08_analytical_mart_area_shift.sql`: crea `mart_area_shift` (nivel área-turno).
@@ -30,7 +30,7 @@
 3. Exportar vistas y marts a `data/processed/ev_factory/`.
 
 ## Runner
-- Script: `src/ev_sql_layer.py`
+- Módulo: `src/gemelo_operativo_ev/ev_sql_layer.py`
 - Entrada: `data/raw/*.csv` (14 tablas base)
 - Salida:
   - DB: `data/processed/gemelo_operativo_ev.duckdb`
@@ -41,4 +41,5 @@
 - Sin `SELECT *` en SQL final de transformación.
 - CTEs por bloque lógico.
 - Nombres de vistas `vw_` y marts `mart_`.
+- Tablas internas `int_` solo para resultados intermedios costosos reutilizados por varias capas.
 - Cálculos operativos expresados en minutos para trazabilidad.

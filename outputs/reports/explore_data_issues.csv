@@ -1,3 +1,1 @@
 problema,severidad,filas_afectadas,regla,correccion_recomendada
-ocupaciones_patio_incompatibles,alta,10,vehículo no puede estar en dos posiciones en la misma marca temporal,Deduplicar instantáneas por marca temporal+vehiculo y conservar el estado de mayor prioridad.
-retrasos_sin_causa,media,1652,Retraso positivo requiere causa de retraso válida,Imponer catálogo de causas y clasificación automática cuando falte causa.

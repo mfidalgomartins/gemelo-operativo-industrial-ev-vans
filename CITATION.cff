@@ -4,8 +4,8 @@ title: "Gemelo operativo para la transición a vans eléctricas"
 authors:
   - family-names: "Fidalgo Martins"
     given-names: "Miguel"
-version: "1.0.2"
-date-released: "2026-07-06"
+version: "2.0.0"
+date-released: "2026-07-14"
 url: "https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans"
 abstract: >
   Gemelo operativo reproducible que identifica dónde se rompe el flujo productivo

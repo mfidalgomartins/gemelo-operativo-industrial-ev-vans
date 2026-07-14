@@ -6,11 +6,13 @@
 
 Fichero HTML estático con carga de datos embebida. Chart.js y las fuentes Geist se cargan desde CDN, por lo que la visualización requiere acceso de red.
 
+La plantilla se distribuye como recurso del paquete en `src/gemelo_operativo_ev/dashboard/dashboard.html`; `dashboard/renderer.py` valida sus marcadores y materializa los payloads. Esta separación permite mantener el generador Python sin modificar el diseño, los estilos ni los componentes existentes.
+
 ## Ruta de construcción
 
 ```bash
-python -m src.run_pipeline       # canalización completa
-python -m src.ev_build_dashboard # solo panel, si los CSVs ya existen
+python -m gemelo_operativo_ev.run_pipeline       # canalización completa
+python -m gemelo_operativo_ev.ev_build_dashboard # solo panel, si los CSVs ya existen
 ```
 
 ## Composición técnica

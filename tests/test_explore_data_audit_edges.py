@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from src.explore_data_audit import _build_recommendations_md, _classify_column, _table_temporal_coverage
+from gemelo_operativo_ev.explore_data_audit import _build_recommendations_md, _classify_column, _table_temporal_coverage
 
 
 def test_classify_column_covers_expected_semantic_buckets() -> None:

@@ -7,11 +7,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.config import OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
-from src.ev_build_dashboard import (
+from gemelo_operativo_ev.config import OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
+from gemelo_operativo_ev.ev_build_dashboard import (
     OFFICIAL_DASHBOARD_NAME,
+    _build_html,
     _build_meta,
     _build_payload,
+    _json_for_inline_script,
     _records,
     run_ev_build_dashboard,
 )
@@ -40,6 +42,7 @@ def test_ev_dashboard_official_build_manifest_and_single_html() -> None:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["official_dashboard"] == "outputs/dashboard/industrial-ev-operating-command-center.html"
     assert manifest["html_size_bytes"] < 6_000_000
+    assert len(manifest["html_sha256"]) == 64
     assert all(manifest["checks"].values())
 
 
@@ -85,11 +88,8 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
         "f_severity",
     ]:
         assert f'id="{fid}"' in html
-    assert (
-        "const filterIds = ['f_date_from','f_date_to','f_turno','f_prop','f_version','f_area','f_yard','f_charge','f_severity'];"
-        in html
-    )
-    assert "el.addEventListener('input', updateCharts);" in html
+    assert '<details class="advanced-filters">' in html
+    assert "el.addEventListener('input', updateCharts);" not in html
     assert 'id="btn_apply"' in html
     assert "document.getElementById('btn_apply').addEventListener('click', updateCharts);" in html
     assert "document.getElementById('btn_toggle_filters').addEventListener('click'" in html
@@ -132,6 +132,19 @@ def test_dashboard_records_serializes_dates_numbers_and_nulls_deterministically(
         {"fecha": "2025-01-01", "score": 1.2346, "count": 3, "label": "EV"},
         {"fecha": None, "score": None, "count": 4, "label": None},
     ]
+
+
+def test_dashboard_inline_json_cannot_close_script_block() -> None:
+    malicious = "</script><script>globalThis.compromised=true</script>&\u2028"
+    payload = {"meta": {"label": malicious}, "filters": {}, "data": {}}
+
+    serialized = _json_for_inline_script(payload)
+    html = _build_html(payload, "ev-test")
+
+    assert malicious not in serialized
+    assert "</script><script>globalThis.compromised" not in html
+    assert "\\u003c/script\\u003e" in serialized
+    assert json.loads(serialized)["meta"]["label"] == malicious
 
 
 def test_dashboard_meta_kpi_validation_passes_with_consistent_inputs() -> None:

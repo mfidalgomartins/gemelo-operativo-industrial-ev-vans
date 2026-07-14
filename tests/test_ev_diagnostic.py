@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from src.ev_diagnostic_analysis import _initial_action, _score_to_100
+from gemelo_operativo_ev.ev_diagnostic_analysis import _initial_action, _score_to_100
 
 
 def test_score_to_100_clamps_output() -> None:

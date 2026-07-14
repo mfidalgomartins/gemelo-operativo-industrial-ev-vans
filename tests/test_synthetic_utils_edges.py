@@ -4,8 +4,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.synthetic_data_gen.config import SyntheticGenerationConfig
-from src.synthetic_data_gen.utils import clamp, get_shift_start, ordered_phase, scenario_curve, shift_from_timestamp
+from gemelo_operativo_ev.synthetic_data_gen.config import SyntheticGenerationConfig
+from gemelo_operativo_ev.synthetic_data_gen.utils import (
+    clamp,
+    get_shift_start,
+    ordered_phase,
+    scenario_curve,
+    shift_from_timestamp,
+)
 
 
 @pytest.mark.parametrize(

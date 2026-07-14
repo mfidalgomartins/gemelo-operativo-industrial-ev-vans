@@ -1,43 +1,36 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
-from src.config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR
-from src.ev_build_dashboard import run_ev_build_dashboard
-from src.ev_diagnostic_analysis import run_ev_diagnostic_analysis
-from src.ev_feature_engineering import run_ev_feature_engineering
-from src.ev_scenario_twin import run_ev_scenario_twin
-from src.ev_scoring_framework import run_ev_scoring_framework
-from src.ev_sql_layer import run_ev_sql_layer
-from src.ev_validate_project import run_ev_validation
-from src.synthetic_data_gen import SyntheticGenerationConfig, generate_synthetic_factory_data
+from gemelo_operativo_ev.config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR
+from gemelo_operativo_ev.ev_build_dashboard import run_ev_build_dashboard
+from gemelo_operativo_ev.ev_diagnostic_analysis import run_ev_diagnostic_analysis
+from gemelo_operativo_ev.ev_feature_engineering import run_ev_feature_engineering
+from gemelo_operativo_ev.ev_scenario_twin import run_ev_scenario_twin
+from gemelo_operativo_ev.ev_scoring_framework import run_ev_scoring_framework
+from gemelo_operativo_ev.ev_sql_layer import run_ev_sql_layer
+from gemelo_operativo_ev.ev_validate_project import run_ev_validation
+from gemelo_operativo_ev.synthetic_data_gen import SyntheticGenerationConfig, generate_synthetic_factory_data
 
 
 @pytest.fixture
 def restore_canonical_data():
-    """After the test, restore the canonical dataset (seed 20260328, 12 months) and
-    re-run the pipeline to leave the repository in a clean state."""
+    """Restaura el corte canónico y sus artefactos después de la prueba."""
     yield
-    subprocess.run(
-        [
-            sys.executable,
-            "generate_synthetic_data.py",
-            "--seed",
-            "20260328",
-            "--start-date",
-            "2025-01-01",
-            "--months",
-            "12",
-        ],
-        check=True,
+    generate_synthetic_factory_data(
+        SyntheticGenerationConfig(
+            seed=20260328,
+            start_date="2025-01-01",
+            months=12,
+            output_raw_dir=EV_DATA_RAW_DIR,
+            output_report_dir=OUTPUT_REPORTS_DIR,
+        )
     )
-    from src.run_pipeline import run_pipeline
+    from gemelo_operativo_ev.run_pipeline import run_pipeline
 
     run_pipeline(generate_data=False)
 
@@ -109,6 +102,8 @@ def test_ev_release_governance_contract(restore_canonical_data) -> None:
         "medium_issues",
         "sql_warn_ratio",
         "kpi_single_source_of_truth",
+        "dashboard_version",
+        "dashboard_html_sha256",
     }
     assert required.issubset(release.keys())
     assert release["release_grade"] in {

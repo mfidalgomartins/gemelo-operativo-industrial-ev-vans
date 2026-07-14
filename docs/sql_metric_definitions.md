@@ -28,7 +28,7 @@
 - `dispatch_delay_min`: diferencia planificada vs real de salida (min).
 - `turno` (`vw_dispatch_readiness`): turno derivado de la salida planificada.
 - `turno_produccion`: turno original de producción, conservado para trazabilidad.
-- `readiness_final_flag`: bandera final consolidada de preparación.
+- `readiness_final_flag`: preparación dentro de la ventana planificada. El nombre se conserva por compatibilidad contractual; no significa que el vehículo nunca alcance preparación después de la ventana.
 - `soc_gap_before_dispatch`: `target_soc_salida_pct - soc_salida_pct`.
 - `dispatch_readiness_risk_score`: puntuación compuesta de brecha SOC, retraso, cola de carga, espera de patio y bloqueo.
 - `readiness_rate`: proporción de vehículos listos por segmento.
@@ -56,7 +56,7 @@
 - `area_mayor_perdida_throughput`
 - `score_readiness_global`
 
-`score_readiness_global` es la tasa de preparación final expresada en escala 0-100. `ratio_salida_retrasada` usa únicamente vehículos efectivamente despachados.
+`score_readiness_global` es la tasa de preparación dentro de la ventana planificada, expresada en escala 0-100. `ratio_salida_retrasada` usa únicamente vehículos efectivamente despachados.
 
 ## Validaciones (`validation_checks`)
 Comprobaciones de duplicados, secuencia, orden temporal, SOC, sesiones imposibles, EV sin carga, salida sin preparación, retraso sin causa y consistencia de capacidad.

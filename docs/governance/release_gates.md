@@ -31,6 +31,7 @@ El máximo nivel permitido para este repositorio sintético es `decision-support
 - SOC en rango.
 - ninguna salida real sin preparación.
 - panel oficial consistente y con manifiesto en estado OK.
+- versión y hash SHA-256 del panel idénticos en el manifiesto y en la validación de publicación.
 
 ## Comprobaciones de aviso (operacionales/metodológicas)
 - sobre-ocupación de patio.

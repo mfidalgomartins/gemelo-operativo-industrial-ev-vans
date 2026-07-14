@@ -6,7 +6,7 @@ Gracias por mejorar el gemelo operativo EV. Este repositorio es una canalizació
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-python -m pip install -e ".[dev]"      # añadir ".[security]" para los escáneres
+python -m pip install -e ".[dev,service]"  # añadir ".[security]" para los escáneres
 ```
 
 Python soportado: **3.10-3.12** en CI.
@@ -20,14 +20,12 @@ pre-commit install
 ## Canalización
 
 ```bash
-generate-data --seed 20260328 --start-date 2025-01-01 --months 12
-python -m src.run_pipeline           # variables, diagnóstico, escenarios y puntuación
-python scripts/generate_chart_pack.py
-python scripts/generate_report.py
-python -m src.ev_release_gate
+ev-twin run --generate-data --seed 20260328 --months 12
+ev-twin artifacts
+ev-twin release-check
 ```
 
-El fichero DuckDB en `data/processed/` es un intermedio reconstruible y no se versiona. Los CSV junto a él son las salidas canónicas versionadas.
+Los CSV de `data/`, el fichero DuckDB y `.ev_twin/` son estado reconstruible y no se versionan. Los artefactos visuales publicados se actualizan solo después de superar la puerta de publicación.
 
 ## Calidad
 
