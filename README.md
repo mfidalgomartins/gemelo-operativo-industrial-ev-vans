@@ -148,7 +148,9 @@ docs/                         arquitectura, métricas, metodología y gobernanza
   governance/                 contrato de gobernanza de KPI y puertas de release
 outputs/dashboard/             panel HTML publicado en GitHub Pages
 outputs/graphs/                19 gráficos analíticos curados
-outputs/reports/               informe, manifiestos y validaciones
+outputs/reports/               informe PDF, manifiesto de release y preparación de publicación
+  pipeline_audit/               trazas intermedias por etapa: auditoría de datos, sumarios SQL,
+                                 diagnóstico, escenarios, puntuación y validación
 ```
 
 ## Documentación

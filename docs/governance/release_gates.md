@@ -43,4 +43,4 @@ Antes de publicación:
 1. Ejecutar canalización EV completa.
 2. Ejecutar validación EV.
 3. Confirmar que `release_grade` no sea `publish-blocked`.
-4. Revisar `outputs/reports/validation_report.md` y `outputs/reports/release_readiness.json`.
+4. Revisar `outputs/reports/pipeline_audit/validation_report.md` y `outputs/reports/release_readiness.json`.

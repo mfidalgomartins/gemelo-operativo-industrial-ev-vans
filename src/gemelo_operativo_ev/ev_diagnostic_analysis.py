@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
+from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_AUDIT_DIR
 from .utils import read_ev_csv, require_columns, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
@@ -72,7 +72,7 @@ def _initial_action(row: pd.Series) -> str:
 
 
 def run_ev_diagnostic_analysis() -> DiagnosticResult:
-    OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_REPORTS_AUDIT_DIR.mkdir(parents=True, exist_ok=True)
 
     vehicle = _read("vehicle_readiness_features", parse_dates=["fecha_real"])
     area = _read("area_shift_features", parse_dates=["fecha"])
@@ -245,7 +245,7 @@ def run_ev_diagnostic_analysis() -> DiagnosticResult:
             f"- Áreas clasificadas como estructurales: {int((area_persistence['tipo_cuello'] == 'ESTRUCTURAL').sum())}.",
         ]
     )
-    write_text_utf8(OUTPUT_REPORTS_DIR / "diagnostic_findings.md", "\n".join(lines))
+    write_text_utf8(OUTPUT_REPORTS_AUDIT_DIR / "diagnostic_findings.md", "\n".join(lines))
 
     return DiagnosticResult(outputs=out_counts)
 

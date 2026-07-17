@@ -5,11 +5,11 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR
+from .config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_AUDIT_DIR
 from .utils import require_columns, to_markdown_safe, write_text_utf8
 
 RAW_DIR = EV_DATA_RAW_DIR
-REPORT_DIR = OUTPUT_REPORTS_DIR
+REPORT_DIR = OUTPUT_REPORTS_AUDIT_DIR
 
 SEVERITY_LABELS = {
     "critical": "critica",

@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
+from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_AUDIT_DIR
 from .utils import read_ev_csv, require_columns, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
@@ -333,7 +333,7 @@ def _simulate(
 
 
 def run_ev_scenario_twin(calibration_path: Path | None = None) -> ScenarioTwinResult:
-    OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_REPORTS_AUDIT_DIR.mkdir(parents=True, exist_ok=True)
     base = _base_metrics()
     if calibration_path is None:
         from .calibration import configured_calibration_path
@@ -540,7 +540,7 @@ def run_ev_scenario_twin(calibration_path: Path | None = None) -> ScenarioTwinRe
             f"- {LEVER_LABELS.get(row.palanca, row.palanca)}: impacto esperado {row.impacto_esperado:.2f}"
         )
 
-    write_text_utf8(OUTPUT_REPORTS_DIR / "scenario_tradeoffs.md", "\n".join(narrative_lines))
+    write_text_utf8(OUTPUT_REPORTS_AUDIT_DIR / "scenario_tradeoffs.md", "\n".join(narrative_lines))
 
     return ScenarioTwinResult(
         scenarios=len(scenario_df),

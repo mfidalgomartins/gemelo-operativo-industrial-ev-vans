@@ -50,7 +50,7 @@ ev-twin status
 | Informe PDF | `outputs/reports/ev_transition_operating_twin_report.pdf` | Narrativa analítica |
 | Manifiesto del panel | `outputs/reports/dashboard_build_manifest.json` | Contratos UI/build |
 | Preparación de publicación | `outputs/reports/release_readiness.json` | Estado de publicación |
-| Resumen de canalización | `outputs/reports/pipeline_run_summary.json` | Resultado agregado de la ejecución |
+| Resumen de canalización | `outputs/reports/pipeline_audit/pipeline_run_summary.json` | Resultado agregado de la ejecución |
 | Estado operacional | `.ev_twin/observability/latest_pipeline_run.json` | Duraciones, fallos y SLA |
 | Linaje de ingesta | `.ev_twin/lineage/latest_ingestion.json` | Fuente, cardinalidad, watermark y hash |
 
@@ -88,6 +88,6 @@ Ejecutar comandos parciales solo cuando las entradas anteriores ya existen. Ejem
 
 - `FileNotFoundError` en origen: confirmar los 14 CSV en `data/raw/ev_factory/`.
 - Panel sin estilos o gráficos: abrir con red disponible, porque Chart.js y fuentes usan CDN.
-- Falla la puerta de publicación: revisar `outputs/reports/validation_report.md`, `validation_issues_found.csv` y `dashboard_build_manifest.json`.
+- Falla la puerta de publicación: revisar `outputs/reports/pipeline_audit/validation_report.md`, `outputs/reports/pipeline_audit/validation_issues_found.csv` y `dashboard_build_manifest.json`.
 - Salidas no deterministas: usar semilla canónica `20260328`; la capa SQL fuerza DuckDB con `PRAGMA threads=1`.
 - API no preparada: ejecutar la canalización y comprobar `ev-twin status`; release y SLA deben estar en `PASS`.

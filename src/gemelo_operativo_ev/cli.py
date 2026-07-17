@@ -10,7 +10,7 @@ import pandas as pd
 
 from .api.repository import read_status
 from .calibration import CalibrationConfig, calibrate_scenario_coefficients
-from .config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR, RUNTIME_STATE_DIR
+from .config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_AUDIT_DIR, OUTPUT_REPORTS_DIR, RUNTIME_STATE_DIR
 from .ev_release_gate import run_release_gate
 from .ingestion.factory import build_connector_registry
 from .ingestion.service import IngestionMode, run_ingestion
@@ -24,7 +24,7 @@ def _add_generation_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--start-date", default="2025-01-01", help="Fecha inicial YYYY-MM-DD")
     parser.add_argument("--months", type=int, default=12, help="Horizonte en meses (9-15)")
     parser.add_argument("--output-raw", type=Path, default=EV_DATA_RAW_DIR)
-    parser.add_argument("--output-reports", type=Path, default=OUTPUT_REPORTS_DIR)
+    parser.add_argument("--output-reports", type=Path, default=OUTPUT_REPORTS_AUDIT_DIR)
 
 
 def _run_generate_data(args: argparse.Namespace) -> int:

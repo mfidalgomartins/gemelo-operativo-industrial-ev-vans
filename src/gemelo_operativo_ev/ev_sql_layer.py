@@ -7,7 +7,7 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
-from .config import DATA_PROCESSED_DIR, EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT, SQL_DIR
+from .config import DATA_PROCESSED_DIR, EV_DATA_RAW_DIR, OUTPUT_REPORTS_AUDIT_DIR, PROJECT_ROOT, SQL_DIR
 from .utils import write_text_utf8
 
 SQL_LAYER_DIR = SQL_DIR / "ev_factory"
@@ -161,7 +161,7 @@ def run_ev_sql_layer(*, deterministic: bool = True, threads: int | None = None) 
         raise ValueError("threads debe ser un entero positivo o None")
 
     DATA_PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_REPORTS_AUDIT_DIR.mkdir(parents=True, exist_ok=True)
 
     con = duckdb.connect(DB_PATH.as_posix())
     try:
@@ -178,7 +178,7 @@ def run_ev_sql_layer(*, deterministic: bool = True, threads: int | None = None) 
     finally:
         con.close()
 
-    summary_path = OUTPUT_REPORTS_DIR / "sql_layer_execution_summary.md"
+    summary_path = OUTPUT_REPORTS_AUDIT_DIR / "sql_layer_execution_summary.md"
     lines = [
         "# Resumen de Ejecución de la Capa SQL (DuckDB)",
         "",

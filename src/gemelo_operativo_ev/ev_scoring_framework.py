@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
+from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_AUDIT_DIR
 from .utils import read_ev_csv, require_columns, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
@@ -96,7 +96,7 @@ def _map_tier(score: float) -> str:
 
 
 def run_ev_scoring_framework() -> ScoringResult:
-    OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_REPORTS_AUDIT_DIR.mkdir(parents=True, exist_ok=True)
 
     area = _read("area_shift_features")
     diagnostic = _read("diagnostic_area_scores")
@@ -351,8 +351,8 @@ def run_ev_scoring_framework() -> ScoringResult:
         )
         .sort_values("prioridad_media", ascending=False)
     )
-    top_areas.to_csv(OUTPUT_REPORTS_DIR / "top_areas_criticas.csv", index=False)
-    top_actions.to_csv(OUTPUT_REPORTS_DIR / "top_acciones_recomendadas.csv", index=False)
+    top_areas.to_csv(OUTPUT_REPORTS_AUDIT_DIR / "top_areas_criticas.csv", index=False)
+    top_actions.to_csv(OUTPUT_REPORTS_AUDIT_DIR / "top_acciones_recomendadas.csv", index=False)
 
     summary_lines = [
         "# Puntuación y Priorización - Resumen",
@@ -390,7 +390,7 @@ def run_ev_scoring_framework() -> ScoringResult:
             ]
         )
 
-    write_text_utf8(OUTPUT_REPORTS_DIR / "scoring_summary.md", "\n".join(summary_lines))
+    write_text_utf8(OUTPUT_REPORTS_AUDIT_DIR / "scoring_summary.md", "\n".join(summary_lines))
 
     return ScoringResult(areas=int(out.shape[0]), top_area=str(out.iloc[0]["area"]))
 

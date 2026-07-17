@@ -44,4 +44,4 @@ Cada tarjeta expone un botón **Datos** que abre la serie representada en forma 
 
 - Manifiesto de construcción: `outputs/reports/dashboard_build_manifest.json`
 - Estado de publicación: `outputs/reports/release_readiness.json`
-- Validación completa: `outputs/reports/validation_report.md`
+- Validación completa: `outputs/reports/pipeline_audit/validation_report.md`

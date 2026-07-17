@@ -35,7 +35,7 @@
 - Salida:
   - DB: `data/processed/gemelo_operativo_ev.duckdb`
   - CSV analíticos: `data/processed/ev_factory/*.csv`
-  - Resumen: `outputs/reports/sql_layer_execution_summary.md`
+  - Resumen: `outputs/reports/pipeline_audit/sql_layer_execution_summary.md`
 
 ## Convenciones
 - Sin `SELECT *` en SQL final de transformación.

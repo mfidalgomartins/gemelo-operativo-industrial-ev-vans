@@ -111,6 +111,6 @@ Desplegar detrás de un proxy TLS que añada HSTS, rote tokens, limite tasa y re
 
 - Lock abandonado: se recupera automáticamente cuando supera el umbral de obsolescencia; investigar antes de reducirlo.
 - Ingesta fallida: corregir la fuente y reejecutar; no editar checkpoints manualmente.
-- Release bloqueado: revisar `validation_report.md`, `release_readiness.json` y el manifiesto del panel.
+- Release bloqueado: revisar `outputs/reports/pipeline_audit/validation_report.md`, `outputs/reports/release_readiness.json` y el manifiesto del panel.
 - Artefacto incoherente: regenerar desde datos de origen; no editar CSV, HTML o PDF a mano.
 - API no preparada: comprobar que existe una ejecución PASS y que release y SLA están aprobados.

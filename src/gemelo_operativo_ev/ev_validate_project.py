@@ -7,7 +7,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .config import DATA_PROCESSED_DIR, DATA_RAW_DIR, EV_DATA_RAW_DIR, OUTPUT_DASHBOARD_DIR, OUTPUT_REPORTS_DIR
+from .config import (
+    DATA_PROCESSED_DIR,
+    DATA_RAW_DIR,
+    EV_DATA_RAW_DIR,
+    OUTPUT_DASHBOARD_DIR,
+    OUTPUT_REPORTS_AUDIT_DIR,
+    OUTPUT_REPORTS_DIR,
+)
 from .utils import require_columns, to_markdown_safe, write_json_utf8, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
@@ -201,6 +208,7 @@ class IssueCollector:
 
 def _load_validation_context() -> ValidationContext:
     OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_REPORTS_AUDIT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Base raw
     ordenes = _read_csv(_resolve_ev_raw("ordenes"), parse_dates=["fecha_programada", "fecha_real"])
@@ -850,10 +858,10 @@ def _write_validation_outputs(
         ]
     )
 
-    report_path = OUTPUT_REPORTS_DIR / "validation_report.md"
+    report_path = OUTPUT_REPORTS_AUDIT_DIR / "validation_report.md"
     write_text_utf8(report_path, "\n".join(lines))
 
-    issues_path = OUTPUT_REPORTS_DIR / "validation_issues_found.csv"
+    issues_path = OUTPUT_REPORTS_AUDIT_DIR / "validation_issues_found.csv"
     display_issues_df.to_csv(issues_path, index=False)
 
     release_json = {

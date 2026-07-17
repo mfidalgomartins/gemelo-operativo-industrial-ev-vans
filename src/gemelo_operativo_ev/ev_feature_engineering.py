@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_DIR
+from .config import DATA_PROCESSED_DIR, OUTPUT_REPORTS_AUDIT_DIR
 from .utils import read_ev_csv, require_columns, write_text_utf8
 
 EV_DIR = DATA_PROCESSED_DIR / "ev_factory"
@@ -253,7 +253,7 @@ def _build_launch_transition_features(
 
 def run_ev_feature_engineering() -> FeatureBuildResult:
     EV_DIR.mkdir(parents=True, exist_ok=True)
-    OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_REPORTS_AUDIT_DIR.mkdir(parents=True, exist_ok=True)
 
     vf = _read_csv(
         "vw_vehicle_flow_timeline",
@@ -316,7 +316,7 @@ def run_ev_feature_engineering() -> FeatureBuildResult:
         ]
     )
 
-    write_text_utf8(OUTPUT_REPORTS_DIR / "feature_engineering_summary.md", "\n".join(summary_lines))
+    write_text_utf8(OUTPUT_REPORTS_AUDIT_DIR / "feature_engineering_summary.md", "\n".join(summary_lines))
 
     return FeatureBuildResult(tables=counts)
 

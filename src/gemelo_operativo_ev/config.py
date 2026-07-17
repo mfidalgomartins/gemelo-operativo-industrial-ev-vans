@@ -25,7 +25,7 @@ SQL_DIR = PACKAGE_ROOT / "sql"
 OUTPUT_DASHBOARD_DIR = PROJECT_ROOT / "outputs" / "dashboard"
 OUTPUT_GRAPHS_DIR = PROJECT_ROOT / "outputs" / "graphs"
 OUTPUT_REPORTS_DIR = PROJECT_ROOT / "outputs" / "reports"
-NOTEBOOKS_DIR = PROJECT_ROOT / "notebooks"
+OUTPUT_REPORTS_AUDIT_DIR = OUTPUT_REPORTS_DIR / "pipeline_audit"
 RUNTIME_STATE_DIR = PROJECT_ROOT / ".ev_twin"
 
 
@@ -37,7 +37,7 @@ def ensure_directories() -> None:
         OUTPUT_DASHBOARD_DIR,
         OUTPUT_GRAPHS_DIR,
         OUTPUT_REPORTS_DIR,
-        NOTEBOOKS_DIR,
+        OUTPUT_REPORTS_AUDIT_DIR,
         RUNTIME_STATE_DIR,
     ]:
         path.mkdir(parents=True, exist_ok=True)

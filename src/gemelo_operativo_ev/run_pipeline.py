@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from .config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT, RUNTIME_STATE_DIR
+from .config import EV_DATA_RAW_DIR, OUTPUT_REPORTS_AUDIT_DIR, OUTPUT_REPORTS_DIR, PROJECT_ROOT, RUNTIME_STATE_DIR
 from .ev_build_dashboard import run_ev_build_dashboard
 from .ev_diagnostic_analysis import run_ev_diagnostic_analysis
 from .ev_feature_engineering import run_ev_feature_engineering
@@ -44,6 +44,7 @@ def run_pipeline(generate_data: bool = False, seed: int = 20260328, months: int 
         raise ValueError("months debe ser un entero positivo")
 
     OUTPUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_REPORTS_AUDIT_DIR.mkdir(parents=True, exist_ok=True)
     RUNTIME_STATE_DIR.mkdir(parents=True, exist_ok=True)
     recorder = PipelineRunRecorder(RUNTIME_STATE_DIR / "observability" / "latest_pipeline_run.json")
     release_approved = False
@@ -55,7 +56,7 @@ def run_pipeline(generate_data: bool = False, seed: int = 20260328, months: int 
                     seed=seed,
                     months=months,
                     output_raw_dir=EV_DATA_RAW_DIR,
-                    output_report_dir=OUTPUT_REPORTS_DIR,
+                    output_report_dir=OUTPUT_REPORTS_AUDIT_DIR,
                 )
                 with recorder.stage("generate_synthetic_data"):
                     generate_synthetic_factory_data(cfg)
@@ -86,10 +87,10 @@ def run_pipeline(generate_data: bool = False, seed: int = 20260328, months: int 
                 release_grade=validation_result.release_grade,
                 release_approved=release_result.approved,
                 release_reason=release_result.reason,
-                explore_report=str((OUTPUT_REPORTS_DIR / "explore_data_audit.md").relative_to(PROJECT_ROOT)),
+                explore_report=str((OUTPUT_REPORTS_AUDIT_DIR / "explore_data_audit.md").relative_to(PROJECT_ROOT)),
                 validation_status=validation_result.status,
             )
-            write_json_utf8(OUTPUT_REPORTS_DIR / "pipeline_run_summary.json", asdict(result))
+            write_json_utf8(OUTPUT_REPORTS_AUDIT_DIR / "pipeline_run_summary.json", asdict(result))
     except Exception as exc:
         recorder.finish(status="FAIL", release_approved=release_approved, error_type=type(exc).__name__)
         raise
