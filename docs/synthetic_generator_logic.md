@@ -14,20 +14,20 @@ El generador opera por dominios:
 7. Validación de plausibilidad y cardinalidades.
 
 ## Comportamientos simulados
-- Evolución diaria de share EV con fases: pre-lanzamiento, pre-serie, ramp-up y estable.
-- Variación de headcount, absentismo y productividad por turno A/B/C.
+- Evolución diaria de cuota EV con fases: pre-lanzamiento, pre-serie, rampa y estable.
+- Variación de dotación, absentismo y productividad por turno A/B/C.
 - Secuencias real vs plan con desviaciones por presión operativa.
 - Fecha operativa de turno separada de la fecha calendario para turnos nocturnos.
 - Tiempo de producción sensible a complejidad de versión y restricciones.
-- Colas de carga EV por disponibilidad de slots, potencia efectiva y saturación.
+- Colas de carga EV por disponibilidad de puntos de carga, potencia efectiva y saturación.
 - Interrupciones de sesión de carga por incidencias operativas.
-- Dwell en patio, bloqueos y movimientos no productivos.
-- Retrasos de salida por readiness, congestión y restricciones logísticas.
-- Retención obligatoria de cualquier vehículo sin readiness final.
+- Permanencia en patio, bloqueos y movimientos no productivos.
+- Retrasos de salida por preparación, congestión y restricciones logísticas.
+- Retención obligatoria de cualquier vehículo sin preparación final.
 - Eventos de cuello de botella detectados por señales operativas observadas.
 
 ## Reproducibilidad
-- Uso de seed configurable.
+- Uso de semilla configurable.
 - Parámetros fijos por dominio y distribución controlada.
 - Salida determinista dado `seed`, `start_date` y `months`.
 
@@ -37,9 +37,9 @@ Se ejecutan comprobaciones de:
 - horizonte temporal de 9-15 meses,
 - unicidad e integridad referencial,
 - rangos de SOC,
-- progresión de share EV,
+- progresión de cuota EV,
 - plausibilidad de esperas de carga y retrasos de salida.
 
 ## Salidas
-- CSV por tabla en `data/raw/`.
+- CSV de origen por tabla en `data/raw/`.
 - Resumen de plausibilidad y cardinalidades en `outputs/reports/`.

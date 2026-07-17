@@ -5,18 +5,18 @@
 - Motivo: ejecución local reproducible y rápida sobre CSV, con una capa SQL visible y auditable.
 
 ## Capas
-1. **Staging** (`01` a `04`): tipado, normalización de timestamps, flags booleanos y estructura canónica.
-2. **Integration** (`05` y `06`): integración de flujo vehículo, carga, patio, expedición y cuello de botella por turno-área.
-3. **Analytical marts** (`07` a `09`): materialización para consumo analítico y scoring.
-4. **KPI queries** (`10`): KPIs ejecutivos y readiness por turno-versión.
-5. **Validation queries** (`11`): checks de coherencia de negocio y de modelado.
+1. **Preparación** (`01` a `04`): tipado, normalización de marcas temporales, marcadores booleanos y estructura canónica.
+2. **Integración** (`05` y `06`): integración de flujo vehículo, carga, patio, expedición y cuello de botella por turno-área.
+3. **Marts analíticos** (`07` a `09`): materialización para consumo analítico y puntuación.
+4. **Consultas KPI** (`10`): KPI ejecutivos y preparación por turno-versión.
+5. **Consultas de validación** (`11`): comprobaciones de coherencia de negocio y de modelado.
 
 ## Scripts y función
-- `01_staging_orders.sql`: staging de órdenes, versiones, vehículos y turnos.
-- `02_staging_charging.sql`: staging de estado de batería, slots y sesiones de carga.
-- `03_staging_yard.sql`: staging de snapshots de patio, movimientos, recursos y restricciones.
-- `04_staging_dispatch.sql`: staging de expedición y escenarios de transición.
-- `05_integrated_vehicle_flow.sql`: crea `vw_vehicle_flow_timeline`, `vw_charging_utilization`, `vw_yard_congestion`.
+- `01_staging_orders.sql`: preparación de órdenes, versiones, vehículos y turnos.
+- `02_staging_charging.sql`: preparación de estado de batería, puntos de carga y sesiones.
+- `03_staging_yard.sql`: preparación de instantáneas de patio, movimientos, recursos y restricciones.
+- `04_staging_dispatch.sql`: preparación de expedición y escenarios de transición.
+- `05_integrated_vehicle_flow.sql`: crea `vw_vehicle_flow_timeline`, `vw_charging_utilization`, `vw_yard_congestion` y materializa internamente los intervalos y la ocupación horaria de patio para evitar recalcularlos en cada mart o validación.
 - `06_integrated_shift_operations.sql`: crea `vw_shift_bottleneck_summary`.
 - `07_analytical_mart_vehicle_day.sql`: crea `mart_vehicle_day` (nivel vehículo-día).
 - `08_analytical_mart_area_shift.sql`: crea `mart_area_shift` (nivel área-turno).
@@ -25,20 +25,21 @@
 - `11_validation_queries.sql`: crea `validation_checks`.
 
 ## Orden de ejecución
-1. Cargar tablas raw en DuckDB.
+1. Cargar tablas de origen en DuckDB.
 2. Ejecutar scripts SQL en orden numérico.
 3. Exportar vistas y marts a `data/processed/ev_factory/`.
 
 ## Runner
-- Script: `src/ev_sql_layer.py`
+- Módulo: `src/gemelo_operativo_ev/ev_sql_layer.py`
 - Entrada: `data/raw/*.csv` (14 tablas base)
 - Salida:
   - DB: `data/processed/gemelo_operativo_ev.duckdb`
   - CSV analíticos: `data/processed/ev_factory/*.csv`
-  - Resumen: `outputs/reports/sql_layer_execution_summary.md`
+  - Resumen: `outputs/reports/pipeline_audit/sql_layer_execution_summary.md`
 
 ## Convenciones
 - Sin `SELECT *` en SQL final de transformación.
 - CTEs por bloque lógico.
 - Nombres de vistas `vw_` y marts `mart_`.
+- Tablas internas `int_` solo para resultados intermedios costosos reutilizados por varias capas.
 - Cálculos operativos expresados en minutos para trazabilidad.

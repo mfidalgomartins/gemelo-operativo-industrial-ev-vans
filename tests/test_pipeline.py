@@ -6,8 +6,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.config import PROJECT_ROOT
-from src.run_pipeline import _relative, run_pipeline
+from gemelo_operativo_ev.config import PROJECT_ROOT
+from gemelo_operativo_ev.run_pipeline import _relative, run_pipeline
 
 
 @pytest.mark.integration
@@ -25,8 +25,8 @@ def test_ev_pipeline_official_path_end_to_end_without_regeneration() -> None:
 
     manifest = Path("outputs/reports/dashboard_build_manifest.json")
     release = Path("outputs/reports/release_readiness.json")
-    validation = Path("outputs/reports/validation_report.md")
-    pipeline_summary = Path("outputs/reports/pipeline_run_summary.json")
+    validation = Path("outputs/reports/pipeline_audit/validation_report.md")
+    pipeline_summary = Path("outputs/reports/pipeline_audit/pipeline_run_summary.json")
 
     assert manifest.exists()
     assert release.exists()
@@ -60,6 +60,8 @@ def test_run_pipeline_executes_stages_in_order_and_writes_portable_summary(
     calls: list[str] = []
     fake_project_root = tmp_path / "project"
     reports_dir = fake_project_root / "outputs" / "reports"
+    audit_dir = reports_dir / "pipeline_audit"
+    runtime_dir = fake_project_root / ".ev_twin"
 
     def record(name: str):
         def _inner():
@@ -67,25 +69,27 @@ def test_run_pipeline_executes_stages_in_order_and_writes_portable_summary(
 
         return _inner
 
-    monkeypatch.setattr("src.run_pipeline.PROJECT_ROOT", fake_project_root)
-    monkeypatch.setattr("src.run_pipeline.OUTPUT_REPORTS_DIR", reports_dir)
-    monkeypatch.setattr("src.run_pipeline.run_explore_data_audit", record("audit"))
-    monkeypatch.setattr("src.run_pipeline.run_ev_sql_layer", record("sql"))
-    monkeypatch.setattr("src.run_pipeline.run_ev_feature_engineering", record("features"))
-    monkeypatch.setattr("src.run_pipeline.run_ev_diagnostic_analysis", record("diagnostic"))
-    monkeypatch.setattr("src.run_pipeline.run_ev_scenario_twin", record("scenario"))
-    monkeypatch.setattr("src.run_pipeline.run_ev_scoring_framework", record("scoring"))
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.PROJECT_ROOT", fake_project_root)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.OUTPUT_REPORTS_DIR", reports_dir)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.OUTPUT_REPORTS_AUDIT_DIR", audit_dir)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.RUNTIME_STATE_DIR", runtime_dir)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_explore_data_audit", record("audit"))
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_ev_sql_layer", record("sql"))
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_ev_feature_engineering", record("features"))
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_ev_diagnostic_analysis", record("diagnostic"))
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_ev_scenario_twin", record("scenario"))
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_ev_scoring_framework", record("scoring"))
     monkeypatch.setattr(
-        "src.run_pipeline.run_ev_build_dashboard",
+        "gemelo_operativo_ev.run_pipeline.run_ev_build_dashboard",
         lambda: SimpleNamespace(path="outputs/dashboard/test-dashboard.html"),
     )
     monkeypatch.setattr(
-        "src.run_pipeline.run_ev_validation",
+        "gemelo_operativo_ev.run_pipeline.run_ev_validation",
         lambda: SimpleNamespace(status="WARN", release_grade="screening-grade only"),
     )
     monkeypatch.setattr(
-        "src.run_pipeline.run_release_gate",
-        lambda: SimpleNamespace(approved=False, reason="Release bloqueado por validación"),
+        "gemelo_operativo_ev.run_pipeline.run_release_gate",
+        lambda: SimpleNamespace(approved=False, reason="Publicación bloqueada por validación"),
     )
 
     result = run_pipeline(generate_data=False)
@@ -97,14 +101,14 @@ def test_run_pipeline_executes_stages_in_order_and_writes_portable_summary(
     assert result.release_approved is False
     assert result.validation_status == "WARN"
 
-    summary = json.loads((reports_dir / "pipeline_run_summary.json").read_text(encoding="utf-8"))
+    summary = json.loads((audit_dir / "pipeline_run_summary.json").read_text(encoding="utf-8"))
     assert summary == {
         "generation_enabled": False,
         "dashboard_path": "outputs/dashboard/test-dashboard.html",
         "release_grade": "screening-grade only",
         "release_approved": False,
-        "release_reason": "Release bloqueado por validación",
-        "explore_report": "outputs/reports/explore_data_audit.md",
+        "release_reason": "Publicación bloqueada por validación",
+        "explore_report": "outputs/reports/pipeline_audit/explore_data_audit.md",
         "validation_status": "WARN",
     }
 
@@ -117,6 +121,8 @@ def test_run_pipeline_generation_uses_requested_seed_months_and_output_dirs(
     fake_project_root = tmp_path / "project"
     raw_dir = fake_project_root / "data" / "raw" / "ev_factory"
     reports_dir = fake_project_root / "outputs" / "reports"
+    audit_dir = reports_dir / "pipeline_audit"
+    runtime_dir = fake_project_root / ".ev_twin"
 
     def fake_generate(cfg) -> None:
         captured["seed"] = cfg.seed
@@ -124,27 +130,29 @@ def test_run_pipeline_generation_uses_requested_seed_months_and_output_dirs(
         captured["output_raw_dir"] = cfg.output_raw_dir
         captured["output_report_dir"] = cfg.output_report_dir
 
-    monkeypatch.setattr("src.run_pipeline.PROJECT_ROOT", fake_project_root)
-    monkeypatch.setattr("src.run_pipeline.OUTPUT_REPORTS_DIR", reports_dir)
-    monkeypatch.setattr("src.run_pipeline.EV_DATA_RAW_DIR", raw_dir)
-    monkeypatch.setattr("src.run_pipeline.generate_synthetic_factory_data", fake_generate)
-    monkeypatch.setattr("src.run_pipeline.run_explore_data_audit", lambda: None)
-    monkeypatch.setattr("src.run_pipeline.run_ev_sql_layer", lambda: None)
-    monkeypatch.setattr("src.run_pipeline.run_ev_feature_engineering", lambda: None)
-    monkeypatch.setattr("src.run_pipeline.run_ev_diagnostic_analysis", lambda: None)
-    monkeypatch.setattr("src.run_pipeline.run_ev_scenario_twin", lambda: None)
-    monkeypatch.setattr("src.run_pipeline.run_ev_scoring_framework", lambda: None)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.PROJECT_ROOT", fake_project_root)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.OUTPUT_REPORTS_DIR", reports_dir)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.OUTPUT_REPORTS_AUDIT_DIR", audit_dir)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.RUNTIME_STATE_DIR", runtime_dir)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.EV_DATA_RAW_DIR", raw_dir)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.generate_synthetic_factory_data", fake_generate)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_explore_data_audit", lambda: None)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_ev_sql_layer", lambda: None)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_ev_feature_engineering", lambda: None)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_ev_diagnostic_analysis", lambda: None)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_ev_scenario_twin", lambda: None)
+    monkeypatch.setattr("gemelo_operativo_ev.run_pipeline.run_ev_scoring_framework", lambda: None)
     monkeypatch.setattr(
-        "src.run_pipeline.run_ev_build_dashboard",
+        "gemelo_operativo_ev.run_pipeline.run_ev_build_dashboard",
         lambda: SimpleNamespace(path="outputs/dashboard/test-dashboard.html"),
     )
     monkeypatch.setattr(
-        "src.run_pipeline.run_ev_validation",
+        "gemelo_operativo_ev.run_pipeline.run_ev_validation",
         lambda: SimpleNamespace(status="PASS", release_grade="decision-support only"),
     )
     monkeypatch.setattr(
-        "src.run_pipeline.run_release_gate",
-        lambda: SimpleNamespace(approved=True, reason="Release apto para publicación"),
+        "gemelo_operativo_ev.run_pipeline.run_release_gate",
+        lambda: SimpleNamespace(approved=True, reason="Publicación apta"),
     )
 
     result = run_pipeline(generate_data=True, seed=99, months=3)
@@ -154,5 +162,5 @@ def test_run_pipeline_generation_uses_requested_seed_months_and_output_dirs(
         "seed": 99,
         "months": 3,
         "output_raw_dir": raw_dir,
-        "output_report_dir": reports_dir,
+        "output_report_dir": audit_dir,
     }

@@ -4,8 +4,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.synthetic_data_gen.config import SyntheticGenerationConfig
-from src.synthetic_data_gen.utils import clamp, get_shift_start, ordered_phase, scenario_curve, shift_from_timestamp
+from gemelo_operativo_ev.synthetic_data_gen.config import SyntheticGenerationConfig
+from gemelo_operativo_ev.synthetic_data_gen.utils import (
+    clamp,
+    get_shift_start,
+    ordered_phase,
+    scenario_curve,
+    shift_from_timestamp,
+)
 
 
 @pytest.mark.parametrize(
@@ -46,7 +52,7 @@ def test_shift_helpers_validate_boundaries_and_invalid_inputs() -> None:
 def test_clamp_rejects_invalid_bounds() -> None:
     assert clamp(10, 0, 5) == 5.0
 
-    with pytest.raises(ValueError, match="low no puede ser mayor que high"):
+    with pytest.raises(ValueError, match="límite inferior no puede ser mayor"):
         clamp(1, 2, 1)
 
 

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.ev_scoring_framework import _map_action, _map_tier, _normalize_100, _normalize_percentile
+from gemelo_operativo_ev.ev_scoring_framework import _map_action, _map_tier, _normalize_100, _normalize_percentile
 
 
 def test_normalize_100_clamps_above_upper() -> None:

@@ -1,9 +1,10 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
-from src.synthetic_data_gen import SyntheticGenerationConfig, generate_synthetic_factory_data
-from src.synthetic_data_gen.operations import _deduplicate_patio_points
+from gemelo_operativo_ev.synthetic_data_gen import SyntheticGenerationConfig, generate_synthetic_factory_data
+from gemelo_operativo_ev.synthetic_data_gen.operations import _active_charging_slots, _deduplicate_patio_points
 
 REQUIRED_TABLES = {
     "ordenes",
@@ -33,10 +34,21 @@ def test_patio_point_deduplication_has_stable_tie_breaking() -> None:
     ]
 
     assert _deduplicate_patio_points(points) == [
-        (timestamp, "NORTE", "INGRESO_PATIO"),
         (timestamp, "NORTE", "POST_CARGA"),
-        (timestamp, "SUR", "INGRESO_PATIO"),
     ]
+
+
+def test_active_charging_slots_rejects_unavailable_capacity() -> None:
+    slots = pd.DataFrame(
+        {
+            "slot_id": ["S1", "S2"],
+            "disponibilidad_flag": [0, 1],
+            "mantenimiento_flag": [0, 1],
+        }
+    )
+
+    with pytest.raises(ValueError, match="al menos un punto disponible"):
+        _active_charging_slots(slots)
 
 
 def test_synthetic_generator_end_to_end(tmp_path: Path) -> None:
@@ -72,7 +84,16 @@ def test_synthetic_generator_end_to_end(tmp_path: Path) -> None:
     assert bateria["soc_pct"].between(0, 100).all()
 
     logistica = pd.read_csv(raw_dir / "logistica_salida.csv")
-    assert not (logistica["fecha_salida_real"].notna() & logistica["readiness_salida_flag"].eq(0)).any()
+    departure_ts = pd.to_datetime(logistica["fecha_salida_real"])
+    readiness_ts = pd.to_datetime(logistica["timestamp_readiness"])
+    assert not (departure_ts.notna() & (readiness_ts.isna() | departure_ts.lt(readiness_ts))).any()
+    assert not (
+        logistica["retraso_min"].gt(120)
+        & logistica["causa_retraso"].fillna("SIN_DATO").isin(["SIN_RETRASO", "N/A", "SIN_DATO"])
+    ).any()
+
+    patio = pd.read_csv(raw_dir / "patio.csv")
+    assert not patio.duplicated(subset=["timestamp", "vehiculo_id"]).any()
 
     assert (report_dir / "synthetic_data_plausibility.md").exists()
     assert (report_dir / "synthetic_data_summary.md").exists()

@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import duckdb
 import pytest
 
-from src import ev_sql_layer as sql_layer
+from gemelo_operativo_ev import ev_sql_layer as sql_layer
 
 
 class _FakeResult:
@@ -45,7 +46,7 @@ class _FakeConnection:
 def test_resolve_raw_csv_raises_with_official_ev_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sql_layer, "EV_DATA_RAW_DIR", tmp_path / "raw_ev")
 
-    with pytest.raises(FileNotFoundError, match="Falta tabla raw requerida"):
+    with pytest.raises(FileNotFoundError, match="Falta tabla de origen requerida"):
         sql_layer._resolve_raw_csv("ordenes")
 
 
@@ -123,3 +124,101 @@ def test_export_objects_rejects_missing_or_columnless_object(tmp_path: Path, mon
 
     with pytest.raises(ValueError, match="objeto sin columnas o inexistente"):
         sql_layer._export_objects(con)  # type: ignore[arg-type]
+
+
+def test_operational_calendar_macros_assign_post_midnight_to_previous_date() -> None:
+    sql_text = (sql_layer.SQL_LAYER_DIR / "01_staging_orders.sql").read_text(encoding="utf-8")
+    macro_sql = sql_text.split("CREATE OR REPLACE VIEW stg_orders", maxsplit=1)[0]
+
+    con = duckdb.connect(":memory:")
+    try:
+        con.execute(macro_sql)
+        rows = con.execute(
+            """
+            SELECT
+                ev_operational_date(ts) AS fecha_operativa,
+                ev_operational_shift(ts) AS turno
+            FROM (
+                VALUES
+                    (TIMESTAMP '2025-01-02 02:30:00'),
+                    (TIMESTAMP '2025-01-02 06:00:00'),
+                    (TIMESTAMP '2025-01-02 14:00:00'),
+                    (TIMESTAMP '2025-01-02 22:00:00')
+            ) samples(ts)
+            """
+        ).fetchall()
+    finally:
+        con.close()
+
+    assert rows == [
+        (duckdb.sql("SELECT DATE '2025-01-01'").fetchone()[0], "C"),
+        (duckdb.sql("SELECT DATE '2025-01-02'").fetchone()[0], "A"),
+        (duckdb.sql("SELECT DATE '2025-01-02'").fetchone()[0], "B"),
+        (duckdb.sql("SELECT DATE '2025-01-02'").fetchone()[0], "C"),
+    ]
+
+
+def test_operational_views_use_shared_calendar_and_physical_yard_capacity() -> None:
+    for file_name in [
+        "05_integrated_vehicle_flow.sql",
+        "06_integrated_shift_operations.sql",
+        "08_analytical_mart_area_shift.sql",
+        "09_analytical_mart_dispatch_readiness.sql",
+    ]:
+        sql_text = (sql_layer.SQL_LAYER_DIR / file_name).read_text(encoding="utf-8")
+        assert "ev_operational_date(" in sql_text
+        assert "ev_operational_shift(" in sql_text
+
+    yard_sql = (sql_layer.SQL_LAYER_DIR / "05_integrated_vehicle_flow.sql").read_text(encoding="utf-8")
+    assert "vw_yard_vehicle_intervals" in yard_sql
+    assert "vw_yard_zone_capacity" in yard_sql
+    assert "CREATE OR REPLACE TABLE int_yard_vehicle_intervals" in yard_sql
+    assert "CREATE OR REPLACE TABLE int_yard_congestion" in yard_sql
+    assert "physical_capacity_units" in yard_sql
+    assert "QUANTILE_CONT(y.occupancy_units" not in yard_sql
+
+
+@pytest.mark.integration
+def test_sql_operational_contracts_against_official_dataset() -> None:
+    con = duckdb.connect(":memory:")
+    try:
+        sql_layer._load_raw_tables(con)
+        sql_layer._run_sql_files(con)
+
+        capacities = dict(
+            con.execute(
+                "SELECT zona_patio, physical_capacity_units FROM vw_yard_zone_capacity ORDER BY zona_patio"
+            ).fetchall()
+        )
+        checks = {
+            name: (failed_rows, status)
+            for name, failed_rows, status in con.execute(
+                """
+                SELECT check_name, failed_rows, status
+                FROM validation_checks
+                WHERE check_name IN (
+                    'balance_wip_patio',
+                    'fecha_operativa_inconsistente',
+                    'intervalos_patio_solapados',
+                    'ocupacion_patio_sobre_capacidad_fisica',
+                    'zonas_patio_sin_capacidad_fisica'
+                )
+                """
+            ).fetchall()
+        }
+    finally:
+        con.close()
+
+    assert capacities == {
+        "BUFFER_CARGA": 80.0,
+        "ESTE": 220.0,
+        "NORTE": 260.0,
+        "OESTE": 210.0,
+        "PRE_SALIDA": 120.0,
+        "SUR": 240.0,
+    }
+    assert checks["balance_wip_patio"] == (0, "PASS")
+    assert checks["fecha_operativa_inconsistente"] == (0, "PASS")
+    assert checks["intervalos_patio_solapados"] == (0, "PASS")
+    assert checks["zonas_patio_sin_capacidad_fisica"] == (0, "PASS")
+    assert checks["ocupacion_patio_sobre_capacidad_fisica"] == (0, "PASS")

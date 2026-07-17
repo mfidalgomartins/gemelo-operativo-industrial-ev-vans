@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from src.ev_feature_engineering import (
+from gemelo_operativo_ev.ev_feature_engineering import (
     _build_area_shift_features,
     _build_charging_features,
     _build_vehicle_readiness_features,

@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.utils import read_ev_csv, to_markdown_safe, write_json_utf8, write_text_utf8
+from gemelo_operativo_ev.utils import read_ev_csv, to_markdown_safe, write_json_utf8, write_text_utf8
 
 
 def test_read_ev_csv_missing_file_raises(tmp_path: Path) -> None:
@@ -44,6 +44,16 @@ def test_to_markdown_safe_newlines_in_values() -> None:
     df = pd.DataFrame({"text": ["line1\nline2"]})
     result = to_markdown_safe(df)
     assert "\n\n" not in result.split("|")[1]
+
+
+def test_to_markdown_safe_does_not_hide_rendering_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise_rendering_error(self: pd.DataFrame, index: bool = False) -> str:
+        raise ValueError("rendering failed")
+
+    monkeypatch.setattr(pd.DataFrame, "to_markdown", _raise_rendering_error)
+
+    with pytest.raises(ValueError, match="rendering failed"):
+        to_markdown_safe(pd.DataFrame({"value": [1]}))
 
 
 def test_write_text_utf8_adds_final_newline(tmp_path: Path) -> None:

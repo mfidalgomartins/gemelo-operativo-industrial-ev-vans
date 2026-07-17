@@ -1,3 +1,0 @@
-issue,severity,affected_rows,rule,recommended_fix
-ocupaciones_patio_incompatibles,high,10,vehículo no puede estar en dos posiciones al mismo timestamp,Deduplicar snapshots por timestamp+vehiculo y conservar estado de mayor prioridad.
-retrasos_sin_causa,medium,1652,Retraso positivo requiere causa de retraso válida,Imponer catálogo de causas y fallback AUTOMATIC_CLASSIFICATION.

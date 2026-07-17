@@ -23,9 +23,13 @@ Thumbs.db
 *.orig
 
 # Relatórios transitórios da geração sintética
-outputs/reports/synthetic_data_plausibility.md
-outputs/reports/synthetic_data_validation.json
-outputs/reports/synthetic_generation_run.json
+outputs/reports/pipeline_audit/synthetic_data_plausibility.md
+outputs/reports/pipeline_audit/synthetic_data_validation.json
+outputs/reports/pipeline_audit/synthetic_generation_run.json
+
+# Dados reconstruíveis; CI e execução local regeneram o corte canónico
+data/raw/ev_factory/*.csv
+data/processed/ev_factory/*.csv
 
 # Cobertura e build local
 .coverage
@@ -42,6 +46,8 @@ coverage.xml
 !.env.example
 !.env.template
 .envrc
+.ev_twin/
+skill-observations/
 *.pem
 *.key
 *.p12
@@ -53,12 +59,11 @@ coverage.xml
 secrets/
 .secrets/
 
-# Bases de dados locais geradas
+# Bases de dados locais geradas (reconstruíveis a partir dos CSV em data/processed/)
 *.db
 *.sqlite
 *.sqlite3
 *.duckdb
-!data/processed/gemelo_operativo_ev.duckdb
 
 # IDE
 .vscode/

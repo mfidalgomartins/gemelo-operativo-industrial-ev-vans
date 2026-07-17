@@ -4,22 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gemelo-operativo-ev"
-version = "1.0.0"
-description = "Operational digital twin for EV van manufacturing transition"
+version = "2.0.0"
+description = "Gemelo operativo para la transición de fabricación de vans EV"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    { name = "Miguel Fidalgo" },
+    { name = "Miguel Fidalgo Martins" },
 ]
 keywords = [
-    "analytics",
-    "digital-twin",
+    "analitica",
+    "gemelo-digital",
     "duckdb",
-    "electric-vehicles",
-    "manufacturing",
-    "operations-research",
-    "supply-chain",
+    "vehiculos-electricos",
+    "manufactura",
+    "investigacion-operativa",
+    "cadena-suministro",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -34,17 +34,18 @@ dependencies = [
     "numpy>=1.24.0,<3.0.0",
     "duckdb>=1.1.0,<2.0.0",
     "matplotlib>=3.8.0,<4.0.0",
-    "pillow>=12.2.0,<13.0.0",
+    "pillow>=12.3.0,<13.0.0",
     "reportlab>=4.0.0,<5.0.0",
 ]
 
 [project.urls]
-Dashboard = "https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/"
-Repository = "https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans"
+Panel = "https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/"
+Repositorio = "https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans"
 
 [project.optional-dependencies]
 dev = [
     "build>=1.2.0,<2.0.0",
+    "pre-commit>=4.0.0,<5.0.0",
     "pygments>=2.20.0,<3.0.0",
     "pytest>=9.0.3,<10.0.0",
     "pytest-cov>=5.0.0,<8.0.0",
@@ -52,16 +53,28 @@ dev = [
 ]
 security = [
     "bandit[toml]>=1.8.0,<2.0.0",
+    "msgpack>=1.2.1,<2.0.0",
     "pip-audit>=2.7.0,<3.0.0",
     "pygments>=2.20.0,<3.0.0",
 ]
+service = [
+    "fastapi>=0.128.0,<1.0.0",
+    "httpx>=0.28.0,<1.0.0",
+    "pydantic>=2.12.0,<3.0.0",
+    "starlette>=0.49.1,<1.0.0",
+    "uvicorn>=0.40.0,<1.0.0",
+]
 
 [project.scripts]
-generate-data = "generate_synthetic_data:main"
+ev-twin = "gemelo_operativo_ev.cli:main"
+ev-twin-api = "gemelo_operativo_ev.api.server:main"
+generate-data = "gemelo_operativo_ev.cli:generate_data_main"
 
-[tool.setuptools]
-packages = ["src", "src.synthetic_data_gen"]
-py-modules = ["generate_synthetic_data"]
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+gemelo_operativo_ev = ["sql/ev_factory/*.sql", "dashboard/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -69,7 +82,7 @@ python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = ["-ra", "--strict-config", "--strict-markers", "-m", "not integration"]
 markers = [
-    "integration: full-pipeline tests that write to the data directory; run with pytest -m integration",
+    "integration: tests de canalización completa que escriben en el directorio data; ejecutar con pytest -m integration",
 ]
 
 [tool.ruff]
@@ -81,12 +94,13 @@ select = ["E", "F", "I", "N", "UP"]
 ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/synthetic_data_gen/config.py" = ["I001"]
+"src/gemelo_operativo_ev/synthetic_data_gen/config.py" = ["I001"]
 
 [tool.coverage.run]
 branch = true
-source = ["src"]
+source = ["gemelo_operativo_ev"]
 omit = [
+    "src/gemelo_operativo_ev/reporting/*",
     "tests/*",
 ]
 
@@ -95,8 +109,8 @@ show_missing = true
 skip_covered = true
 
 [tool.bandit]
-# A camada DuckDB constrói SQL com identificadores internos validados por whitelist.
-# Os valores externos continuam parametrizados; B608 gera falsos positivos neste projeto.
+# La capa DuckDB construye SQL con identificadores internos validados por whitelist.
+# Los valores externos siguen parametrizados; B608 genera falsos positivos en este proyecto.
 skips = ["B608"]
 exclude_dirs = [
     ".venv",

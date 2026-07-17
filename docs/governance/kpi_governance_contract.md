@@ -1,9 +1,9 @@
-# KPI Governance Contract (EV)
+# Contrato de Gobernanza KPI (EV)
 
 ## Objetivo
-Definir fuente, fórmula y validación mínima de KPI críticos para evitar derivaciones ambiguas en análisis, scoring y dashboard.
+Definir fuente, fórmula y validación mínima de KPI críticos para evitar derivaciones ambiguas en análisis, puntuación y panel.
 
-## KPI críticos (source of truth)
+## KPI críticos (fuente de verdad)
 - `throughput_planificado`: `kpi_operativos.csv`
 - `throughput_real`: `kpi_operativos.csv`
 - `throughput_gap`: `kpi_operativos.csv`
@@ -14,7 +14,7 @@ Definir fuente, fórmula y validación mínima de KPI críticos para evitar deri
 - `score_readiness_global`: `kpi_operativos.csv`
 
 Definiciones:
-- `score_readiness_global`: porcentaje de vehículos con readiness final, escala 0-100.
+- `score_readiness_global`: porcentaje de vehículos preparados dentro de la ventana planificada, escala 0-100.
 - `ratio_salida_retrasada`: porcentaje de vehículos despachados con atraso superior a 120 minutos.
 
 ## Reglas de consistencia obligatorias
@@ -24,10 +24,10 @@ Definiciones:
    - igualdad exacta en la ejecución.
 3. KPI fuera de rango:
    - proporciones deben estar en [0, 1].
-   - scores en [0, 100].
-4. Ninguna salida real puede tener `readiness_final_flag = false`.
+   - puntuaciones en [0, 100].
+4. Ninguna salida real puede preceder a `timestamp_readiness`; una salida tardía puede tener `readiness_final_flag = false` si no estuvo preparada dentro de la ventana planificada.
 
 ## Uso permitido
-- Dashboard ejecutivo: permitido.
+- Panel ejecutivo: permitido.
 - Priorización inicial de operaciones: permitido.
 - Comité de inversión: no permitido sin calibración con datos reales y validación independiente.

@@ -12,5 +12,7 @@
   "high_issues": 0,
   "medium_issues": 0,
   "sql_warn_ratio": 0.0,
-  "kpi_single_source_of_truth": true
+  "kpi_single_source_of_truth": true,
+  "dashboard_version": "ev-e9db516dc8",
+  "dashboard_html_sha256": "c30d73c81416482d5c40060211457f0f05e30f66f7b1109b65e9123de1708026"
 }

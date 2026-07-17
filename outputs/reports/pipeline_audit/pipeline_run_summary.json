@@ -1,0 +1,9 @@
+{
+  "generation_enabled": false,
+  "dashboard_path": "outputs/dashboard/industrial-ev-operating-command-center.html",
+  "release_grade": "decision-support only",
+  "release_approved": true,
+  "release_reason": "Publicación apta",
+  "explore_report": "outputs/reports/pipeline_audit/explore_data_audit.md",
+  "validation_status": "PASS"
+}
