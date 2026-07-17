@@ -568,9 +568,7 @@ class Report(BaseDocTemplate):
         canvas.setFont("ReportSans", 6.5)
         canvas.setFillColor(SUBTLE)
         canvas.drawString(MARGIN, PAGE_H - MARGIN + 5 * mm, "GEMELO OPERATIVO · TRANSICIÓN EV")
-        canvas.drawRightString(
-            PAGE_W - MARGIN, PAGE_H - MARGIN + 5 * mm, "DIAGNÓSTICO · ESCENARIOS · DECISIÓN"
-        )
+        canvas.drawRightString(PAGE_W - MARGIN, PAGE_H - MARGIN + 5 * mm, "DIAGNÓSTICO · ESCENARIOS · DECISIÓN")
         canvas.setStrokeColor(LINE)
         canvas.setLineWidth(0.45)
         canvas.line(MARGIN, PAGE_H - MARGIN + 3 * mm, MARGIN + 28 * mm, PAGE_H - MARGIN + 3 * mm)
@@ -883,10 +881,15 @@ def cover() -> list:
     st.append(Spacer(1, 0.8 * cm))
     st.append(
         Table(
-            [[Paragraph(
-                "Las figuras se generan directamente desde los marts procesados y coinciden con el panel operativo publicado.",
-                S["caption"],
-            ), ""]],
+            [
+                [
+                    Paragraph(
+                        "Las figuras se generan directamente desde los marts procesados y coinciden con el panel operativo publicado.",
+                        S["caption"],
+                    ),
+                    "",
+                ]
+            ],
             colWidths=[COVER_META_WIDTH, CONTENT_W - COVER_META_WIDTH],
         )
     )

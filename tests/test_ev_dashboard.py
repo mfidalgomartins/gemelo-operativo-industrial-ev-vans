@@ -74,9 +74,9 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
     assert "const THEME_KEY = 'ev_dashboard_theme';" in html
     # El tema oscuro es el predeterminado en la primera visita, pero la elección
     # guardada del usuario siempre manda sobre él.
-    assert (
-        "applyTheme(stored === 'light' || stored === 'dark' ? stored : 'dark');" in html
-    ), "Dark is the first-load default; a stored choice still wins"
+    assert "applyTheme(stored === 'light' || stored === 'dark' ? stored : 'dark');" in html, (
+        "Dark is the first-load default; a stored choice still wins"
+    )
     assert "prefers-color-scheme: dark" not in html, "First-load theme must not depend on OS preference"
     # Design guardrails: no decorative gradients, glassmorphism, or excessive eyebrow chips.
     assert "linear-gradient(135deg" not in html, "No decorative hero gradients"
