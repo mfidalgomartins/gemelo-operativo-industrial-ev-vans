@@ -56,47 +56,49 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
     assert "__FILTERS__" not in html
     assert "__CHARTJS__" not in html
 
-    # Layout safety contracts — "instrumento" design system: Archivo for text and
-    # figures, IBM Plex Mono reserved for tabular contexts, KPI strip, flow spine,
-    # neutral surfaces, no gradients/glassmorphism.
-    assert '"Archivo"' in html, "Display and figure typeface must be Archivo"
-    assert '"IBM Plex Mono"' in html, "Tabular contexts must use IBM Plex Mono"
+    # Contratos de seguridad de layout — sistema de diseño "instrumento": Archivo para
+    # texto y cifras, IBM Plex Mono reservado a contextos tabulares, banda KPI, espina
+    # de flujo, superficies neutras, sin gradientes ni glassmorphism.
+    assert '"Archivo"' in html, "La tipografía de texto y cifras debe ser Archivo"
+    assert '"IBM Plex Mono"' in html, "Los contextos tabulares deben usar IBM Plex Mono"
     assert "--font-sans:" in html and "--font-mono:" in html
-    assert "kpi-strip" in html, "Above-the-fold KPI strip must be present"
-    assert 'id="spine_track"' in html, "Flow spine is the primary diagnosis surface"
-    assert "card tall" in html, "Chart cards must reserve adequate vertical room"
+    assert "kpi-strip" in html, "La banda KPI sobre el pliegue debe estar presente"
+    assert 'id="spine_track"' in html, "La espina de flujo es la superficie de diagnóstico principal"
+    assert "card tall" in html, "Las tarjetas de gráfico deben reservar espacio vertical adecuado"
     assert "maxTicksLimit: 8" in html
     assert "html[data-theme='dark']" in html
     assert 'id="theme_toggle"' in html
     assert 'id="btn_toggle_filters"' in html
     assert 'id="filters_shell"' in html
-    assert "setFilterPanelCollapsed(false);" in html, "Filters are inline; start visible"
+    assert "setFilterPanelCollapsed(false);" in html, "Los filtros son en línea; empiezan visibles"
     assert "const THEME_KEY = 'ev_dashboard_theme';" in html
     # El tema oscuro es el predeterminado en la primera visita, pero la elección
     # guardada del usuario siempre manda sobre él.
     assert "applyTheme(stored === 'light' || stored === 'dark' ? stored : 'dark');" in html, (
-        "Dark is the first-load default; a stored choice still wins"
+        "El oscuro es el predeterminado en la primera carga; una elección guardada sigue mandando"
     )
-    assert "prefers-color-scheme: dark" not in html, "First-load theme must not depend on OS preference"
-    # Design guardrails: no decorative gradients, glassmorphism, or excessive eyebrow chips.
-    assert "linear-gradient(135deg" not in html, "No decorative hero gradients"
-    assert 'class="eyebrow"' not in html or html.count('class="eyebrow"') <= 2, "Eyebrow chips must be minimal"
-    assert "Iowan Old Style" not in html, "Legacy serif must be removed"
-    assert "IBM Plex Sans" not in html, "Legacy sans must be removed"
-    assert "Geist" not in html, "Superseded typeface must be removed"
+    assert "prefers-color-scheme: dark" not in html, (
+        "El tema de primera carga no debe depender de la preferencia del sistema operativo"
+    )
+    # Guardarraíles de diseño: sin gradientes decorativos, glassmorphism ni exceso de chips eyebrow.
+    assert "linear-gradient(135deg" not in html, "Sin gradientes decorativos en el hero"
+    assert 'class="eyebrow"' not in html or html.count('class="eyebrow"') <= 2, "Los chips eyebrow deben ser mínimos"
+    assert "Iowan Old Style" not in html, "La serif heredada debe estar eliminada"
+    assert "IBM Plex Sans" not in html, "La sans heredada debe estar eliminada"
+    assert "Geist" not in html, "La tipografía sustituida debe estar eliminada"
 
-    # Data-visualisation contracts. A second y-scale on one plot invents a
-    # correlation the data does not carry: yard occupancy and p95 dwell are
-    # separate panels, and every mark colour is bound to a semantic role.
-    assert "yAxisID" not in html, "No dual-axis charts"
+    # Contratos de visualización de datos. Un segundo eje Y en un mismo gráfico inventa
+    # una correlación que los datos no contienen: ocupación de patio y p95 de permanencia
+    # van en paneles separados, y cada color de marca está ligado a un rol semántico.
+    assert "yAxisID" not in html, "Sin gráficos de doble eje"
     assert 'id="ch_yard_occ"' in html and 'id="ch_yard_dwell"' in html
     for role in ["--mark-real:", "--mark-plan:", "--mark-ev:", "--mark-energy:", "--mark-risk:"]:
-        assert role in html, f"Semantic mark role {role} must be declared"
-    assert "showLegend(" in html, "Legends are opt-in per series count, not global"
-    assert 'id="data_dialog"' in html, "Every chart needs a table-view twin"
-    assert html.count('class="btn-data"') == 19, "Each chart exposes its underlying series"
+        assert role in html, f"El rol de marca semántica {role} debe estar declarado"
+    assert "showLegend(" in html, "Las leyendas se activan por número de series, no de forma global"
+    assert 'id="data_dialog"' in html, "Cada gráfico necesita su gemela en vista de tabla"
+    assert html.count('class="btn-data"') == 19, "Cada gráfico expone su serie subyacente"
 
-    # Filter wiring contracts
+    # Contratos de conexión de filtros
     for fid in [
         "f_date_from",
         "f_date_to",
@@ -132,8 +134,8 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
     assert "Dashboard Version" not in html
     assert "Actualizado" not in html
 
-    # Chart contracts: every declared canvas must be initialised, and nothing
-    # may be initialised that has no canvas to draw on.
+    # Contratos de gráfico: todo canvas declarado debe inicializarse, y nada
+    # puede inicializarse sin un canvas donde dibujar.
     assert html.count("<canvas id=") == 19
     canvas_ids = set(re.findall(r'<canvas id="(ch_[a-z_]+)"', html))
     initialised = set(re.findall(r"make(?:Rank)?Chart\('(ch_[a-z_]+)'", html))

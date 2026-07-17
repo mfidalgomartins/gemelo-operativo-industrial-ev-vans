@@ -1,8 +1,8 @@
-# Run `pre-commit install` once, then hooks run on every commit.
-# Mirrors the CI quality gate so problems are caught before push.
+# Ejecutar `pre-commit install` una vez; los hooks corren en cada commit.
+# Refleja la puerta de calidad de la CI para detectar problemas antes del push.
 
-# Generated artifacts (committed data snapshot, charts, report, dashboard) are
-# excluded from text-normalising hooks; they are produced by the pipeline.
+# Artefactos generados (corte de datos versionado, gráficos, informe, panel)
+# quedan excluidos de los hooks de normalización de texto; los produce la canalización.
 exclude: '^(data/|outputs/|dist/)'
 
 repos:
@@ -22,6 +22,6 @@ repos:
       - id: check-toml
       - id: check-merge-conflict
       - id: check-added-large-files
-        # Allows the committed data snapshot (largest mart ~20 MB) while
-        # blocking the rebuildable 34 MB DuckDB and other oversized binaries.
+        # Permite el corte de datos versionado (el mart más grande, ~20 MB)
+        # y bloquea el DuckDB reconstruible de 34 MB y otros binarios excesivos.
         args: ["--maxkb=25600"]

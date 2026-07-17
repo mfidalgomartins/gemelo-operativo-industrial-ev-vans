@@ -75,7 +75,7 @@ def test_simulate_yard_gain_reduces_congestion_risk() -> None:
 
 
 def test_simulate_combined_improvement_better_than_base() -> None:
-    """Scenario 8: all gains should improve stability vs base."""
+    """Escenario 8: todas las ganancias combinadas deben mejorar la estabilidad frente a la base."""
     base = _make_base()
     params_combined = {
         "share_ev_delta": 0.25,
