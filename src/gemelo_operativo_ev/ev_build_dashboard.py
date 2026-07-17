@@ -463,7 +463,7 @@ def _write_manifest_and_qc(
             "chart_js_cdn_declared": "cdn.jsdelivr.net/npm/chart.js" in html,
             "kpi_payload_bound": "kpi_official" in html and "const META = PAYLOAD.meta;" in html,
             "html_size_under_6mb": html_size < 6_000_000,
-            "canvas_count_expected": canvas_count == 17,
+            "canvas_count_expected": canvas_count == 19,
             "severity_filter_wired": "f_severity" in html and "severity:'severidad'" in html,
             "executive_snapshot_consistent": payload["meta"]["executive_snapshot"]["top_area"] == top_priority_area,
             "density_guard": density_guard,

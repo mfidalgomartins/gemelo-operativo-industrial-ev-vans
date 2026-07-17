@@ -29,21 +29,22 @@ OUT = OUTPUT_GRAPHS_DIR
 OUT.mkdir(parents=True, exist_ok=True)
 
 # ── Paleta y tipografía
-INK = "#1c1917"
-INK_2 = "#44403c"
-MUTED = "#78716c"
-SUBTLE = "#a8a29e"
-LINE = "#e7e5e4"
-SURFACE = "#ffffff"
+INK = "#111111"
+INK_2 = "#343638"
+MUTED = "#62676b"
+SUBTLE = "#6f7478"
+LINE = "#d7d9da"
+SURFACE = "#f2f2f0"
 
-ACCENT = "#1d4ed8"
-ACCENT_SOFT = "#bfdbfe"
-DANGER = "#b91c1c"
-WARN = "#a16207"
-POSITIVE = "#15803d"
-NEUTRAL_BAR = "#a8a29e"
-EV_COLOR = "#1d4ed8"
-ICE_COLOR = "#a8a29e"
+ACCENT = "#6bcb45"
+ACCENT_TEXT = "#357d28"
+ACCENT_SOFT = "#d9efcf"
+DANGER = "#c44938"
+WARN = "#c8892e"
+POSITIVE = "#4f9f3a"
+NEUTRAL_BAR = "#7c8184"
+EV_COLOR = "#2aa7c7"
+ICE_COLOR = "#7c8184"
 
 TIER_COLOR = {
     "estabilizar en la siguiente ola": DANGER,
@@ -92,7 +93,7 @@ PARTIAL_DAY_MIN_COVERAGE_RATIO = 0.50
 
 plt.rcParams.update(
     {
-        "font.family": ["Helvetica Neue", "Arial", "DejaVu Sans"],
+        "font.family": ["DejaVu Sans", "Arial", "sans-serif"],
         "font.size": 10,
         "axes.titlesize": 13,
         "axes.titleweight": "regular",
@@ -122,20 +123,20 @@ plt.rcParams.update(
 
 def title_block(ax, eyebrow: str, title: str, subtitle: str | None = None) -> None:
     fig = ax.figure
-    fig.text(0.045, 0.955, eyebrow.upper(), color=SUBTLE, fontsize=9.5, weight="regular")
-    fig.text(0.045, 0.905, title, color=INK, fontsize=17.5, weight="semibold")
+    fig.text(0.045, 0.957, eyebrow.upper(), color=ACCENT_TEXT, fontsize=8.2, weight="bold")
+    fig.text(0.045, 0.907, title, color=INK, fontsize=17.0, weight="bold")
     if subtitle:
-        fig.text(0.045, 0.865, subtitle, color=MUTED, fontsize=11)
+        fig.text(0.045, 0.865, subtitle, color=INK_2, fontsize=9.8)
 
 
 def footer(fig, source: str) -> None:
-    fig.text(0.045, 0.022, source, color=SUBTLE, fontsize=8.5)
+    fig.text(0.045, 0.022, source, color=MUTED, fontsize=7.5)
     fig.text(
         0.955,
         0.022,
         "Gemelo Operativo EV · Datos sintéticos de fábrica",
-        color=SUBTLE,
-        fontsize=8.5,
+        color=MUTED,
+        fontsize=7.5,
         ha="right",
     )
 
@@ -234,7 +235,7 @@ def chart_01_throughput() -> None:
     fig, ax = plt.subplots(figsize=(12, 5.6))
     plt.subplots_adjust(left=0.07, right=0.96, top=0.76, bottom=0.13)
 
-    ax.scatter(daily["fecha"], daily["real"], s=8, color="#d6d3d1", alpha=0.9, zorder=1, label="Diario")
+    ax.scatter(daily["fecha"], daily["real"], s=8, color=LINE, alpha=0.9, zorder=1, label="Diario")
     ax.plot(daily["fecha"], daily["real_7d"], color=INK, linewidth=2.4, zorder=3, label="Media móvil 7 días")
 
     ax.axhline(avg, color=MUTED, linewidth=0.9, linestyle=(0, (3, 3)), zorder=2)

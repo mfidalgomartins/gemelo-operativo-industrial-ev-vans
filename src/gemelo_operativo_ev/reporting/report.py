@@ -10,14 +10,22 @@ el informe se mantenga consistente con el panel publicado.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
+from matplotlib import get_data_path
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm, mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
+    BalancedColumns,
     BaseDocTemplate,
+    CondPageBreak,
+    Flowable,
     Frame,
     Image,
     KeepTogether,
@@ -39,21 +47,55 @@ GRAPHS = OUTPUT_GRAPHS_DIR
 OUT = OUTPUT_REPORTS_DIR
 PDF = OUT / "ev_transition_operating_twin_report.pdf"
 
-# ── Paleta (alineada con el paquete de gráficos)
-INK = colors.HexColor("#1c1917")
-INK_2 = colors.HexColor("#44403c")
-MUTED = colors.HexColor("#78716c")
-SUBTLE = colors.HexColor("#a8a29e")
-LINE = colors.HexColor("#e7e5e4")
-ACCENT = colors.HexColor("#1d4ed8")
-DANGER = colors.HexColor("#b91c1c")
-POSITIVE = colors.HexColor("#15803d")
+# ── Sistema editorial inspirado en la referencia
+INK = colors.HexColor("#111111")
+INK_2 = colors.HexColor("#343638")
+MUTED = colors.HexColor("#62676b")
+SUBTLE = colors.HexColor("#6f7478")
+LINE = colors.HexColor("#d7d9da")
+ACCENT = colors.HexColor("#6bcb45")
+ACCENT_TEXT = colors.HexColor("#357d28")
+ACCENT_2 = colors.HexColor("#2aa7c7")
+WARM = colors.HexColor("#d47745")
+DANGER = colors.HexColor("#c44938")
+POSITIVE = colors.HexColor("#4f9f3a")
 PAPER = colors.HexColor("#ffffff")
-BAND = colors.HexColor("#f5f5f4")
+BAND = colors.HexColor("#f2f2f0")
 
 PAGE_W, PAGE_H = A4
-MARGIN = 2.2 * cm
+MARGIN = 1.8 * cm
 CONTENT_W = PAGE_W - 2 * MARGIN
+COVER_META_WIDTH = 8.9 * cm
+COVER_ART_X0 = 11.2 * cm
+
+
+def _register_editorial_fonts() -> None:
+    """Registra una pareja serif/sans incluida con Matplotlib."""
+    font_dir = Path(get_data_path()) / "fonts" / "ttf"
+    fonts = {
+        "ReportSans": "DejaVuSans.ttf",
+        "ReportSans-Bold": "DejaVuSans-Bold.ttf",
+        "ReportSerif": "DejaVuSerif.ttf",
+        "ReportSerif-Bold": "DejaVuSerif-Bold.ttf",
+        "ReportSerif-Italic": "DejaVuSerif-Italic.ttf",
+    }
+    for name, filename in fonts.items():
+        if name not in pdfmetrics.getRegisteredFontNames():
+            pdfmetrics.registerFont(TTFont(name, str(font_dir / filename)))
+    pdfmetrics.registerFontFamily(
+        "ReportSans",
+        normal="ReportSans",
+        bold="ReportSans-Bold",
+    )
+    pdfmetrics.registerFontFamily(
+        "ReportSerif",
+        normal="ReportSerif",
+        bold="ReportSerif-Bold",
+        italic="ReportSerif-Italic",
+    )
+
+
+_register_editorial_fonts()
 
 
 def weighted_avg(df: pd.DataFrame, value_col: str, weight_col: str) -> float:
@@ -268,31 +310,32 @@ def build_styles() -> dict:
     s["body"] = ParagraphStyle(
         "body",
         parent=ss["BodyText"],
-        fontName="Helvetica",
-        fontSize=10.3,
-        leading=15.6,
+        fontName="ReportSerif",
+        fontSize=8.7,
+        leading=11.8,
         textColor=INK_2,
         alignment=TA_JUSTIFY,
-        spaceAfter=8,
+        spaceAfter=6,
         spaceBefore=0,
     )
     s["lead"] = ParagraphStyle(
         "lead",
         parent=s["body"],
-        fontSize=11.5,
-        leading=17,
+        fontName="ReportSans",
+        fontSize=10.2,
+        leading=13.8,
         textColor=INK,
-        spaceAfter=11,
+        spaceAfter=10,
     )
     s["h1"] = ParagraphStyle(
         "h1",
         parent=ss["Heading1"],
-        fontName="Helvetica-Bold",
-        fontSize=20,
-        leading=24,
+        fontName="ReportSans-Bold",
+        fontSize=23,
+        leading=25.5,
         textColor=INK,
-        spaceBefore=10,
-        spaceAfter=4,
+        spaceBefore=6,
+        spaceAfter=3,
     )
     s["h1_plain"] = ParagraphStyle(
         "h1_plain",
@@ -300,37 +343,37 @@ def build_styles() -> dict:
     )
     s["eyebrow"] = ParagraphStyle(
         "eyebrow",
-        fontName="Helvetica-Bold",
-        fontSize=9,
-        leading=12,
-        textColor=ACCENT,
+        fontName="ReportSans-Bold",
+        fontSize=7.4,
+        leading=9.5,
+        textColor=ACCENT_TEXT,
         spaceBefore=0,
-        spaceAfter=2,
+        spaceAfter=3,
     )
     s["h2"] = ParagraphStyle(
         "h2",
         parent=ss["Heading2"],
-        fontName="Helvetica-Bold",
-        fontSize=13.5,
-        leading=18,
+        fontName="ReportSans-Bold",
+        fontSize=11.2,
+        leading=13.8,
         textColor=INK,
-        spaceBefore=16,
-        spaceAfter=5,
+        spaceBefore=11,
+        spaceAfter=4,
     )
     s["h3"] = ParagraphStyle(
         "h3",
-        fontName="Helvetica-Bold",
-        fontSize=11,
-        leading=15,
+        fontName="ReportSans-Bold",
+        fontSize=9.2,
+        leading=11.5,
         textColor=INK,
         spaceBefore=10,
         spaceAfter=3,
     )
     s["caption"] = ParagraphStyle(
         "caption",
-        fontName="Helvetica",
-        fontSize=8.6,
-        leading=11.5,
+        fontName="ReportSerif-Italic",
+        fontSize=7.3,
+        leading=9.6,
         textColor=MUTED,
         alignment=TA_LEFT,
         spaceBefore=4,
@@ -338,9 +381,9 @@ def build_styles() -> dict:
     )
     s["callout"] = ParagraphStyle(
         "callout",
-        fontName="Helvetica",
-        fontSize=10.5,
-        leading=15,
+        fontName="ReportSerif",
+        fontSize=9.2,
+        leading=12.6,
         textColor=INK,
         leftIndent=10,
         spaceBefore=2,
@@ -348,61 +391,109 @@ def build_styles() -> dict:
     )
     s["kpi_num"] = ParagraphStyle(
         "kpi_num",
-        fontName="Helvetica-Bold",
-        fontSize=19,
-        leading=21,
-        textColor=INK,
+        fontName="ReportSans-Bold",
+        fontSize=18,
+        leading=20,
+        textColor=ACCENT_TEXT,
     )
     s["kpi_lbl"] = ParagraphStyle(
         "kpi_lbl",
-        fontName="Helvetica",
-        fontSize=7.8,
-        leading=10,
+        fontName="ReportSans",
+        fontSize=7.1,
+        leading=9.2,
         textColor=MUTED,
     )
     s["toc1"] = ParagraphStyle(
         "toc1",
-        fontName="Helvetica-Bold",
-        fontSize=11,
-        leading=20,
+        fontName="ReportSans-Bold",
+        fontSize=9.6,
+        leading=14,
         textColor=INK,
     )
     s["toc2"] = ParagraphStyle(
         "toc2",
-        fontName="Helvetica",
-        fontSize=10,
-        leading=17,
+        fontName="ReportSerif",
+        fontSize=8.6,
+        leading=12.5,
         textColor=INK_2,
         leftIndent=14,
     )
     s["cover_title"] = ParagraphStyle(
         "cover_title",
-        fontName="Helvetica-Bold",
-        fontSize=30,
-        leading=35,
+        fontName="ReportSans-Bold",
+        fontSize=25,
+        leading=28.5,
         textColor=INK,
     )
     s["cover_sub"] = ParagraphStyle(
         "cover_sub",
-        fontName="Helvetica",
-        fontSize=13.5,
-        leading=19,
-        textColor=MUTED,
+        fontName="ReportSerif-Italic",
+        fontSize=10.5,
+        leading=14.5,
+        textColor=INK_2,
     )
     s["cover_meta"] = ParagraphStyle(
         "cover_meta",
-        fontName="Helvetica",
-        fontSize=9.5,
-        leading=15,
+        fontName="ReportSerif",
+        fontSize=8.2,
+        leading=11.4,
         textColor=INK_2,
     )
-    s["tbl"] = ParagraphStyle("tbl", fontName="Helvetica", fontSize=8.8, leading=11.5, textColor=INK_2)
-    s["tbl_b"] = ParagraphStyle("tbl_b", fontName="Helvetica-Bold", fontSize=8.8, leading=11.5, textColor=INK)
-    s["tbl_h"] = ParagraphStyle("tbl_h", fontName="Helvetica-Bold", fontSize=8.4, leading=11, textColor=colors.white)
+    s["tbl"] = ParagraphStyle("tbl", fontName="ReportSerif", fontSize=7.2, leading=9.4, textColor=INK_2)
+    s["tbl_b"] = ParagraphStyle("tbl_b", fontName="ReportSerif-Bold", fontSize=7.2, leading=9.4, textColor=INK)
+    s["tbl_h"] = ParagraphStyle("tbl_h", fontName="ReportSans-Bold", fontSize=6.8, leading=8.8, textColor=INK)
     return s
 
 
 S = build_styles()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Apertura editorial de sección
+class SectionTitle(Flowable):
+    """Título de sección con punto de color y regla vertical de navegación."""
+
+    def __init__(self, text: str, eyebrow: str | None = None):
+        super().__init__()
+        self.text = text
+        self.eyebrow = eyebrow or ""
+        self.style = S["h1"]
+        self._eyebrow_flowable = Paragraph(self.eyebrow, S["eyebrow"]) if self.eyebrow else None
+        self._title_flowable = Paragraph(text, S["h1"])
+        self._content_width = 0.0
+        self._eyebrow_height = 0.0
+        self._title_height = 0.0
+
+    def getPlainText(self) -> str:  # noqa: N802 - API de ReportLab
+        return self.text
+
+    def wrap(self, avail_width, avail_height):
+        self.width = avail_width
+        self._content_width = max(avail_width - 14 * mm, 1)
+        if self._eyebrow_flowable:
+            _, self._eyebrow_height = self._eyebrow_flowable.wrap(self._content_width, avail_height)
+        _, self._title_height = self._title_flowable.wrap(self._content_width, avail_height)
+        self.height = max(28 * mm, self._eyebrow_height + self._title_height + 8 * mm)
+        return self.width, self.height
+
+    def draw(self):
+        canvas = self.canv
+        marker_x = 4.2 * mm
+        marker_y = self.height - 5.2 * mm
+        canvas.saveState()
+        canvas.setFillColor(ACCENT)
+        canvas.circle(marker_x, marker_y, 2.8 * mm, fill=1, stroke=0)
+        canvas.setStrokeColor(INK)
+        canvas.setLineWidth(0.7)
+        canvas.line(marker_x, marker_y - 4.2 * mm, marker_x, 0)
+        canvas.restoreState()
+
+        y = self.height - 2 * mm
+        if self._eyebrow_flowable:
+            y -= self._eyebrow_height
+            self._eyebrow_flowable.drawOn(canvas, 14 * mm, y)
+        y -= self._title_height + 1.5 * mm
+        self._title_flowable.drawOn(canvas, 14 * mm, y)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -422,31 +513,85 @@ class Report(BaseDocTemplate):
 
     def _cover_bg(self, canvas, doc):
         canvas.saveState()
+        canvas.setFillColor(BAND)
+        canvas.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
+
+        # Sistema vectorial original: flujo, capacidad y transición convergen.
+        canvas.setStrokeColor(colors.HexColor("#c7cacc"))
+        canvas.setLineWidth(0.7)
+        for offset in range(6):
+            path = canvas.beginPath()
+            path.moveTo(COVER_ART_X0, (5.4 + offset * 1.15) * cm)
+            path.curveTo(
+                13.2 * cm,
+                (4.2 + offset * 1.35) * cm,
+                16.2 * cm,
+                (6.2 + offset * 0.95) * cm,
+                20.2 * cm,
+                (5.0 + offset * 1.2) * cm,
+            )
+            canvas.drawPath(path, fill=0, stroke=1)
+
+        slat_colors = (PAPER, ACCENT_2, PAPER, WARM, PAPER, colors.HexColor("#bfc2c4"))
+        for index in range(15):
+            x = COVER_ART_X0 + index * 0.58 * cm
+            y = (6.2 + (index % 5) * 0.82 + index * 0.12) * cm
+            canvas.saveState()
+            canvas.translate(x, y)
+            canvas.rotate(-24 + index * 3.2)
+            canvas.setFillColor(slat_colors[index % len(slat_colors)])
+            canvas.setStrokeColor(colors.HexColor("#b6b9bb"))
+            canvas.setLineWidth(0.45)
+            canvas.roundRect(-3.2 * mm, -23 * mm, 6.4 * mm, 46 * mm, 3.2 * mm, fill=1, stroke=1)
+            canvas.restoreState()
+
+        for x, y, radius, color in (
+            (11.3, 8.7, 3.0, ACCENT),
+            (12.2, 6.6, 2.6, INK),
+            (13.4, 10.9, 2.4, ACCENT_2),
+            (16.2, 7.4, 2.8, PAPER),
+            (18.5, 11.8, 2.5, WARM),
+            (19.8, 8.8, 2.3, ACCENT),
+        ):
+            canvas.setFillColor(color)
+            canvas.circle(x * cm, y * cm, radius * mm, fill=1, stroke=0)
+
         canvas.setFillColor(INK)
-        canvas.rect(0, PAGE_H - 6 * mm, PAGE_W, 6 * mm, fill=1, stroke=0)
+        canvas.rect(MARGIN, 13 * mm, 20 * mm, 1.2 * mm, fill=1, stroke=0)
         canvas.setFillColor(ACCENT)
-        canvas.rect(0, PAGE_H - 6 * mm, PAGE_W * 0.39, 6 * mm, fill=1, stroke=0)
+        canvas.rect(MARGIN, 13 * mm, 7 * mm, 1.2 * mm, fill=1, stroke=0)
         canvas.restoreState()
 
     def _chrome(self, canvas, doc):
         canvas.saveState()
-        # Cabecera
-        canvas.setFont("Helvetica", 7.5)
+        # Navegación editorial mínima.
+        canvas.setFont("ReportSans", 6.5)
         canvas.setFillColor(SUBTLE)
-        canvas.drawString(MARGIN, PAGE_H - MARGIN + 6 * mm, "Gemelo operativo para la transición a vans EV")
+        canvas.drawString(MARGIN, PAGE_H - MARGIN + 5 * mm, "GEMELO OPERATIVO · TRANSICIÓN EV")
         canvas.drawRightString(
-            PAGE_W - MARGIN, PAGE_H - MARGIN + 6 * mm, "Diagnóstico operativo y análisis de escenarios"
+            PAGE_W - MARGIN, PAGE_H - MARGIN + 5 * mm, "DIAGNÓSTICO · ESCENARIOS · DECISIÓN"
         )
         canvas.setStrokeColor(LINE)
-        canvas.setLineWidth(0.6)
-        canvas.line(MARGIN, PAGE_H - MARGIN + 4 * mm, PAGE_W - MARGIN, PAGE_H - MARGIN + 4 * mm)
-        # Pie
-        canvas.setStrokeColor(LINE)
-        canvas.line(MARGIN, MARGIN - 4 * mm, PAGE_W - MARGIN, MARGIN - 4 * mm)
-        canvas.setFont("Helvetica", 7.5)
+        canvas.setLineWidth(0.45)
+        canvas.line(MARGIN, PAGE_H - MARGIN + 3 * mm, MARGIN + 28 * mm, PAGE_H - MARGIN + 3 * mm)
+
+        outer_x = PAGE_W - 10 * mm
+        canvas.line(outer_x, 16 * mm, outer_x, PAGE_H - 16 * mm)
+        canvas.saveState()
+        canvas.translate(PAGE_W - 6.5 * mm, PAGE_H / 2)
+        canvas.rotate(90)
+        canvas.setFont("ReportSans", 5.8)
+        canvas.drawCentredString(0, 0, "OPERACIONES INDUSTRIALES · DATOS SINTÉTICOS · INFORME REPRODUCIBLE")
+        canvas.restoreState()
+
+        canvas.setFillColor(ACCENT)
+        canvas.circle(MARGIN + 1.5 * mm, MARGIN - 6.4 * mm, 1.5 * mm, fill=1, stroke=0)
+        canvas.setFont("ReportSans", 6.3)
         canvas.setFillColor(SUBTLE)
-        canvas.drawString(MARGIN, MARGIN - 9 * mm, "Datos sintéticos de fábrica")
-        canvas.drawRightString(PAGE_W - MARGIN, MARGIN - 9 * mm, f"{doc.page}")
+        canvas.drawString(MARGIN + 5 * mm, MARGIN - 8 * mm, "DATOS SINTÉTICOS DE FÁBRICA")
+        canvas.setFont("ReportSans-Bold", 7.2)
+        canvas.setFillColor(INK)
+        canvas.drawRightString(PAGE_W - MARGIN, MARGIN - 8 * mm, f"{doc.page}")
         canvas.restoreState()
 
     def afterFlowable(self, flowable):  # noqa: N802  (overrides reportlab BaseDocTemplate)
@@ -455,8 +600,6 @@ class Report(BaseDocTemplate):
         name = flowable.style.name
         if name == "h1":
             self.notify("TOCEntry", (0, flowable.getPlainText(), self.page))
-        elif name == "h2":
-            self.notify("TOCEntry", (1, flowable.getPlainText(), self.page))
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -467,7 +610,19 @@ def fig(name: str, caption: str, width=CONTENT_W) -> list:
     iw, ih = img.imageWidth, img.imageHeight
     img.drawWidth = width
     img.drawHeight = width * ih / iw
-    return [Spacer(1, 4), img, Paragraph(caption, S["caption"])]
+    caption_band = Table([[Paragraph(caption, S["caption"])]], colWidths=[width])
+    caption_band.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), BAND),
+                ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ]
+        )
+    )
+    return [Spacer(1, 3), KeepTogether([img, caption_band]), Spacer(1, 4)]
 
 
 def p(text: str) -> Paragraph:
@@ -479,12 +634,7 @@ def lead(text: str) -> Paragraph:
 
 
 def h1(text: str, eyebrow: str | None = None) -> list:
-    out = []
-    if eyebrow:
-        out.append(Paragraph(eyebrow.upper(), S["eyebrow"]))
-    out.append(Paragraph(text, S["h1"]))
-    out.append(hr())
-    return out
+    return [SectionTitle(text, eyebrow)]
 
 
 def h2(text: str) -> Paragraph:
@@ -493,6 +643,48 @@ def h2(text: str) -> Paragraph:
 
 def h3(text: str) -> Paragraph:
     return Paragraph(text, S["h3"])
+
+
+def editorialize(flowables: list) -> list:
+    """Compone bloques narrativos en dos columnas y preserva visuales a ancho completo."""
+    result: list = []
+    narrative: list = []
+
+    def flush() -> None:
+        if not narrative:
+            return
+        result.append(
+            BalancedColumns(
+                list(narrative),
+                nCols=2,
+                needed=52 * mm,
+                innerPadding=7 * mm,
+                spaceBefore=1.5 * mm,
+                spaceAfter=3 * mm,
+                endSlack=0.08,
+            )
+        )
+        narrative.clear()
+
+    for flowable in flowables:
+        if isinstance(flowable, Paragraph) and flowable.style.name in {"body", "h2", "h3"}:
+            narrative.append(flowable)
+        else:
+            flush()
+            result.append(flowable)
+    flush()
+    return result
+
+
+def compose_section(flowables: list, *, is_first: bool) -> list:
+    """Substitui a quebra rígida final por uma porta de espaço para a secção seguinte."""
+    section = list(flowables)
+    if section and isinstance(section[-1], PageBreak):
+        section.pop()
+    composed = editorialize(section)
+    if not is_first:
+        composed.insert(0, CondPageBreak(15 * cm))
+    return composed
 
 
 def hr(color=LINE, w=0.8, space_after=10):
@@ -520,11 +712,11 @@ def kpi_strip(items) -> Table:
         inner.setStyle(
             TableStyle(
                 [
-                    ("TOPPADDING", (0, 0), (-1, -1), 2),
+                    ("TOPPADDING", (0, 0), (-1, -1), 3),
                     ("BOTTOMPADDING", (0, 0), (-1, 0), 1),
-                    ("BOTTOMPADDING", (0, 1), (-1, 1), 8),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 10),
-                    ("LINEABOVE", (0, 0), (-1, 0), 2, ACCENT),
+                    ("BOTTOMPADDING", (0, 1), (-1, 1), 7),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 8),
                 ]
             )
         )
@@ -534,10 +726,11 @@ def kpi_strip(items) -> Table:
         TableStyle(
             [
                 ("BACKGROUND", (0, 0), (-1, -1), BAND),
+                ("LINEAFTER", (0, 0), (-2, -1), 0.6, LINE),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
             ]
         )
@@ -566,14 +759,15 @@ def _table_flowables(header, rows, col_widths, highlight_first_col=True, aligns=
         body.append(cells)
     t = Table(body, colWidths=col_widths, repeatRows=1)
     ts = [
-        ("BACKGROUND", (0, 0), (-1, 0), INK),
+        ("BACKGROUND", (0, 0), (-1, 0), PAPER),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [PAPER, BAND]),
-        ("LINEBELOW", (0, 0), (-1, 0), 0.6, INK),
-        ("LINEBELOW", (0, -1), (-1, -1), 0.6, LINE),
-        ("TOPPADDING", (0, 0), (-1, -1), 5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-        ("LEFTPADDING", (0, 0), (-1, -1), 7),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+        ("LINEABOVE", (0, 0), (-1, 0), 1.2, INK),
+        ("LINEBELOW", (0, 0), (-1, 0), 0.45, INK),
+        ("LINEBELOW", (0, -1), (-1, -1), 0.55, INK),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
     ]
     if aligns:
@@ -609,20 +803,38 @@ def pct(x, d=0):
 # ──────────────────────────────────────────────────────────────────────────────
 def cover() -> list:
     st = []
-    st.append(Spacer(1, 3.2 * cm))
-    st.append(Paragraph("INFORME DE DIAGNÓSTICO OPERATIVO Y DECISIÓN", S["eyebrow"]))
-    st.append(Spacer(1, 6))
-    st.append(Paragraph("Gemelo Operativo para la<br/>Transición a Vans Eléctricas", S["cover_title"]))
-    st.append(Spacer(1, 14))
-    st.append(
-        Paragraph(
-            "Dónde rompe la rampa EV el modelo operativo, cuánta fiabilidad pierde "
-            "y qué controles recuperan la puerta de salida.",
-            S["cover_sub"],
+    st.append(Spacer(1, 0.7 * cm))
+    title_block = Table(
+        [
+            [
+                [
+                    Paragraph("INFORME DE DIAGNÓSTICO OPERATIVO Y DECISIÓN", S["eyebrow"]),
+                    Spacer(1, 5),
+                    Paragraph("Gemelo Operativo para la<br/>Transición a Vans Eléctricas", S["cover_title"]),
+                ],
+                Paragraph(
+                    "Dónde rompe la rampa EV el modelo operativo, cuánta fiabilidad pierde "
+                    "y qué controles recuperan la puerta de salida.",
+                    S["cover_sub"],
+                ),
+            ]
+        ],
+        colWidths=[CONTENT_W * 0.60, CONTENT_W * 0.40],
+    )
+    title_block.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (0, 0), 18),
+                ("RIGHTPADDING", (1, 0), (1, 0), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
         )
     )
-    st.append(Spacer(1, 1.6 * cm))
-    st.append(hr(INK, 1.0, 10))
+    st.append(title_block)
+    st.append(Spacer(1, 9.2 * cm))
     meta = Table(
         [
             [
@@ -652,7 +864,7 @@ def cover() -> list:
                 ),
             ],
         ],
-        colWidths=[3 * cm, CONTENT_W - 3 * cm],
+        colWidths=[2.1 * cm, COVER_META_WIDTH - 2.1 * cm],
     )
     meta.setStyle(
         TableStyle(
@@ -660,17 +872,22 @@ def cover() -> list:
                 ("TOPPADDING", (0, 0), (-1, -1), 4),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("LINEABOVE", (0, 0), (-1, 0), 1.0, INK),
+                ("LINEBELOW", (0, -1), (-1, -1), 0.5, INK),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
             ]
         )
     )
-    st.append(meta)
-    st.append(Spacer(1, 1.4 * cm))
-    st.append(hr(LINE, 0.8, 6))
+    st.append(Table([[meta, ""]], colWidths=[COVER_META_WIDTH, CONTENT_W - COVER_META_WIDTH]))
+    st.append(Spacer(1, 0.8 * cm))
     st.append(
-        Paragraph(
-            "Las figuras se generan directamente desde los marts procesados y coinciden con el panel operativo publicado.",
-            S["caption"],
+        Table(
+            [[Paragraph(
+                "Las figuras se generan directamente desde los marts procesados y coinciden con el panel operativo publicado.",
+                S["caption"],
+            ), ""]],
+            colWidths=[COVER_META_WIDTH, CONTENT_W - COVER_META_WIDTH],
         )
     )
     return st
@@ -679,7 +896,7 @@ def cover() -> list:
 def toc_page() -> list:
     st = [Paragraph("Índice", S["h1_plain"]), hr()]
     toc = TableOfContents()
-    toc.levelStyles = [S["toc1"], S["toc2"]]
+    toc.levelStyles = [S["toc1"]]
     st.append(toc)
     return st
 
@@ -2103,23 +2320,25 @@ def build_story() -> list:
     story.append(PageBreak())
     story += toc_page()
     story.append(PageBreak())
-    for section in (
-        _story_section_01,
-        _story_section_02,
-        _story_section_03,
-        _story_section_04,
-        _story_section_05,
-        _story_section_06,
-        _story_section_07,
-        _story_section_08,
-        _story_section_09,
-        _story_section_10,
-        _story_section_11,
-        _story_section_12,
-        _story_section_13,
-        _story_section_14,
+    for index, section in enumerate(
+        (
+            _story_section_01,
+            _story_section_02,
+            _story_section_03,
+            _story_section_04,
+            _story_section_05,
+            _story_section_06,
+            _story_section_07,
+            _story_section_08,
+            _story_section_09,
+            _story_section_10,
+            _story_section_11,
+            _story_section_12,
+            _story_section_13,
+            _story_section_14,
+        )
     ):
-        story += section()
+        story += compose_section(section(), is_first=index == 0)
     return story
 
 

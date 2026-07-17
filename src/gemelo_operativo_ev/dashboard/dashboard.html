@@ -7,107 +7,76 @@
 <title>Gemelo Operativo EV · Panel Oficial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..112,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<noscript><style>.kpi-strip,.card,.canvas-wrap{display:none}</style></noscript>
+<noscript><style>.kpi-strip,.card,.canvas-wrap,.spine{display:none}</style></noscript>
 <style>
+/* ═══════════════════════════════════════════════════════════════════════
+   Sistema visual: "instrumento".
+   Plano en grafito cálido, acento cobalto frío, medida en monoespaciada.
+   El color de las marcas es semántico y fijo, nunca decorativo:
+     tinta   → lo que ocurrió de verdad (real, total observado)
+     pizarra → el plan o el objetivo (siempre discontinuo)
+     cobalto → la dimensión EV / eléctrica
+     verdemar→ energía y carga
+     carmín  → pérdida, riesgo y congestión (significa "malo" en todo el panel)
+   Paleta categórica verificada con validate_palette.js en ambos modos:
+   separación CVD mínima ΔE 28,1 (claro) y 20,0 (oscuro); umbral objetivo ≥12.
+   ═══════════════════════════════════════════════════════════════════════ */
 :root {
-  --font-sans:"Geist","Söhne","Helvetica Neue",Arial,sans-serif;
-  --font-mono:"Geist Mono","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --font-sans:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 
-  --bg:#fafaf9;
-  --surface:#ffffff;
-  --surface-2:#fafaf9;
-  --line:#e7e5e4;
-  --line-strong:#d6d3d1;
-  --ink:#1c1917;
-  --ink-2:#44403c;
-  --muted:#78716c;
-  --subtle:#6b7280;
+  --plane:#f4f3f0;
+  --surface:#fbfbf9;
+  --surface-2:#f0efec;
+  --line:#e3e1db;
+  --line-strong:#cdcac2;
+  --ink:#171614;
+  --ink-2:#4a4844;
+  --muted:#8a8781;
 
-  --accent:#1d4ed8;
-  --accent-soft:#eff6ff;
-  --accent-line:#bfdbfe;
-  --danger:#b91c1c;
-  --danger-soft:#fef2f2;
-  --warn:#a16207;
-  --positive:#15803d;
+  --mark-real:#171614;
+  --mark-plan:#8a8781;
+  --mark-ev:#2f52c8;
+  --mark-energy:#00897b;
+  --mark-risk:#c0392f;
 
-  --series-1:#1c1917;
-  --series-2:#78716c;
-  --series-3:#1d4ed8;
-  --series-4:#b91c1c;
-  --series-5:#a16207;
-  --series-6:#15803d;
-  --series-7:#7c3aed;
-  --series-8:#0e7490;
-  --series-9:#a8a29e;
+  --state-good:#1d7a3d;
+  --state-warn:#a8730a;
+  --state-bad:#c0392f;
 
-  /* Alias semánticos de series consumidos por Chart.js (themeColors).
-     Mapeados a la paleta editorial sobria para que los gráficos compartan
-     lenguaje visual y sean legibles en ambos temas. */
-  --series-plan:#a8a29e;
-  --series-real:#1c1917;
-  --series-ev:#1d4ed8;
-  --series-gap:#b91c1c;
-  --series-aux:#78716c;
-  --series-yard:#a16207;
-  --series-load:#0e7490;
-  --series-dispatch:#7c3aed;
-  --series-priority:#15803d;
-
-  --grid:#f1f1ef;
-  --grid-x:#f1f1ef;
-  --grid-y:#f1f1ef;
-  --tooltip-bg:#0a0a0a;
-  --tooltip-text:#fafafa;
-  --focus:rgba(29,78,216,.24);
+  --grid:#e8e6e0;
+  --axis:#cdcac2;
+  --tooltip-bg:#171614;
+  --tooltip-ink:#fbfbf9;
+  --focus:rgba(47,82,200,.28);
 }
 html[data-theme='dark'] {
-  --bg:#070707;
-  --surface:#0e0e0e;
-  --surface-2:#161616;
-  --line:#222222;
-  --line-strong:#2e2e2e;
-  --ink:#fafafa;
-  --ink-2:#d4d4d8;
-  --muted:#a1a1aa;
-  --subtle:#a1a1aa;
+  --plane:#0c0c0b;
+  --surface:#141413;
+  --surface-2:#1c1c1a;
+  --line:#262623;
+  --line-strong:#37372f;
+  --ink:#f5f4f0;
+  --ink-2:#c9c7c0;
+  --muted:#8b8880;
 
-  --accent:#60a5fa;
-  --accent-soft:#0c1a35;
-  --accent-line:#1e3a8a;
-  --danger:#f87171;
-  --danger-soft:#2a1010;
-  --warn:#fbbf24;
-  --positive:#4ade80;
+  --mark-real:#f5f4f0;
+  --mark-plan:#7d7a73;
+  --mark-ev:#6d8cf5;
+  --mark-energy:#2da895;
+  --mark-risk:#e4635a;
 
-  --series-1:#fafafa;
-  --series-2:#a1a1aa;
-  --series-3:#60a5fa;
-  --series-4:#f87171;
-  --series-5:#fbbf24;
-  --series-6:#4ade80;
-  --series-7:#a78bfa;
-  --series-8:#22d3ee;
-  --series-9:#52525b;
+  --state-good:#3fae62;
+  --state-warn:#d9a03c;
+  --state-bad:#e4635a;
 
-  --series-plan:#52525b;
-  --series-real:#fafafa;
-  --series-ev:#60a5fa;
-  --series-gap:#f87171;
-  --series-aux:#a1a1aa;
-  --series-yard:#fbbf24;
-  --series-load:#22d3ee;
-  --series-dispatch:#a78bfa;
-  --series-priority:#4ade80;
-
-  --grid:#1a1a1a;
-  --grid-x:#1a1a1a;
-  --grid-y:#1a1a1a;
-  --tooltip-bg:#fafafa;
-  --tooltip-text:#0a0a0a;
-  --focus:rgba(96,165,250,.32);
+  --grid:#232320;
+  --axis:#37372f;
+  --tooltip-bg:#f5f4f0;
+  --tooltip-ink:#141413;
+  --focus:rgba(109,140,245,.32);
 }
 
 * { box-sizing:border-box; }
@@ -115,543 +84,749 @@ html,body { margin:0; padding:0; max-width:100%; overflow-x:hidden; }
 html { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
 body {
   font-family:var(--font-sans);
-  font-feature-settings:"ss01","cv11";
   font-size:14px;
   line-height:1.5;
   color:var(--ink);
-  background:var(--bg);
+  background:var(--plane);
 }
 .sr-only {
   position:absolute; width:1px; height:1px; padding:0; margin:-1px;
   overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
 }
+::selection { background:var(--ink); color:var(--surface); }
 
-/* ───── Barra superior ───── */
-.topbar {
-  position:sticky; top:0; z-index:50;
+/* Etiqueta de instrumento: mono, versalitas, para rótulos y unidades. */
+.mono-label {
+  font-family:var(--font-mono);
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+/* ───── Barra de mando ───── */
+.cmd {
+  position:sticky; top:0; z-index:60;
   display:flex; align-items:center; justify-content:space-between;
   gap:24px;
-  padding:14px 32px;
+  padding:0 28px;
+  height:52px;
   background:var(--surface);
   border-bottom:1px solid var(--line);
 }
-.topbar-left { display:flex; align-items:center; gap:14px; min-width:0; }
-.brand-mark {
-  width:24px; height:24px; flex:0 0 24px;
-  display:flex; align-items:center; justify-content:center;
-  color:var(--ink);
-  font-family:var(--font-mono);
-  font-size:13px;
-  font-weight:500;
-  letter-spacing:-.04em;
-  border:1px solid var(--line-strong);
-  border-radius:6px;
-  position:relative;
-}
-.brand-mark::after {
-  content:'';
-  position:absolute;
-  right:-3px; bottom:-3px;
-  width:6px; height:6px;
-  border-radius:99px;
-  background:var(--accent);
-}
+.cmd-left { display:flex; align-items:center; gap:12px; min-width:0; }
+.brand-mark { width:18px; height:18px; flex:0 0 18px; color:var(--mark-ev); }
 .brand-title {
-  font-size:13px; font-weight:500; color:var(--ink);
-  letter-spacing:-.005em;
+  font-size:13px; font-weight:600; color:var(--ink);
+  letter-spacing:-.01em;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  min-width:0;
 }
-.brand-sep { width:1px; height:14px; background:var(--line-strong); margin:0 4px; }
-.brand-context { font-size:13px; color:var(--muted); white-space:nowrap; }
-.topbar-right { display:flex; align-items:center; gap:8px; }
-.icon-btn {
-  display:inline-flex; align-items:center; justify-content:center;
-  gap:6px;
-  min-height:36px; padding:0 11px;
+.brand-rule { width:1px; height:15px; background:var(--line-strong); }
+.brand-context {
+  font-size:13px; color:var(--muted); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.cmd-right { display:flex; align-items:center; gap:6px; flex:0 0 auto; }
+
+.seal {
+  display:inline-flex; align-items:center; gap:6px;
+  height:26px; padding:0 9px;
+  border:1px solid var(--line);
+  border-radius:4px;
+  font-family:var(--font-mono);
+  font-size:10px; font-weight:500;
+  letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-2);
+  white-space:nowrap;
+}
+.seal .pip { width:5px; height:5px; border-radius:99px; background:var(--state-good); }
+.seal[data-ok='false'] .pip { background:var(--state-warn); }
+
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  height:30px; padding:0 10px;
   border:1px solid var(--line);
   background:var(--surface);
   color:var(--ink-2);
-  border-radius:6px;
+  border-radius:4px;
   font:500 12px/1 var(--font-sans);
   letter-spacing:-.005em;
   cursor:pointer;
   transition:border-color .12s ease, color .12s ease, background .12s ease;
 }
-.icon-btn:hover { border-color:var(--line-strong); color:var(--ink); }
-.icon-btn svg { width:14px; height:14px; }
-.icon-btn-square { width:30px; padding:0; }
+.btn:hover { border-color:var(--line-strong); color:var(--ink); }
+.btn svg { width:13px; height:13px; }
+.btn-square { width:30px; padding:0; }
 
-/* ───── Main shell ───── */
-.shell { max-width:1440px; margin:0 auto; padding:32px; }
-.shell > section + section { margin-top:48px; }
-.shell > .kpi-strip + section { margin-top:48px; }
+/* ───── Estructura ───── */
+.shell { max-width:1420px; margin:0 auto; padding:34px 28px 40px; }
+section + section { margin-top:52px; }
 
-/* ───── Verdict ───── */
+/* ───── Veredicto ───── */
 .verdict {
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  gap:32px;
-  align-items:end;
-  padding-bottom:28px;
-  margin-bottom:32px;
-  border-bottom:1px solid var(--line);
+  grid-template-columns:minmax(0,7fr) minmax(280px,4fr);
+  gap:44px;
+  align-items:start;
+  padding-bottom:30px;
+  border-bottom:1px solid var(--line-strong);
 }
 .eyebrow {
   font-family:var(--font-mono);
-  font-size:11px;
-  font-weight:500;
-  letter-spacing:.04em;
-  text-transform:uppercase;
+  font-size:10px; font-weight:500;
+  letter-spacing:.09em; text-transform:uppercase;
   color:var(--muted);
-  margin:0 0 12px 0;
+  margin:0 0 14px 0;
 }
 h1 {
   margin:0;
-  font-size:32px;
-  line-height:1.15;
-  font-weight:500;
-  letter-spacing:-.025em;
+  font-size:34px;
+  line-height:1.14;
+  font-weight:600;
+  font-stretch:96%;
+  letter-spacing:-.028em;
   color:var(--ink);
-  max-width:880px;
+  max-width:22ch;
   text-wrap:balance;
 }
 .verdict-sub {
-  margin:14px 0 0 0;
+  margin:16px 0 0 0;
   font-size:15px;
-  line-height:1.55;
-  color:var(--muted);
-  max-width:780px;
+  line-height:1.6;
+  color:var(--ink-2);
+  max-width:62ch;
 }
-.verdict-meta {
-  display:flex; flex-direction:column; align-items:flex-end; gap:8px;
-  font-size:12px;
-  color:var(--muted);
-  white-space:nowrap;
-}
-.verdict-meta strong { color:var(--ink); font-weight:500; font-variant-numeric:tabular-nums; }
-.verdict-meta .row { display:flex; gap:8px; align-items:center; }
-.verdict-meta .dot { width:5px; height:5px; border-radius:99px; background:var(--positive); display:inline-block; }
-.verdict-meta .dot.warn { background:var(--warn); }
-.verdict-meta .dot.bad { background:var(--danger); }
+.verdict-sub strong { font-weight:600; color:var(--ink); }
 
-/* ───── Filter strip ───── */
+.headline-figure {
+  display:flex; flex-direction:column; gap:2px;
+  padding-left:28px;
+  border-left:1px solid var(--line);
+}
+.headline-figure .figure {
+  font-size:58px;
+  line-height:1;
+  font-weight:600;
+  font-stretch:100%;
+  letter-spacing:-.04em;
+  color:var(--state-bad);
+}
+.headline-figure .figure-note {
+  margin:6px 0 0 0;
+  font-size:13px;
+  line-height:1.45;
+  color:var(--ink-2);
+  max-width:26ch;
+}
+.scope-rows {
+  margin-top:20px;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+  display:flex; flex-direction:column; gap:7px;
+}
+.scope-rows .row {
+  display:flex; align-items:baseline; justify-content:space-between; gap:14px;
+  font-size:12px; color:var(--muted);
+}
+.scope-rows .row strong {
+  font-family:var(--font-mono);
+  font-size:12px; font-weight:500;
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+
+/* ───── Filtros ───── */
 .filter-strip {
   display:flex; align-items:center; gap:6px;
   flex-wrap:wrap;
-  margin-bottom:24px;
+  margin-top:26px;
 }
 .filter-strip .label {
-  font-size:12px; color:var(--muted); margin-right:4px;
+  font-family:var(--font-mono);
+  font-size:10px; font-weight:500;
+  letter-spacing:.09em; text-transform:uppercase;
+  color:var(--muted);
+  margin-right:4px;
 }
 .filter-chip {
-  display:inline-flex; align-items:center; gap:6px;
-  padding:5px 10px 5px 10px;
+  display:inline-flex; align-items:center; gap:7px;
+  height:30px; padding:0 10px;
   border:1px solid var(--line);
   background:var(--surface);
-  border-radius:6px;
+  border-radius:4px;
   font-size:12px;
-  color:var(--ink-2);
-  cursor:pointer;
-}
-.filter-chip[data-active='true'] {
-  border-color:var(--line-strong);
-  background:var(--surface-2);
   color:var(--ink);
 }
 .filter-chip select,.filter-chip input {
-  appearance:none;
-  -webkit-appearance:none;
-  border:none;
-  background:transparent;
+  appearance:none; -webkit-appearance:none;
+  border:none; background:transparent;
   font:500 12px/1 var(--font-sans);
-  color:inherit;
-  cursor:pointer;
-  padding:0;
+  color:inherit; cursor:pointer; padding:0;
   letter-spacing:-.005em;
 }
 .filter-chip input[type='date'] {
   font-family:var(--font-mono);
   font-size:11px;
-  color:var(--ink);
-  min-width:96px;
+  min-width:94px;
 }
 .filter-chip select:focus,.filter-chip input:focus { outline:none; }
-.filter-chip strong,.filter-chip label { font-weight:500; color:var(--muted); font-size:11px; }
+.filter-chip label {
+  font-family:var(--font-mono);
+  font-size:10px; font-weight:500;
+  letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted);
+}
 .advanced-filters { flex-basis:100%; }
 .advanced-filters summary {
   width:max-content;
-  padding:6px 10px;
+  padding:6px 2px;
   color:var(--muted);
   font:500 12px/1 var(--font-sans);
   cursor:pointer;
 }
+.advanced-filters summary:hover { color:var(--ink); }
 .advanced-filter-panel { display:flex; gap:6px; flex-wrap:wrap; padding-top:8px; }
 .filter-reset {
   margin-left:auto;
   font:500 12px/1 var(--font-sans);
   color:var(--muted);
   background:transparent; border:none; cursor:pointer;
-  padding:6px 10px;
+  padding:6px 4px;
 }
 .filter-reset:hover { color:var(--ink); }
 
-/* ───── KPI strip ───── */
+/* ───── Espina de flujo (elemento distintivo) ─────
+   El recorrido físico del vehículo, con la presión medida en cada etapa.
+   Es diagnóstico y navegación a la vez: cada nodo filtra su área. */
+.spine { margin-top:34px; }
+.spine-track {
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:minmax(0,1fr);
+  align-items:stretch;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:var(--surface);
+  overflow:hidden;
+}
+.stage {
+  position:relative;
+  display:flex; flex-direction:column; gap:9px;
+  padding:16px 18px 15px;
+  border-right:1px solid var(--line);
+  background:transparent;
+  text-align:left;
+  font:inherit;
+  color:inherit;
+  cursor:pointer;
+  min-width:0;
+  transition:background .14s ease;
+}
+.stage:last-child { border-right:none; }
+.stage:hover { background:var(--surface-2); }
+.stage[aria-pressed='true'] { background:var(--surface-2); }
+.stage[aria-pressed='true']::before {
+  content:''; position:absolute; inset:0 auto 0 0; width:2px;
+  background:var(--ink);
+}
+/* La energía alimenta la cadena pero no transporta vehículos: se marca aparte. */
+.stage[data-support='true'] { background:repeating-linear-gradient(90deg,transparent 0 6px,var(--surface-2) 6px 7px); }
+.stage[data-support='true']:hover { background:var(--surface-2); }
+
+.stage-top { display:flex; align-items:center; gap:8px; min-width:0; }
+.stage-idx {
+  font-family:var(--font-mono);
+  font-size:10px; font-weight:500;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.stage-name {
+  font-size:13px; font-weight:600;
+  font-stretch:88%;
+  letter-spacing:.005em;
+  color:var(--ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.stage-role {
+  font-family:var(--font-mono);
+  font-size:9px; font-weight:500;
+  letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted);
+  border:1px solid var(--line-strong);
+  border-radius:3px;
+  padding:1px 4px;
+  flex:0 0 auto;
+}
+.stage-measure { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.stage-measure .m-value {
+  font-family:var(--font-mono);
+  font-size:14px; font-weight:500;
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.stage-measure .m-label {
+  font-size:11px; color:var(--muted);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.stage-meter {
+  margin-top:auto;
+  display:flex; flex-direction:column; gap:6px;
+}
+.meter-track {
+  height:3px;
+  background:var(--surface-2);
+  border-radius:99px;
+  overflow:hidden;
+}
+html[data-theme='dark'] .meter-track { background:var(--line); }
+.meter-fill { display:block; height:100%; border-radius:99px; background:var(--muted); }
+.meter-fill[data-tone='bad'] { background:var(--state-bad); }
+.meter-fill[data-tone='warn'] { background:var(--state-warn); }
+.meter-fill[data-tone='good'] { background:var(--state-good); }
+.stage-foot {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  font-size:11px; color:var(--muted);
+  min-width:0;
+}
+.stage-foot .tier {
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.stage-foot .opi {
+  font-family:var(--font-mono);
+  font-size:11px; font-weight:500;
+  color:var(--ink-2);
+  font-variant-numeric:tabular-nums;
+  flex:0 0 auto;
+}
+.spine-legend {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; margin-top:10px;
+  font-size:12px; color:var(--muted);
+}
+.spine-legend .hint { max-width:76ch; }
+
+/* ───── Franja de KPI ───── */
 .kpi-strip {
   display:grid;
   grid-template-columns:repeat(7, minmax(0,1fr));
   border:1px solid var(--line);
-  border-radius:8px;
+  border-radius:6px;
   background:var(--surface);
   overflow:hidden;
+  margin-top:34px;
 }
 .kpi-cell {
-  position:relative;
-  padding:20px 22px;
+  padding:16px 18px 14px;
   border-right:1px solid var(--line);
-  display:flex; flex-direction:column; gap:6px;
+  display:flex; flex-direction:column; gap:5px;
   min-width:0;
 }
 .kpi-cell:last-child { border-right:none; }
 .kpi-label {
-  font-size:11px;
-  color:var(--muted);
-  font-weight:500;
-  letter-spacing:.005em;
+  font-size:11px; color:var(--muted);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .kpi-value {
-  font-family:var(--font-mono);
-  font-size:28px;
-  line-height:1.05;
-  font-weight:500;
+  font-size:27px;
+  line-height:1.1;
+  font-weight:600;
   letter-spacing:-.03em;
   color:var(--ink);
-  font-variant-numeric:tabular-nums;
 }
-.kpi-value.is-text { font-family:var(--font-sans); font-size:16px; letter-spacing:-.01em; }
+.kpi-value .unit {
+  font-size:13px; font-weight:400;
+  letter-spacing:0;
+  color:var(--muted);
+  margin-left:3px;
+}
+.kpi-spark { height:22px; margin:2px 0 1px; color:var(--muted); }
+.kpi-spark svg { display:block; width:100%; height:22px; }
+.kpi-spark[data-tone='bad'] { color:var(--state-bad); }
+.kpi-spark[data-tone='warn'] { color:var(--state-warn); }
+.kpi-spark[data-tone='good'] { color:var(--state-good); }
 .kpi-foot {
   margin-top:auto;
   display:flex; align-items:center; gap:6px;
-  font-size:11px;
-  color:var(--muted);
+  font-size:11px; color:var(--muted);
+  min-width:0;
 }
-.kpi-dot {
-  width:6px; height:6px; border-radius:99px; background:var(--subtle); flex:0 0 6px;
+.kpi-foot .state {
+  font-weight:600; color:var(--ink-2);
+  flex:0 0 auto;
 }
-.kpi-dot.bad { background:var(--danger); }
-.kpi-dot.warn { background:var(--warn); }
-.kpi-dot.good { background:var(--positive); }
+.kpi-foot .sep { color:var(--line-strong); flex:0 0 auto; }
+.kpi-foot .note { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.kpi-dot { width:5px; height:5px; border-radius:99px; background:var(--muted); flex:0 0 5px; }
+.kpi-dot[data-tone='bad'] { background:var(--state-bad); }
+.kpi-dot[data-tone='warn'] { background:var(--state-warn); }
+.kpi-dot[data-tone='good'] { background:var(--state-good); }
+.kpi-scope {
+  display:flex; justify-content:flex-end;
+  margin-top:8px;
+  font-size:11px; color:var(--muted);
+}
 
-/* ───── Sections ───── */
+/* ───── Secciones ───── */
 .section-head {
-  display:flex; align-items:baseline; justify-content:space-between;
-  gap:16px;
-  margin-bottom:20px;
+  display:flex; align-items:flex-end; justify-content:space-between;
+  gap:24px;
+  margin-bottom:18px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--line);
 }
 .section-head h2 {
-  margin:0;
-  font-size:18px;
-  font-weight:500;
-  letter-spacing:-.015em;
+  margin:6px 0 0 0;
+  font-size:19px; font-weight:600;
+  font-stretch:96%;
+  letter-spacing:-.018em;
   color:var(--ink);
 }
 .section-head .desc {
-  margin:6px 0 0 0;
-  font-size:13px;
+  margin:7px 0 0 0;
+  font-size:13px; line-height:1.55;
   color:var(--muted);
-  max-width:680px;
+  max-width:74ch;
 }
-.section-head .section-num + h2 { margin-top:8px; }
 .section-num {
   font-family:var(--font-mono);
-  font-size:11px;
-  font-weight:500;
-  color:var(--subtle);
-  letter-spacing:.04em;
+  font-size:10px; font-weight:500;
+  letter-spacing:.09em; text-transform:uppercase;
+  color:var(--muted);
 }
 
-/* ───── Grid ───── */
-.grid { display:grid; gap:16px; }
-.grid-2 { grid-template-columns:repeat(2, minmax(0,1fr)); }
-.grid-3 { grid-template-columns:repeat(3, minmax(0,1fr)); }
-.grid + .grid { margin-top:16px; }
+/* ───── Rejilla asimétrica de 12 columnas ───── */
+.grid { display:grid; grid-template-columns:repeat(12, minmax(0,1fr)); gap:14px; }
+.grid + .grid { margin-top:14px; }
+.c4 { grid-column:span 4; }
+.c5 { grid-column:span 5; }
+.c6 { grid-column:span 6; }
+.c7 { grid-column:span 7; }
+.c8 { grid-column:span 8; }
+.c12 { grid-column:span 12; }
 
-/* ───── Card ───── */
+/* ───── Tarjeta ───── */
 .card {
   background:var(--surface);
   border:1px solid var(--line);
-  border-radius:8px;
-  padding:20px;
+  border-radius:6px;
+  padding:16px 18px 14px;
   display:flex; flex-direction:column;
   min-width:0;
 }
-.card.tall { min-height:340px; }
 .card-head {
-  margin-bottom:16px;
+  margin-bottom:14px;
   display:flex; align-items:flex-start; justify-content:space-between;
   gap:12px;
 }
 .card-head h3 {
   margin:0;
-  font-size:14px;
-  font-weight:500;
+  font-size:13px; font-weight:600;
   letter-spacing:-.005em;
   color:var(--ink);
 }
 .card-head .hint {
   margin:4px 0 0 0;
-  font-size:12px;
+  font-size:12px; line-height:1.45;
   color:var(--muted);
-  max-width:48ch;
+  max-width:52ch;
 }
-.card-head .tag {
+.card-tools { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+.grain {
   font-family:var(--font-mono);
-  font-size:10px;
-  letter-spacing:.04em;
-  color:var(--subtle);
-  text-transform:uppercase;
+  font-size:9px; font-weight:500;
+  letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted);
   white-space:nowrap;
 }
+/* El acceso a la tabla equivalente está siempre disponible por teclado;
+   sólo se atenúa visualmente hasta que la tarjeta recibe atención. */
+.btn-data {
+  height:22px; padding:0 7px;
+  font-family:var(--font-mono);
+  font-size:9px; font-weight:500;
+  letter-spacing:.08em; text-transform:uppercase;
+  border:1px solid var(--line);
+  background:transparent;
+  color:var(--muted);
+  border-radius:3px;
+  cursor:pointer;
+  opacity:0;
+  transition:opacity .14s ease, color .12s ease, border-color .12s ease;
+}
+.card:hover .btn-data,.btn-data:focus-visible { opacity:1; }
+.btn-data:hover { color:var(--ink); border-color:var(--line-strong); }
 .card-body { flex:1; min-height:0; }
-.canvas-wrap { position:relative; height:260px; }
+.canvas-wrap { position:relative; height:252px; }
+.card.tall .canvas-wrap { height:330px; }
 canvas { width:100% !important; height:100% !important; }
 
-/* ───── Priority table ───── */
+/* Nota que enlaza dos gráficos que sólo significan algo juntos. */
+.pair-note {
+  grid-column:span 12;
+  margin:0;
+  padding:11px 14px;
+  border-left:2px solid var(--mark-risk);
+  background:var(--surface);
+  border-radius:0 4px 4px 0;
+  font-size:12px; line-height:1.5;
+  color:var(--ink-2);
+}
+.pair-note strong { font-weight:600; color:var(--ink); }
+
+/* ───── Tabla de prioridades ───── */
 .table-card { padding:0; overflow:hidden; }
 .table-head-row {
   display:flex; align-items:center; justify-content:space-between;
   gap:16px;
-  padding:18px 20px;
+  padding:15px 18px;
   border-bottom:1px solid var(--line);
 }
-.table-head-row h3 { margin:0; font-size:14px; font-weight:500; }
+.table-head-row h3 { margin:0; font-size:13px; font-weight:600; }
 .table-head-row .desc { margin:4px 0 0 0; font-size:12px; color:var(--muted); }
 .table-tools { display:flex; align-items:center; gap:8px; }
-.input,.btn {
-  min-height:36px;
-  padding:0 11px;
+.input {
+  height:30px; padding:0 10px;
   border:1px solid var(--line);
   background:var(--surface);
   color:var(--ink);
-  border-radius:6px;
-  font:500 12px/1 var(--font-sans);
-  letter-spacing:-.005em;
+  border-radius:4px;
+  font:400 12px/1 var(--font-sans);
+  min-width:230px;
 }
-.input { min-width:240px; }
-.input::placeholder { color:var(--subtle); }
-.btn { cursor:pointer; }
-.btn:hover { border-color:var(--line-strong); }
-.btn-ghost {
-  background:transparent; border-color:transparent; color:var(--muted);
-}
-.btn-ghost:hover { color:var(--ink); background:var(--surface-2); }
+.input::placeholder { color:var(--muted); }
 
 .table-wrap { overflow:auto; max-height:520px; }
 table {
   width:100%;
   border-collapse:collapse;
   font-size:13px;
-  font-variant-numeric:tabular-nums;
 }
 thead th {
   position:sticky; top:0;
   background:var(--surface);
-  border-bottom:1px solid var(--line);
+  border-bottom:1px solid var(--line-strong);
   text-align:left;
-  padding:10px 16px;
-  font-size:11px;
-  font-weight:500;
+  padding:9px 16px;
+  font-family:var(--font-mono);
+  font-size:9px; font-weight:500;
   color:var(--muted);
-  letter-spacing:.02em;
-  text-transform:uppercase;
+  letter-spacing:.08em; text-transform:uppercase;
+  white-space:nowrap;
   z-index:1;
 }
 thead th.num { text-align:right; }
 tbody td {
-  padding:12px 16px;
+  padding:11px 16px;
   border-bottom:1px solid var(--line);
   color:var(--ink-2);
   vertical-align:top;
 }
 tbody tr:last-child td { border-bottom:none; }
-tbody tr:hover td { background:var(--surface-2); color:var(--ink); }
-td.num { text-align:right; font-family:var(--font-mono); color:var(--ink); }
-td.rank { font-family:var(--font-mono); color:var(--subtle); font-size:12px; width:48px; }
-td .area { font-weight:500; color:var(--ink); display:block; }
-td .action-main { font-weight:500; color:var(--ink); display:block; }
-td .action-sub { display:block; color:var(--muted); font-size:12px; margin-top:2px; }
-.tier {
-  display:inline-flex; align-items:center;
-  padding:2px 8px;
-  border-radius:99px;
+tbody tr:hover td { background:var(--surface-2); }
+td.num {
+  text-align:right;
   font-family:var(--font-mono);
-  font-size:10px;
-  font-weight:500;
-  letter-spacing:.04em;
-  text-transform:uppercase;
-}
-.tier.t0 { background:var(--danger-soft); color:var(--danger); }
-.tier.t1 { background:#fef3c7; color:var(--warn); }
-.tier.t2 { background:#dcfce7; color:var(--positive); }
-html[data-theme='dark'] .tier.t1 { background:#2a200a; color:var(--warn); }
-html[data-theme='dark'] .tier.t2 { background:#0f2a14; color:var(--positive); }
-.opi {
-  display:inline-block;
-  font-family:var(--font-mono);
-  font-size:13px;
+  font-variant-numeric:tabular-nums;
   color:var(--ink);
-  font-weight:500;
 }
-.bar-cell { display:flex; flex-direction:column; gap:5px; min-width:120px; }
-.bar-cell .bar-track {
-  height:4px;
-  background:var(--surface-2);
-  border-radius:99px;
-  overflow:hidden;
+td.rank {
+  font-family:var(--font-mono);
+  font-variant-numeric:tabular-nums;
+  color:var(--muted);
+  font-size:11px; width:44px;
 }
-.bar-cell .bar-fill {
-  height:100%;
-  background:var(--ink);
-  border-radius:99px;
-}
-.bar-cell .bar-fill.t0 { background:var(--danger); }
-.bar-cell .bar-fill.t1 { background:var(--warn); }
-.bar-cell .bar-fill.t2 { background:var(--positive); }
+td .action-main { font-weight:600; color:var(--ink); display:block; }
+/* El estado nunca viaja sólo en el color: el punto acompaña al texto. */
+.tier { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.tier .pip { width:5px; height:5px; border-radius:99px; flex:0 0 5px; background:var(--muted); }
+.tier[data-tone='bad'] .pip { background:var(--state-bad); }
+.tier[data-tone='warn'] .pip { background:var(--state-warn); }
+.tier[data-tone='good'] .pip { background:var(--state-good); }
 .table-status {
-  padding:12px 20px;
+  padding:11px 18px;
   border-top:1px solid var(--line);
   font-size:12px;
   color:var(--muted);
 }
 
-/* ───── Scenario block ───── */
-.scenario-head {
-  display:flex; align-items:center; gap:12px;
-}
-.scenario-head select {
-  height:30px; padding:0 28px 0 11px;
+/* ───── Escenarios ───── */
+.scenario-select {
+  height:26px; padding:0 8px;
   border:1px solid var(--line);
   background:var(--surface);
   color:var(--ink);
-  border-radius:6px;
-  font:500 12px/1 var(--font-sans);
+  border-radius:4px;
+  font:500 11px/1 var(--font-sans);
   cursor:pointer;
+  max-width:180px;
 }
 
-/* ───── Footer / decision ───── */
+/* ───── Decisión ───── */
 .decision-strip {
-  margin-top:32px;
-  padding:24px 0 0 0;
-  border-top:1px solid var(--line);
+  margin-top:52px;
+  padding-top:26px;
+  border-top:1px solid var(--line-strong);
   display:grid;
-  grid-template-columns:1fr auto auto auto auto;
-  gap:32px;
-  align-items:end;
+  grid-template-columns:minmax(0,5fr) repeat(4, minmax(0,auto));
+  gap:36px;
+  align-items:start;
 }
 .decision-strip .lead {
-  font-size:14px;
-  line-height:1.55;
+  font-size:14px; line-height:1.6;
   color:var(--ink-2);
-  max-width:520px;
+  max-width:56ch;
 }
-.decision-strip .lead strong { color:var(--ink); font-weight:500; }
+.decision-strip .lead strong { color:var(--ink); font-weight:600; }
 .decision-strip .lead .eyebrow { margin:0 0 8px 0; }
-.decision-strip .lead #decision_text { display:block; }
 .decision-stat span {
   display:block;
-  font-size:11px;
-  color:var(--muted);
-  margin-bottom:4px;
-  letter-spacing:.005em;
+  font-size:11px; color:var(--muted);
+  margin-bottom:5px;
 }
 .decision-stat strong {
   display:block;
-  font-family:var(--font-mono);
-  font-size:18px;
-  font-weight:500;
+  font-size:14px; font-weight:600;
   color:var(--ink);
-  letter-spacing:-.02em;
-  white-space:nowrap;
+  letter-spacing:-.01em;
+  max-width:22ch;
 }
-.decision-stat.text strong {
-  font-family:var(--font-sans);
-  font-size:14px;
+.decision-stat.figure strong {
+  font-family:var(--font-mono);
+  font-size:19px; font-weight:500;
+  letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;
 }
 
 footer.foot {
-  margin-top:48px;
-  padding:20px 0 8px;
+  margin-top:44px;
+  padding:16px 0 6px;
   border-top:1px solid var(--line);
-  font-size:11px;
-  color:var(--subtle);
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:.05em;
+  color:var(--muted);
   display:flex;
   justify-content:space-between;
-  font-family:var(--font-mono);
-  letter-spacing:.02em;
+  gap:16px;
+  flex-wrap:wrap;
 }
 
-/* ───── Focus states ───── */
-button:focus-visible, select:focus-visible, input:focus-visible {
+/* ───── Vista de datos equivalente ───── */
+.data-dialog {
+  width:min(720px, calc(100vw - 40px));
+  max-height:min(76vh, 680px);
+  padding:0;
+  border:1px solid var(--line-strong);
+  border-radius:8px;
+  background:var(--surface);
+  color:var(--ink);
+  overflow:hidden;
+}
+.data-dialog::backdrop { background:rgba(10,10,9,.44); }
+.dialog-head {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px;
+  padding:14px 18px;
+  border-bottom:1px solid var(--line);
+}
+.dialog-head h3 { margin:0; font-size:13px; font-weight:600; }
+.dialog-head p { margin:3px 0 0 0; font-size:12px; color:var(--muted); }
+.dialog-body { overflow:auto; max-height:calc(76vh - 60px); }
+.dialog-body table { font-size:12px; }
+.dialog-body td.num,.dialog-body th.num { text-align:right; }
+.dialog-body td { padding:8px 16px; }
+
+/* ───── Foco ───── */
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible {
   outline:none;
-  border-color:var(--accent);
+  border-color:var(--mark-ev);
   box-shadow:0 0 0 3px var(--focus);
+  border-radius:4px;
 }
 
-/* ───── Responsive ───── */
-@media (max-width:1280px) {
+/* ───── Entrada escalonada, una sola vez y sólo arriba ───── */
+@media (prefers-reduced-motion:no-preference) {
+  .stage, .kpi-cell {
+    animation:rise .42s cubic-bezier(.2,.7,.3,1) backwards;
+  }
+  .stage:nth-child(1),.kpi-cell:nth-child(1) { animation-delay:.02s; }
+  .stage:nth-child(2),.kpi-cell:nth-child(2) { animation-delay:.06s; }
+  .stage:nth-child(3),.kpi-cell:nth-child(3) { animation-delay:.10s; }
+  .stage:nth-child(4),.kpi-cell:nth-child(4) { animation-delay:.14s; }
+  .stage:nth-child(5),.kpi-cell:nth-child(5) { animation-delay:.18s; }
+  .stage:nth-child(6),.kpi-cell:nth-child(6) { animation-delay:.22s; }
+  .kpi-cell:nth-child(7) { animation-delay:.26s; }
+}
+@keyframes rise {
+  from { opacity:0; transform:translateY(6px); }
+  to { opacity:1; transform:none; }
+}
+
+/* ───── Adaptación ───── */
+@media (max-width:1240px) {
   .kpi-strip { grid-template-columns:repeat(4, minmax(0,1fr)); }
   .kpi-cell:nth-child(4) { border-right:none; }
   .kpi-cell:nth-child(n+5) { border-top:1px solid var(--line); }
-  .grid-3 { grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .spine-track { grid-auto-flow:row; grid-auto-columns:auto; }
+  .stage { border-right:none; border-bottom:1px solid var(--line); }
+  .stage:last-child { border-bottom:none; }
+  .c4,.c5,.c7,.c8 { grid-column:span 6; }
 }
-@media (max-width:900px) {
-  .shell { padding:24px 20px; }
-  .topbar { padding:12px 20px; }
-  .verdict { grid-template-columns:1fr; gap:20px; }
-  .verdict-meta { align-items:flex-start; }
-  h1 { font-size:26px; }
+@media (max-width:980px) {
+  .shell { padding:26px 18px 32px; }
+  .cmd { padding:0 18px; }
+  .verdict { grid-template-columns:1fr; gap:28px; }
+  .headline-figure { padding-left:0; border-left:none; padding-top:22px; border-top:1px solid var(--line); }
+  .headline-figure .figure { font-size:48px; }
+  h1 { font-size:27px; max-width:26ch; }
   .kpi-strip { grid-template-columns:repeat(2, minmax(0,1fr)); }
   .kpi-cell { border-right:1px solid var(--line); border-bottom:1px solid var(--line); }
   .kpi-cell:nth-child(2n) { border-right:none; }
-  .grid-2,.grid-3 { grid-template-columns:1fr; }
-  .decision-strip { grid-template-columns:1fr 1fr; }
+  .c4,.c5,.c6,.c7,.c8 { grid-column:span 12; }
+  .decision-strip { grid-template-columns:repeat(2, minmax(0,1fr)); gap:24px; }
+  .decision-strip .lead { grid-column:span 2; }
 }
-@media (max-width:600px) {
-  .topbar { padding:10px 12px; gap:8px; }
-  .topbar-left { gap:8px; }
-  .brand-title { max-width:96px; }
-  .topbar-right { gap:6px; flex:0 0 auto; }
-  .icon-btn { padding:0 8px; }
-  .brand-context, .brand-sep { display:none; }
+@media (max-width:620px) {
+  .cmd { padding:0 12px; gap:10px; }
+  .brand-context,.brand-rule { display:none; }
+  .seal { display:none; }
   .kpi-strip { grid-template-columns:1fr; }
   .kpi-cell { border-right:none; }
-  .kpi-value { font-size:24px; }
+  .table-head-row { flex-direction:column; align-items:stretch; }
+  .input { min-width:0; width:100%; }
   .decision-strip { grid-template-columns:1fr; }
+  .decision-strip .lead { grid-column:span 1; }
+  .btn-data { opacity:1; }
 }
 
-/* ───── Print ───── */
+/* ───── Impresión ───── */
 @media print {
-  @page { size:A4 landscape; margin:10mm; }
-  .topbar, .filter-strip, .table-tools, .scenario-head select, .icon-btn { display:none !important; }
+  @page { size:A4 landscape; margin:9mm; }
+  .cmd, .filter-strip, .table-tools, .scenario-select, .btn, .card-tools { display:none !important; }
   body { background:white; }
   .shell { max-width:none; padding:0; }
-  .card, .kpi-strip { break-inside:avoid; }
-  .canvas-wrap { height:220px; }
+  .card, .kpi-strip, .spine-track, .verdict { break-inside:avoid; }
+  .canvas-wrap, .card.tall .canvas-wrap { height:210px; }
+  .stage, .kpi-cell { animation:none; }
 }
 </style>
 </head>
 <body>
-<header class="topbar">
-  <div class="topbar-left">
-    <div class="brand-mark" aria-hidden="true">ev</div>
-    <div class="brand-title">Gemelo Operativo EV</div>
-    <div class="brand-sep"></div>
-    <div class="brand-context">Panel de transición industrial</div>
+<header class="cmd">
+  <div class="cmd-left">
+    <svg class="brand-mark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12.5h3l2-9 2.5 9 2-5.5 1.5 3h2"/></svg>
+    <span class="brand-title">Gemelo Operativo EV</span>
+    <span class="brand-rule"></span>
+    <span class="brand-context">Transición a vans eléctricas</span>
   </div>
-  <div class="topbar-right">
-    <button id="btn_toggle_filters" class="icon-btn" type="button" aria-expanded="true" aria-controls="filters_shell">Ocultar filtros</button>
-    <button id="btn_print" class="icon-btn" type="button" aria-label="Exportar PDF">Exportar</button>
-    <button id="theme_toggle" class="icon-btn icon-btn-square" type="button" aria-label="Cambiar tema" title="Cambiar tema">
+  <div class="cmd-right">
+    <span class="seal" id="kpi_seal" title="Coherencia entre los KPI publicados y los datos del panel"><span class="pip"></span><span id="kpi_seal_text">KPI conciliados</span></span>
+    <button id="btn_toggle_filters" class="btn" type="button" aria-expanded="true" aria-controls="filters_shell">Ocultar filtros</button>
+    <button id="btn_print" class="btn" type="button">Exportar</button>
+    <button id="theme_toggle" class="btn btn-square" type="button" aria-label="Cambiar tema" title="Cambiar tema">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M3.5 3.5l1 1M11.5 11.5l1 1M1.5 8h1.5M13 8h1.5M3.5 12.5l1-1M11.5 4.5l1-1"/></svg>
     </button>
   </div>
@@ -662,25 +837,30 @@ button:focus-visible, select:focus-visible, input:focus-visible {
 <section class="verdict">
   <div>
     <p class="eyebrow">Lectura ejecutiva</p>
-    <h1 id="hero_message">El cuello dominante se ha desplazado de línea a patio, carga y expedición.</h1>
+    <h1 id="hero_message">La línea entrega el plan. La salida no llega a tiempo.</h1>
     <p class="verdict-sub" id="verdict_sub"></p>
   </div>
-  <div class="verdict-meta">
-    <div class="row"><span class="dot" id="verdict_dot"></span><span>Cobertura</span><strong id="meta_coverage">—</strong></div>
-    <div class="row"><span>Órdenes</span><strong id="meta_orders">—</strong></div>
-    <div class="row"><span>Vehículos</span><strong id="meta_vehicles">—</strong></div>
-    <div class="row"><span>Zonas</span><strong><span id="meta_yard_zones">—</span> patio · <span id="meta_charge_zones">—</span> carga</strong></div>
+  <div class="headline-figure">
+    <span class="mono-label" id="headline_label">Salidas retrasadas</span>
+    <span class="figure" id="headline_value">—</span>
+    <p class="figure-note" id="headline_note"></p>
+    <div class="scope-rows">
+      <div class="row"><span>Cobertura</span><strong id="meta_coverage">—</strong></div>
+      <div class="row"><span>Órdenes</span><strong id="meta_orders">—</strong></div>
+      <div class="row"><span>Vehículos</span><strong id="meta_vehicles">—</strong></div>
+      <div class="row"><span>Zonas</span><strong><span id="meta_yard_zones">—</span> patio · <span id="meta_charge_zones">—</span> carga</strong></div>
+    </div>
   </div>
 </section>
 
 <div id="filters_shell" class="filter-strip" role="group" aria-label="Filtros del panel">
-  <span class="label">Vista:</span>
+  <span class="label">Vista</span>
   <span class="filter-chip"><label for="f_date_from">De</label><input id="f_date_from" type="date" /></span>
   <span class="filter-chip"><label for="f_date_to">A</label><input id="f_date_to" type="date" /></span>
   <span class="filter-chip"><label for="f_turno">Turno</label><select id="f_turno"></select></span>
   <span class="filter-chip"><label for="f_prop">Propulsión</label><select id="f_prop"></select></span>
   <span class="filter-chip"><label for="f_area">Área</label><select id="f_area"></select></span>
-  <button id="btn_apply" class="icon-btn" type="button">Aplicar</button>
+  <button id="btn_apply" class="btn" type="button">Aplicar</button>
   <button id="btn_reset" class="filter-reset" type="button">Restablecer</button>
   <details class="advanced-filters">
     <summary>Más filtros</summary>
@@ -695,119 +875,194 @@ button:focus-visible, select:focus-visible, input:focus-visible {
   <span class="sr-only" id="scenario_summary_text" role="status" aria-live="polite"></span>
 </div>
 
-<div class="kpi-strip" id="kpi_cards" aria-label="Indicadores clave"></div>
+<section class="spine" aria-labelledby="spine_title">
+  <h2 class="sr-only" id="spine_title">Presión operativa a lo largo del recorrido del vehículo</h2>
+  <div class="spine-track" id="spine_track"></div>
+  <div class="spine-legend">
+    <p class="hint">Recorrido físico del vehículo, de la línea a la puerta. La barra mide el Índice de Prioridad Operativa del área; selecciona una etapa para acotar todo el panel a ella.</p>
+  </div>
+</section>
 
-<section class="flow-section">
+<div class="kpi-strip" id="kpi_cards" aria-label="Indicadores clave"></div>
+<div class="kpi-scope"><span id="kpi_scope_note"></span></div>
+
+<section>
   <div class="section-head">
     <div>
-      <span class="section-num">01 / Flujo &amp; Cuota EV</span>
-      <h2>Plan vs ejecución, y la presión que introduce la cuota EV</h2>
-      <p class="desc">Si plan y real divergen y la curva EV sube, la pérdida de capacidad es estructural, no incidental.</p>
+      <span class="section-num">01 · Flujo y cuota EV</span>
+      <h2>El plan se cumple; la secuencia no</h2>
+      <p class="desc">El caudal diario acompaña al plan y la cuota EV sigue subiendo. La pérdida no aparece en el total producido: aparece en el orden real de paso, que es lo que arrastra la cola aguas abajo.</p>
     </div>
   </div>
-  <div class="grid grid-2">
-    <div class="card tall">
-      <div class="card-head"><div><h3>Caudal planificado vs real</h3><p class="hint">Ritmo diario; cualquier divergencia sostenida señala pérdida de capacidad.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_throughput" role="img" aria-label="Caudal planificado frente a real"></canvas></div></div>
+  <div class="grid">
+    <div class="card tall c8">
+      <div class="card-head">
+        <div><h3>Caudal planificado frente a real</h3><p class="hint">Ritmo diario. Una divergencia sostenida indicaría pérdida de capacidad; un solape limpio traslada el problema aguas abajo.</p></div>
+        <div class="card-tools"><span class="grain">Diario</span><button class="btn-data" type="button" data-chart="ch_throughput">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_throughput" role="img" aria-label="Caudal planificado frente a real por día"></canvas></div></div>
     </div>
-    <div class="card tall">
-      <div class="card-head"><div><h3>Cuota EV semanal</h3><p class="hint">Cuota que explica la presión incremental sobre carga, patio y expedición.</p></div></div>
+    <div class="card tall c4">
+      <div class="card-head">
+        <div><h3>Cuota EV</h3><p class="hint">La proporción eléctrica del flujo: cada punto añade presión sobre carga, patio y expedición.</p></div>
+        <div class="card-tools"><span class="grain">Semanal</span><button class="btn-data" type="button" data-chart="ch_ev_share">Datos</button></div>
+      </div>
       <div class="card-body"><div class="canvas-wrap"><canvas id="ch_ev_share" role="img" aria-label="Cuota EV semanal"></canvas></div></div>
     </div>
   </div>
-  <div class="grid grid-2">
-    <div class="card tall">
-      <div class="card-head"><div><h3>Brecha de secuencia plan–real</h3><p class="hint">Desviación del orden objetivo; señal temprana antes de que la cola se rompa.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_seq_gap" role="img" aria-label="Brecha de secuencia plan frente a real"></canvas></div></div>
-    </div>
-    <div class="card tall">
-      <div class="card-head"><div><h3>Tiempo interno por versión</h3><p class="hint">Versiones con mayor tiempo interno: candidatas a arrastrar congestión.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_lead_version" role="img" aria-label="Tiempo interno por versión"></canvas></div></div>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="section-head">
-    <div>
-      <span class="section-num">02 / Patio &amp; Carga</span>
-      <h2>Dónde se está bloqueando físicamente el flujo</h2>
-      <p class="desc">Ocupación, permanencia extrema, utilización de carga y SOC: las cuatro señales que precipitan el cuello de salida.</p>
-    </div>
-  </div>
-  <div class="grid grid-2">
-    <div class="card tall">
-      <div class="card-head"><div><h3>Ocupación de patio y permanencia p95</h3><p class="hint">Saturación + cola extrema = bloqueo físico inminente.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_yard_occ" role="img" aria-label="Ocupación de patio y permanencia percentil 95"></canvas></div></div>
-    </div>
-    <div class="card tall">
-      <div class="card-head"><div><h3>Permanencia por zona</h3><p class="hint">Pulmones improductivos y movimientos sin valor por zona física.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_yard_zone" role="img" aria-label="Permanencia por zona de patio"></canvas></div></div>
-    </div>
-  </div>
-  <div class="grid grid-2">
-    <div class="card tall">
-      <div class="card-head"><div><h3>Utilización de carga</h3><p class="hint">Uso medio por zona y miss-rate de SOC objetivo.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_charge_util" role="img" aria-label="Utilización de puntos de carga"></canvas></div></div>
-    </div>
-    <div class="card tall">
-      <div class="card-head"><div><h3>Cola media de carga</h3><p class="hint">Espera previa: señal directa del cuello energético EV.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_charge_wait" role="img" aria-label="Cola media de carga"></canvas></div></div>
-    </div>
-  </div>
-  <div class="grid grid-2">
-    <div class="card tall">
-      <div class="card-head"><div><h3>SOC objetivo vs real</h3><p class="hint">Brecha de energía antes de expedir: clave para asignación de puntos de carga.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_soc" role="img" aria-label="Estado de carga objetivo frente a real"></canvas></div></div>
-    </div>
-    <div class="card tall">
-      <div class="card-head"><div><h3>Interrupciones de carga</h3><p class="hint">Sesiones frágiles que degradan estabilidad sin subir utilización.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_interrupt" role="img" aria-label="Interrupciones de carga por causa"></canvas></div></div>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="section-head">
-    <div>
-      <span class="section-num">03 / Riesgo &amp; Expedición</span>
-      <h2>Quién pierde flujo, por qué, y cuál es el siguiente movimiento</h2>
-      <p class="desc">Causas de retraso, comparativa EV vs ICE, matriz de riesgo y ranking de palancas para intervenir.</p>
-    </div>
-  </div>
-  <div class="grid grid-2">
-    <div class="card tall">
-      <div class="card-head"><div><h3>Retraso por causa</h3><p class="hint">Separa incidencias aisladas de fricción sistémica de salida.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_delay_cause" role="img" aria-label="Retraso de expedición por causa"></canvas></div></div>
-    </div>
-    <div class="card tall">
-      <div class="card-head"><div><h3>Retraso y preparación por turno</h3><p class="hint">Distingue tensión localizada de problema estructural por turno.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_shift_readiness" role="img" aria-label="Retraso y preparación por turno"></canvas></div></div>
-    </div>
-  </div>
-  <div class="grid grid-3">
-    <div class="card tall">
-      <div class="card-head"><div><h3>Impacto de cuellos por área</h3><p class="hint">Caudal perdido por área en tensión.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_bneck_area" role="img" aria-label="Impacto de cuellos de botella por área"></canvas></div></div>
-    </div>
-    <div class="card tall">
-      <div class="card-head"><div><h3>Matriz de riesgo</h3><p class="hint">Pérdida × riesgo de expedición: dónde actuar primero.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_risk_matrix" role="img" aria-label="Matriz de pérdida de caudal y riesgo de expedición"></canvas></div></div>
-    </div>
-    <div class="card tall">
-      <div class="card-head"><div><h3>Ranking de acciones</h3><p class="hint">Prioridad media por palanca operativa.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_actions" role="img" aria-label="Ranking de acciones operativas"></canvas></div></div>
-    </div>
-  </div>
-  <div class="grid grid-2">
-    <div class="card tall">
-      <div class="card-head"><div><h3>Comparativa EV vs ICE</h3><p class="hint">Dónde se concentra la carga incremental de la cuota EV.</p></div></div>
-      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_ev_vs_ice" role="img" aria-label="Comparativa de vehículos EV frente a ICE"></canvas></div></div>
-    </div>
-    <div class="card tall">
+  <div class="grid">
+    <div class="card c6">
       <div class="card-head">
-        <div><h3>Comparador de escenarios</h3><p class="hint">Qué palanca da mejor equilibrio entre caudal y riesgo.</p></div>
-        <div class="scenario-head"><select id="scenario_select" aria-label="Seleccionar escenario"></select></div>
+        <div><h3>Brecha de secuencia</h3><p class="hint">Desviación entre el orden previsto y el real. Se rompe antes de que la congestión sea visible.</p></div>
+        <div class="card-tools"><span class="grain">Diario</span><button class="btn-data" type="button" data-chart="ch_seq_gap">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_seq_gap" role="img" aria-label="Brecha entre secuencia planificada y real"></canvas></div></div>
+    </div>
+    <div class="card c6">
+      <div class="card-head">
+        <div><h3>Tiempo interno por versión</h3><p class="hint">Partido por propulsión: si la cabeza de la cola es eléctrica, la lentitud viene de la transición y no del producto.</p></div>
+        <div class="card-tools"><span class="grain">Por versión</span><button class="btn-data" type="button" data-chart="ch_lead_version">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_lead_version" role="img" aria-label="Tiempo interno medio por versión"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div>
+      <span class="section-num">02 · Patio y carga</span>
+      <h2>Capacidad libre, colas largas</h2>
+      <p class="desc">Patio y cargadores están lejos de su límite físico y aun así acumulan permanencias y esperas. El recurso no está agotado: está mal asignado en el tiempo.</p>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card c6">
+      <div class="card-head">
+        <div><h3>Ocupación media de patio</h3><p class="hint">Media diaria entre zonas. El pico del período, que es lo que mide el indicador, queda muy por encima de esta curva.</p></div>
+        <div class="card-tools"><span class="grain">Diario · %</span><button class="btn-data" type="button" data-chart="ch_yard_occ">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_yard_occ" role="img" aria-label="Ocupación media de patio por día"></canvas></div></div>
+    </div>
+    <div class="card c6">
+      <div class="card-head">
+        <div><h3>Permanencia p95</h3><p class="hint">Cuánto esperan las unidades del percentil extremo.</p></div>
+        <div class="card-tools"><span class="grain">Diario · min</span><button class="btn-data" type="button" data-chart="ch_yard_dwell">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_yard_dwell" role="img" aria-label="Permanencia en patio, percentil 95, por día"></canvas></div></div>
+    </div>
+    <p class="pair-note" id="yard_paradox_note"></p>
+  </div>
+  <div class="grid">
+    <div class="card c4">
+      <div class="card-head">
+        <div><h3>Permanencia por zona</h3><p class="hint">Qué zonas retienen unidades más tiempo.</p></div>
+        <div class="card-tools"><span class="grain">Por zona · min</span><button class="btn-data" type="button" data-chart="ch_yard_zone">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_yard_zone" role="img" aria-label="Permanencia media por zona de patio"></canvas></div></div>
+    </div>
+    <div class="card c4">
+      <div class="card-head">
+        <div><h3>Bloqueo por zona</h3><p class="hint">Cuáles, además, impiden moverse a las demás.</p></div>
+        <div class="card-tools"><span class="grain">Por zona · %</span><button class="btn-data" type="button" data-chart="ch_yard_block">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_yard_block" role="img" aria-label="Tasa de bloqueo por zona de patio"></canvas></div></div>
+    </div>
+    <div class="card c4">
+      <div class="card-head">
+        <div><h3>Uso de carga e incumplimiento de SOC</h3><p class="hint">Un uso bajo con incumplimiento alto señala reparto, no falta de puntos de carga.</p></div>
+        <div class="card-tools"><span class="grain">Por zona · %</span><button class="btn-data" type="button" data-chart="ch_charge_util">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_charge_util" role="img" aria-label="Utilización de carga e incumplimiento del SOC objetivo por zona"></canvas></div></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card c4">
+      <div class="card-head">
+        <div><h3>Cola de carga</h3><p class="hint">Espera previa a disponer de energía.</p></div>
+        <div class="card-tools"><span class="grain">Diario · min</span><button class="btn-data" type="button" data-chart="ch_charge_wait">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_charge_wait" role="img" aria-label="Cola media de carga por día"></canvas></div></div>
+    </div>
+    <div class="card c4">
+      <div class="card-head">
+        <div><h3>SOC objetivo y real</h3><p class="hint">Energía disponible al salir frente a la comprometida.</p></div>
+        <div class="card-tools"><span class="grain">Diario · %</span><button class="btn-data" type="button" data-chart="ch_soc">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_soc" role="img" aria-label="Estado de carga real frente al objetivo por día"></canvas></div></div>
+    </div>
+    <div class="card c4">
+      <div class="card-head">
+        <div><h3>Interrupciones de carga</h3><p class="hint">Sesiones que se cortan: degradan estabilidad sin elevar el uso.</p></div>
+        <div class="card-tools"><span class="grain">Por zona</span><button class="btn-data" type="button" data-chart="ch_interrupt">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_interrupt" role="img" aria-label="Tasa de interrupción de carga por zona"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div>
+      <span class="section-num">03 · Riesgo y expedición</span>
+      <h2>Dónde se pierde la salida y con qué palanca se recupera</h2>
+      <p class="desc">Causas del retraso, reparto entre EV e ICE, y el contraste entre pérdida de caudal y riesgo de expedición que decide el orden de intervención.</p>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card c7">
+      <div class="card-head">
+        <div><h3>Retraso medio por causa</h3><p class="hint">Separa la incidencia puntual de la fricción sistemática de salida.</p></div>
+        <div class="card-tools"><span class="grain">Por causa · min</span><button class="btn-data" type="button" data-chart="ch_delay_cause">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_delay_cause" role="img" aria-label="Retraso medio de expedición por causa"></canvas></div></div>
+    </div>
+    <div class="card c5">
+      <div class="card-head">
+        <div><h3>Retraso y preparación por turno</h3><p class="hint">Distingue la tensión de un turno del problema estructural.</p></div>
+        <div class="card-tools"><span class="grain">Por turno · %</span><button class="btn-data" type="button" data-chart="ch_shift_readiness">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_shift_readiness" role="img" aria-label="Tasa de retraso y de preparación por turno"></canvas></div></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card c4">
+      <div class="card-head">
+        <div><h3>Impacto de cuellos por área</h3><p class="hint">Caudal atribuido a eventos de cuello, no estimación causal.</p></div>
+        <div class="card-tools"><span class="grain">Por área</span><button class="btn-data" type="button" data-chart="ch_bneck_area">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_bneck_area" role="img" aria-label="Impacto de los cuellos de botella por área"></canvas></div></div>
+    </div>
+    <div class="card c4">
+      <div class="card-head">
+        <div><h3>Pérdida frente a riesgo</h3><p class="hint">Arriba a la derecha: pierde caudal y además compromete la salida.</p></div>
+        <div class="card-tools"><span class="grain">Por área</span><button class="btn-data" type="button" data-chart="ch_risk_matrix">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_risk_matrix" role="img" aria-label="Matriz de pérdida de caudal frente a riesgo de expedición por área"></canvas></div></div>
+    </div>
+    <div class="card c4">
+      <div class="card-head">
+        <div><h3>Prioridad media por acción</h3><p class="hint">Qué palanca concentra más prioridad acumulada.</p></div>
+        <div class="card-tools"><span class="grain">Por acción</span><button class="btn-data" type="button" data-chart="ch_actions">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_actions" role="img" aria-label="Índice de prioridad operativa medio por acción recomendada"></canvas></div></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card c5">
+      <div class="card-head">
+        <div><h3>EV frente a ICE</h3><p class="hint">Dónde se concentra el minutaje incremental que introduce la cuota EV.</p></div>
+        <div class="card-tools"><span class="grain">Minutos medios</span><button class="btn-data" type="button" data-chart="ch_ev_vs_ice">Datos</button></div>
+      </div>
+      <div class="card-body"><div class="canvas-wrap"><canvas id="ch_ev_vs_ice" role="img" aria-label="Comparación de tiempos entre vehículos EV e ICE"></canvas></div></div>
+    </div>
+    <div class="card c7">
+      <div class="card-head">
+        <div><h3>Comparador de escenarios</h3><p class="hint">Puntuación multiobjetivo y estabilidad. Supuestos paramétricos sin calibrar.</p></div>
+        <div class="card-tools">
+          <select id="scenario_select" class="scenario-select" aria-label="Seleccionar escenario"></select>
+          <button class="btn-data" type="button" data-chart="ch_scenarios">Datos</button>
+        </div>
       </div>
       <div class="card-body"><div class="canvas-wrap"><canvas id="ch_scenarios" role="img" aria-label="Comparación de escenarios operativos"></canvas></div></div>
     </div>
@@ -817,20 +1072,20 @@ button:focus-visible, select:focus-visible, input:focus-visible {
 <section>
   <div class="section-head">
     <div>
-      <span class="section-num">04 / Priorización operativa</span>
-      <h2>Ranking de áreas y acciones para esta semana</h2>
-      <p class="desc">Ordenado por Índice de Prioridad Operativa (OPI). Buscar por área o factor; exportar como CSV para iterar.</p>
+      <span class="section-num">04 · Priorización operativa</span>
+      <h2>Qué se toca primero, y por qué</h2>
+      <p class="desc">Áreas ordenadas por Índice de Prioridad Operativa. Cada fila empareja el factor dominante con la acción que lo ataca.</p>
     </div>
   </div>
   <div class="card table-card">
     <div class="table-head-row">
       <div>
         <h3>Áreas críticas por OPI</h3>
-        <p class="desc">Cada fila empareja el factor dominante con la acción recomendada.</p>
+        <p class="desc">El nivel resume la urgencia; el factor explica de dónde viene.</p>
       </div>
       <div class="table-tools">
         <label class="sr-only" for="table_search">Buscar</label>
-        <input id="table_search" class="input" type="text" placeholder="Buscar área, factor, acción…" />
+        <input id="table_search" class="input" type="text" placeholder="Buscar área, factor o acción…" />
         <button id="btn_export" class="btn" type="button">Exportar CSV</button>
       </div>
     </div>
@@ -857,13 +1112,13 @@ button:focus-visible, select:focus-visible, input:focus-visible {
 
 <section class="decision-strip">
   <div class="lead">
-    <span class="eyebrow">Intervención recomendada</span>
+    <p class="eyebrow">Intervención recomendada</p>
     <span id="decision_text"></span>
   </div>
-  <div class="decision-stat text"><span>Área</span><strong id="decision_area">—</strong></div>
-  <div class="decision-stat text"><span>Acción</span><strong id="decision_action">—</strong></div>
-  <div class="decision-stat text"><span>Factor</span><strong id="decision_driver">—</strong></div>
-  <div class="decision-stat"><span>OPI</span><strong id="decision_opi">—</strong></div>
+  <div class="decision-stat"><span>Área</span><strong id="decision_area">—</strong></div>
+  <div class="decision-stat"><span>Acción</span><strong id="decision_action">—</strong></div>
+  <div class="decision-stat"><span>Factor</span><strong id="decision_driver">—</strong></div>
+  <div class="decision-stat figure"><span>OPI</span><strong id="decision_opi">—</strong></div>
 </section>
 
 <div class="sr-only">
@@ -887,20 +1142,30 @@ button:focus-visible, select:focus-visible, input:focus-visible {
 
 <footer class="foot">
   <span>__DASHBOARD_VERSION__</span>
-  <span><span id="foot_coverage"></span> · <span id="foot_rows"></span> registros · imprimir con ⌘P</span>
+  <span>Datos sintéticos · apoyo a decisión, no compromiso de inversión</span>
+  <span><span id="foot_coverage"></span> · <span id="foot_rows"></span> órdenes</span>
 </footer>
 
 </main>
+
+<dialog class="data-dialog" id="data_dialog" aria-labelledby="dialog_title">
+  <div class="dialog-head">
+    <div><h3 id="dialog_title">Datos</h3><p id="dialog_note"></p></div>
+    <button class="btn" type="button" id="dialog_close">Cerrar</button>
+  </div>
+  <div class="dialog-body"><table id="dialog_table"><thead></thead><tbody></tbody></table></div>
+</dialog>
 
 <script>
 const PAYLOAD = __DASHBOARD_PAYLOAD__;
 const META = PAYLOAD.meta;
 const FILTERS = PAYLOAD.filters;
 const DATA = PAYLOAD.data;
-const state = { sortCol: 'operational_priority_index', sortAsc: false, scenario: '' };
+const state = { scenario: '', fullRange: { from: '', to: '' } };
 let tableRows = [];
 const charts = {};
 const THEME_KEY = 'ev_dashboard_theme';
+
 const RISK_DRIVER_LABELS = {
   throughput_loss_score: 'Pérdida de caudal',
   yard_risk_score: 'Riesgo de patio',
@@ -922,21 +1187,44 @@ const SCENARIO_LABELS = {
   '7_turno_tensionado_menor_disponibilidad': 'Turno con menor disponibilidad',
   '8_combinacion_medidas_correctivas': 'Combinación de medidas correctivas'
 };
-const YARD_ZONE_LABELS = {
+const ZONE_LABELS = {
   BUFFER_CARGA: 'Pulmón de carga',
-  PRE_SALIDA: 'Preexpedición'
+  PRE_SALIDA: 'Preexpedición',
+  NORTE: 'Norte', SUR: 'Sur', ESTE: 'Este', OESTE: 'Oeste'
 };
+const CAUSE_LABELS = {
+  VARIABILIDAD_OPERATIVA: 'Variabilidad operativa',
+  READINESS_RECUPERADA_CON_RETRASO: 'Preparación recuperada tarde',
+  CONGESTION_PATIO: 'Congestión de patio',
+  FALTA_SLOT_LOGISTICO: 'Falta de slot logístico',
+  SIN_RETRASO: 'Sin retraso',
+  SIN_SALIDA: 'Sin salida',
+  SIN_DATO: 'Sin dato'
+};
+const AREA_LABELS = {
+  PRODUCCION: 'Producción', PATIO: 'Patio', CARGA: 'Carga',
+  ENERGIA: 'Energía', LOGISTICA: 'Logística', EXPEDICION: 'Expedición'
+};
+/* La etiqueta larga del nivel vive en la tabla; la espina necesita una palabra. */
+const TIER_SHORT = {
+  'intervenir ahora': 'Intervenir',
+  'estabilizar en la siguiente ola': 'Estabilizar',
+  'monitorizar muy de cerca': 'Vigilar de cerca',
+  'mantener bajo observación': 'Observar',
+  'sin prioridad inmediata': 'Sin prioridad'
+};
+const MONTHS_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+/* El recorrido físico del vehículo. ENERGIA alimenta la carga pero no
+   transporta unidades: se marca como soporte y no consume número de etapa. */
+const STAGE_ORDER = ['PRODUCCION', 'PATIO', 'CARGA', 'ENERGIA', 'LOGISTICA', 'EXPEDICION'];
+const SUPPORT_AREAS = ['ENERGIA'];
 
 function n(v) { const x = Number(v); return Number.isFinite(x) ? x : 0; }
-function pct(v) { return (n(v)*100).toFixed(1) + '%'; }
+function pct(v) { return (n(v)*100).toFixed(1).replace('.', ',') + '%'; }
+function num(v, digits) { return n(v).toLocaleString('es-ES', { minimumFractionDigits: digits || 0, maximumFractionDigits: digits || 0 }); }
 function mean(rows, key) {
   if (!rows.length) return 0;
   return rows.reduce((a, r) => a + n(r[key]), 0) / rows.length;
-}
-function weightedMean(rows, valueKey, weightKey) {
-  const w = rows.reduce((a, r) => a + Math.max(1, n(r[weightKey])), 0);
-  if (!w) return 0;
-  return rows.reduce((a, r) => a + n(r[valueKey]) * Math.max(1, n(r[weightKey])), 0) / w;
 }
 function escapeHtml(v) {
   return String(v ?? '')
@@ -948,11 +1236,26 @@ function escapeHtml(v) {
 }
 function labelLookup(map, value) {
   const key = String(value ?? '');
-  return map[key] || key.replace(/_/g, ' ');
+  if (map[key]) return map[key];
+  const words = key.replace(/_/g, ' ').toLowerCase().trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Sin dato';
 }
 function riskDriverLabel(value) { return labelLookup(RISK_DRIVER_LABELS, value); }
 function scenarioLabel(value) { return labelLookup(SCENARIO_LABELS, value); }
-function yardZoneLabel(value) { return labelLookup(YARD_ZONE_LABELS, value); }
+function zoneLabel(value) { return labelLookup(ZONE_LABELS, value); }
+function causeLabel(value) { return labelLookup(CAUSE_LABELS, value); }
+function areaLabel(value) { return labelLookup(AREA_LABELS, value); }
+function tierLabel(value) { return labelLookup({}, value); }
+function tierShort(value) {
+  const key = String(value ?? '').toLowerCase().trim();
+  return TIER_SHORT[key] || tierLabel(value);
+}
+/* Los ejes temporales llevan la fecha corta: el año lo fija la cobertura. */
+function shortDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  if (!m) return String(iso || '');
+  return String(Number(m[3])) + ' ' + MONTHS_SHORT[Number(m[2]) - 1];
+}
 function dstr(v) {
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return '';
@@ -963,21 +1266,18 @@ function cssVar(name) { return getComputedStyle(document.documentElement).getPro
 function themeColors() {
   return {
     ink: cssVar('--ink'),
+    ink2: cssVar('--ink-2'),
     muted: cssVar('--muted'),
-    gridX: cssVar('--grid-x'),
-    gridY: cssVar('--grid-y'),
+    surface: cssVar('--surface'),
+    grid: cssVar('--grid'),
+    axis: cssVar('--axis'),
     tooltipBg: cssVar('--tooltip-bg'),
-    tooltipText: cssVar('--tooltip-text'),
-    plan: cssVar('--series-plan'),
-    real: cssVar('--series-real'),
-    ev: cssVar('--series-ev'),
-    gap: cssVar('--series-gap'),
-    aux: cssVar('--series-aux'),
-    yard: cssVar('--series-yard'),
-    load: cssVar('--series-load'),
-    dispatch: cssVar('--series-dispatch'),
-    priority: cssVar('--series-priority'),
-    warn: cssVar('--warn'),
+    tooltipInk: cssVar('--tooltip-ink'),
+    real: cssVar('--mark-real'),
+    plan: cssVar('--mark-plan'),
+    ev: cssVar('--mark-ev'),
+    energy: cssVar('--mark-energy'),
+    risk: cssVar('--mark-risk'),
   };
 }
 
@@ -990,74 +1290,328 @@ function hexToRgba(hex, alpha) {
   return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
 }
 
+/* ───── Agregación ───── */
+function groupAgg(rows, key, value, mode) {
+  const m = new Map();
+  rows.forEach(r => {
+    const k = String(r[key]);
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(n(r[value]));
+  });
+  const labels = Array.from(m.keys()).sort();
+  const vals = labels.map(l => {
+    const arr = m.get(l);
+    if (mode === 'sum') return arr.reduce((a,b) => a+b, 0);
+    if (mode === 'max') return Math.max.apply(null, arr);
+    return arr.reduce((a,b) => a+b, 0) / arr.length;
+  });
+  return { labels, vals };
+}
+
+function aggregateBy(rows, key, specs) {
+  const m = new Map();
+  rows.forEach(r => {
+    const k = String(r[key] ?? 'SIN_DATO');
+    if (!m.has(k)) {
+      const seed = {};
+      specs.forEach(s => { seed[s.name] = { sum: 0, count: 0 }; });
+      m.set(k, seed);
+    }
+    const bucket = m.get(k);
+    specs.forEach(s => {
+      bucket[s.name].sum += n(r[s.src]);
+      bucket[s.name].count += 1;
+    });
+  });
+  return Array.from(m.entries()).map(([k, v]) => {
+    const out = { [key]: k };
+    specs.forEach(s => {
+      out[s.name] = s.mode === 'sum'
+        ? v[s.name].sum
+        : (v[s.name].count ? v[s.name].sum / v[s.name].count : 0);
+    });
+    return out;
+  });
+}
+
+/* Razón ponderada por día: evita que un día con pocos vehículos pese igual
+   que uno completo al construir la serie de la chispa. */
+function ratioByDate(rows, numKey, denKey) {
+  const m = new Map();
+  rows.forEach(r => {
+    const k = dstr(r.fecha);
+    if (!k) return;
+    if (!m.has(k)) m.set(k, { num: 0, den: 0 });
+    const b = m.get(k);
+    b.num += n(r[numKey]);
+    b.den += n(r[denKey]);
+  });
+  const labels = Array.from(m.keys()).sort();
+  return labels.map(l => {
+    const b = m.get(l);
+    return b.den ? b.num / b.den : 0;
+  });
+}
+
+function downsample(labels, seriesList, maxPoints) {
+  const cap = maxPoints || 50;
+  if (labels.length <= cap) return { labels, seriesList };
+  const step = Math.ceil(labels.length / cap);
+  const idx = [];
+  for (let i=0;i<labels.length;i+=step) idx.push(i);
+  return {
+    labels: idx.map(i => labels[i]),
+    seriesList: seriesList.map(s => idx.map(i => s[i]))
+  };
+}
+
+function truncLabels(arr, max) {
+  const limit = max || 20;
+  return arr.map(x => x.length > limit ? x.slice(0, limit-1) + '…' : x);
+}
+
+/* ───── Formato ───── */
+function compactNumber(value) {
+  const v = n(value);
+  const abs = Math.abs(v);
+  if (abs >= 1e6) return (v / 1e6).toFixed(abs >= 1e7 ? 0 : 1).replace('.0','').replace('.', ',') + 'M';
+  if (abs >= 1e4) return (v / 1e3).toFixed(0) + 'k';
+  if (abs >= 1e3) return (v / 1e3).toFixed(1).replace('.0','').replace('.', ',') + 'k';
+  return Math.round(v).toString();
+}
+function signedCompact(value) {
+  const v = n(value);
+  if (v === 0) return '0';
+  return (v > 0 ? '+' : '−') + compactNumber(Math.abs(v));
+}
+function pctCompact(value) { return Math.round(n(value) * 100) + '%'; }
+function hours(minutes) {
+  const h = n(minutes) / 60;
+  return (h >= 10 ? h.toFixed(0) : h.toFixed(1).replace('.', ',')) + ' h';
+}
+
+/* Umbrales operativos: fijan el estado publicado de cada indicador. */
+function tone(key, value) {
+  if (key === 'throughput_gap') return n(value) < 0 ? 'bad' : 'good';
+  if (key === 'ratio_salida_retrasada') return n(value) > 0.12 ? 'bad' : (n(value) > 0.05 ? 'warn' : 'good');
+  if (key === 'utilizacion_media_cargadores') return n(value) > 0.82 ? 'bad' : (n(value) > 0.68 ? 'warn' : 'good');
+  if (key === 'ocupacion_pico_patio') return n(value) > 0.85 ? 'bad' : (n(value) > 0.70 ? 'warn' : 'good');
+  if (key === 'vehiculos_no_ready') return n(value) > 0 ? 'warn' : 'good';
+  if (key === 'score_readiness_global') return n(value) >= 70 ? 'good' : (n(value) >= 50 ? 'warn' : 'bad');
+  if (key === 'tiempo_medio_espera_carga_min') return n(value) > 45 ? 'bad' : (n(value) > 20 ? 'warn' : 'good');
+  if (key === 'operational_priority_index') return n(value) >= 65 ? 'bad' : (n(value) >= 45 ? 'warn' : 'good');
+  return '';
+}
+const STATE_WORD = { bad: 'Crítico', warn: 'Atención', good: 'Estable' };
+
+/* ───── Chispa: la serie que da contexto al número ───── */
+function sparkline(values) {
+  const vals = (values || []).filter(v => Number.isFinite(Number(v))).map(Number);
+  if (vals.length < 2) return '';
+  const w = 100, h = 22, p = 2.5;
+  const min = Math.min.apply(null, vals);
+  const max = Math.max.apply(null, vals);
+  const span = (max - min) || 1;
+  const pts = vals.map((v, i) => [
+    p + (i / (vals.length - 1)) * (w - 2 * p),
+    h - p - ((v - min) / span) * (h - 2 * p)
+  ]);
+  const d = pts.map((pt, i) => (i ? 'L' : 'M') + pt[0].toFixed(1) + ' ' + pt[1].toFixed(1)).join(' ');
+  const last = pts[pts.length - 1];
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true" focusable="false">'
+    + '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" stroke-linecap="round" opacity=".7"/>'
+    + '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="1.9" fill="currentColor"/>'
+    + '</svg>';
+}
+
+/* ───── Cabecera y narrativa ───── */
 function setMeta() {
   const k = META.kpi_official || {};
+  const snap = META.executive_snapshot || {};
   document.getElementById('meta_coverage').textContent = META.coverage || 'Sin dato';
-  document.getElementById('meta_orders').textContent = (META.orders || 0).toLocaleString('es-ES');
-  document.getElementById('meta_vehicles').textContent = (META.vehicles || 0).toLocaleString('es-ES');
-  document.getElementById('meta_yard_zones').textContent = (META.yard_zones || 0).toLocaleString('es-ES');
-  document.getElementById('meta_charge_zones').textContent = (META.charge_zones || 0).toLocaleString('es-ES');
-  document.getElementById('meta_top_area').textContent = META.executive_snapshot.top_area || 'Sin dato';
-  document.getElementById('meta_top_action').textContent = META.executive_snapshot.top_action || 'Sin dato';
-  document.getElementById('meta_top_scenario').textContent = scenarioLabel(META.executive_snapshot.top_scenario || 'Sin dato');
-  document.getElementById('meta_yard_zones_card').textContent = (META.yard_zones || 0).toLocaleString('es-ES');
-  document.getElementById('meta_charge_zones_card').textContent = (META.charge_zones || 0).toLocaleString('es-ES');
-  const footCov = document.getElementById('foot_coverage');
-  if (footCov) footCov.textContent = META.coverage || '';
-  const footRows = document.getElementById('foot_rows');
-  if (footRows) footRows.textContent = (META.orders || 0).toLocaleString('es-ES');
+  document.getElementById('meta_orders').textContent = num(META.orders || 0);
+  document.getElementById('meta_vehicles').textContent = num(META.vehicles || 0);
+  document.getElementById('meta_yard_zones').textContent = num(META.yard_zones || 0);
+  document.getElementById('meta_charge_zones').textContent = num(META.charge_zones || 0);
+  document.getElementById('meta_top_area').textContent = snap.top_area || 'Sin dato';
+  document.getElementById('meta_top_action').textContent = snap.top_action || 'Sin dato';
+  document.getElementById('meta_top_scenario').textContent = scenarioLabel(snap.top_scenario || 'Sin dato');
+  document.getElementById('meta_yard_zones_card').textContent = num(META.yard_zones || 0);
+  document.getElementById('meta_charge_zones_card').textContent = num(META.charge_zones || 0);
+  document.getElementById('foot_coverage').textContent = META.coverage || '';
+  document.getElementById('foot_rows').textContent = num(META.orders || 0);
+
+  const validation = META.kpi_validation || {};
+  const values = Object.keys(validation).map(key => validation[key]);
+  const reconciled = values.length > 0 && values.every(Boolean);
+  const seal = document.getElementById('kpi_seal');
+  seal.setAttribute('data-ok', reconciled ? 'true' : 'false');
+  document.getElementById('kpi_seal_text').textContent = reconciled ? 'KPI conciliados' : 'KPI por revisar';
+
+  const topArea = snap.top_area || 'Sin dato';
+  const topAction = snap.top_action || 'Sin dato';
+
+  document.getElementById('headline_value').textContent = pct(k.ratio_salida_retrasada || 0);
+  document.getElementById('headline_note').textContent =
+    'de los vehículos despachados sale fuera de ventana, con ' + num(k.vehiculos_no_ready || 0)
+    + ' unidades que llegan a expedición sin preparación suficiente.';
 
   const list = [
-    'Área con mayor presión actual: ' + (META.executive_snapshot.top_area || 'Sin dato') + '.',
-    'Utilización media de carga: ' + pct(k.utilizacion_media_cargadores || 0) + ' con cola media de ' + n(k.tiempo_medio_espera_carga_min || 0).toFixed(1) + ' min.',
-    'Patio en pico: ' + pct(k.ocupacion_pico_patio || 0) + ' y permanencia p95 de ' + n(k.dwell_p95_min || 0).toFixed(0) + ' min.',
-    'Escenario con mejor balance actual: ' + scenarioLabel(META.executive_snapshot.top_scenario || 'Sin dato') + '.'
+    'Área con mayor presión actual: ' + areaLabel(topArea) + '.',
+    'Utilización media de carga: ' + pct(k.utilizacion_media_cargadores || 0) + ' con cola media de ' + num(k.tiempo_medio_espera_carga_min || 0, 1) + ' min.',
+    'Patio en pico: ' + pct(k.ocupacion_pico_patio || 0) + ' y permanencia p95 de ' + num(k.dwell_p95_min || 0) + ' min.',
+    'Escenario con mejor balance actual: ' + scenarioLabel(snap.top_scenario || 'Sin dato') + '.'
   ];
   document.getElementById('executive_list').innerHTML = list.map(x => '<li>' + escapeHtml(x) + '</li>').join('');
 
   const opList = [
     'Reservar carga para unidades con salida inmediata cuando la preparación real quede por debajo del objetivo.',
     'Reducir permanencia en las zonas con mayor p95 antes de ampliar físicamente patio.',
-    'Tratar la desviación de secuencia como señal temprana de rotura, no solo como efecto de la congestión.'
+    'Tratar la desviación de secuencia como señal temprana de rotura, no sólo como efecto de la congestión.'
   ];
   document.getElementById('operational_list').innerHTML = opList.map(x => '<li>' + escapeHtml(x) + '</li>').join('');
-
-  const topArea = META.executive_snapshot.top_area || 'Sin dato';
-  const topAction = META.executive_snapshot.top_action || 'Sin dato';
-  const topScenario = META.executive_snapshot.top_scenario || 'Sin dato';
-  document.getElementById('hero_message').textContent =
-    'La presión operativa se concentra en ' + topArea + '. El cuello ya no es la línea: es patio, carga y expedición.';
-  const subEl = document.getElementById('verdict_sub');
-  if (subEl) {
-    const noReadyCount = Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES');
-    const delayPct = pct(k.ratio_salida_retrasada || 0);
-    subEl.textContent =
-      noReadyCount + ' vehículos no llegan listos a expedición y ' + delayPct +
-      ' de las salidas se retrasan. La intervención con mejor retorno inmediato es ' +
-      topAction.toLowerCase() + '.';
-  }
-  const dotEl = document.getElementById('verdict_dot');
-  if (dotEl) {
-    const ratio = n(k.ratio_salida_retrasada || 0);
-    dotEl.className = 'dot ' + (ratio > 0.12 ? 'bad' : (ratio > 0.05 ? 'warn' : ''));
-  }
 
   document.getElementById('command_matter').textContent = 'Proteger preparación de salida';
   document.getElementById('command_matter_note').textContent = 'El riesgo visible no es volumen total, sino vehículos que llegan a expedición sin preparación suficiente.';
   document.getElementById('command_critical').textContent = pct(k.ratio_salida_retrasada || 0) + ' de salidas retrasadas';
   document.getElementById('command_critical_note').textContent = 'Con este nivel, la prioridad es reducir cola y secuencia rota antes de perseguir más caudal.';
-  document.getElementById('command_action').textContent = META.executive_snapshot.top_action || 'Sin dato';
-  document.getElementById('command_action_note').textContent = 'Acción táctica sugerida por el ranking OPI, aplicable primero en ' + (META.executive_snapshot.top_area || 'Sin dato') + '.';
-  document.getElementById('command_impact').textContent = Math.round(n(k.vehiculos_no_ready || 0)).toLocaleString('es-ES') + ' no preparados';
+  document.getElementById('command_action').textContent = topAction;
+  document.getElementById('command_action_note').textContent = 'Acción táctica sugerida por el ranking OPI, aplicable primero en ' + areaLabel(topArea) + '.';
+  document.getElementById('command_impact').textContent = num(k.vehiculos_no_ready || 0) + ' no preparados';
   document.getElementById('command_impact_note').textContent = 'Atraso operativo que conecta carga, patio y expedición; si no baja, la rampa EV amplifica el cuello.';
 }
 
+/* El veredicto se compone con los números del corte, no se fija a mano:
+   si el patrón cambia, la frase cambia con él. */
+function buildVerdict() {
+  const k = META.kpi_official || {};
+  const snap = META.executive_snapshot || {};
+  const gap = n(k.throughput_gap);
+  const delay = n(k.ratio_salida_retrasada);
+  const util = n(k.utilizacion_media_cargadores);
+  const peak = n(k.ocupacion_pico_patio);
+  const topAction = (snap.top_action || 'Sin dato');
+
+  const supplyHolds = gap >= 0;
+  const capacityIdle = util < 0.6 && peak < 0.7;
+  const exitFails = delay > 0.12;
+
+  let headline;
+  if (supplyHolds && exitFails) headline = 'La línea entrega el plan. La salida no llega a tiempo.';
+  else if (!supplyHolds && exitFails) headline = 'El caudal cae y la salida se retrasa a la vez.';
+  else if (exitFails) headline = 'La salida concentra el riesgo operativo del corte.';
+  else headline = 'El flujo se sostiene dentro de los umbrales publicados.';
+  document.getElementById('hero_message').textContent = headline;
+
+  const parts = [];
+  if (gap === 0) {
+    parts.push('Producción cierra el período clavada en el plan, sin una sola unidad de déficit.');
+  } else if (supplyHolds) {
+    parts.push('Producción cierra el período por encima del plan, con ' + compactNumber(gap) + ' unidades de más.');
+  } else {
+    parts.push('Producción cierra el período con un déficit de ' + compactNumber(Math.abs(gap)) + ' unidades frente al plan.');
+  }
+  if (capacityIdle && exitFails) {
+    parts.push('Y sin embargo los cargadores trabajan al ' + pctCompact(util)
+      + ' y el patio no supera el ' + pctCompact(peak) + ' de ocupación en su pico: '
+      + 'la capacidad instalada está libre mientras la cola se alarga. '
+      + 'El límite no es el hierro disponible, es el orden en que se usa.');
+  } else if (exitFails) {
+    parts.push('La carga trabaja al ' + pctCompact(util) + ' y el patio alcanza el '
+      + pctCompact(peak) + ' en su pico, con la salida aún fuera de ventana.');
+  }
+  parts.push('La palanca con mejor retorno inmediato es ' + topAction.toLowerCase() + '.');
+  document.getElementById('verdict_sub').innerHTML = parts.map(escapeHtml).join(' ');
+}
+
+/* ───── Espina de flujo ───── */
+function stageMeasure(area, k, ctx) {
+  const key = String(area);
+  if (key === 'PRODUCCION') {
+    const plan = ctx.fThrough.reduce((a, r) => a + n(r.throughput_plan), 0);
+    const real = ctx.fThrough.reduce((a, r) => a + n(r.throughput_real), 0);
+    return { value: compactNumber(real) + ' / ' + compactNumber(plan), label: 'Real frente a plan' };
+  }
+  if (key === 'PATIO') {
+    return { value: hours(k.dwell_p95_min), label: 'Permanencia p95' };
+  }
+  if (key === 'CARGA') {
+    return { value: num(k.tiempo_medio_espera_carga_min, 0) + ' min', label: 'Cola de carga' };
+  }
+  if (key === 'ENERGIA') {
+    return { value: pct(mean(ctx.fCharge, 'interruption')), label: 'Sesiones interrumpidas' };
+  }
+  if (key === 'LOGISTICA') {
+    return { value: num(mean(ctx.fDispatchBase, 'delay_min'), 0) + ' min', label: 'Retraso medio' };
+  }
+  if (key === 'EXPEDICION') {
+    return { value: pct(k.ratio_salida_retrasada), label: 'Salidas fuera de ventana' };
+  }
+  return { value: '—', label: 'Sin medida directa' };
+}
+
+function orderedStages(rows) {
+  const known = rows.filter(r => STAGE_ORDER.indexOf(String(r.area)) !== -1)
+    .sort((a, b) => STAGE_ORDER.indexOf(String(a.area)) - STAGE_ORDER.indexOf(String(b.area)));
+  const rest = rows.filter(r => STAGE_ORDER.indexOf(String(r.area)) === -1)
+    .sort((a, b) => String(a.area).localeCompare(String(b.area)));
+  return known.concat(rest);
+}
+
+function renderSpine(ctx, k) {
+  const rows = orderedStages(DATA.priorities || []);
+  const activeArea = document.getElementById('f_area').value;
+  let stageNumber = 0;
+
+  document.getElementById('spine_track').innerHTML = rows.map(r => {
+    const area = String(r.area);
+    const support = SUPPORT_AREAS.indexOf(area) !== -1;
+    if (!support) stageNumber += 1;
+    const opi = n(r.operational_priority_index);
+    const t = tone('operational_priority_index', opi);
+    const m = stageMeasure(area, k, ctx);
+    const pressed = activeArea === area;
+    return '<button type="button" class="stage" data-area="' + escapeHtml(area) + '"'
+      + ' data-support="' + (support ? 'true' : 'false') + '"'
+      + ' aria-pressed="' + (pressed ? 'true' : 'false') + '">'
+      + '<span class="stage-top">'
+      +   (support
+            ? '<span class="stage-role">Soporte</span>'
+            : '<span class="stage-idx">' + String(stageNumber).padStart(2, '0') + '</span>')
+      +   '<span class="stage-name">' + escapeHtml(areaLabel(area)) + '</span>'
+      + '</span>'
+      + '<span class="stage-measure">'
+      +   '<span class="m-value">' + escapeHtml(m.value) + '</span>'
+      +   '<span class="m-label">' + escapeHtml(m.label) + '</span>'
+      + '</span>'
+      + '<span class="stage-meter">'
+      +   '<span class="meter-track"><span class="meter-fill" data-tone="' + t + '" style="width:' + Math.max(2, Math.min(100, opi)).toFixed(1) + '%"></span></span>'
+      +   '<span class="stage-foot">'
+      +     '<span class="tier" title="' + escapeHtml(tierLabel(r.area_priority_tier)) + '">'
+      +       escapeHtml(tierShort(r.area_priority_tier)) + '</span>'
+      +     '<span class="opi">' + num(opi, 1) + '</span>'
+      +   '</span>'
+      + '</span>'
+      + '</button>';
+  }).join('');
+
+  Array.prototype.forEach.call(document.querySelectorAll('.stage'), el => {
+    el.addEventListener('click', () => {
+      const area = el.dataset.area;
+      const select = document.getElementById('f_area');
+      select.value = (select.value === area) ? 'ALL' : area;
+      updateCharts();
+    });
+  });
+}
+
+/* ───── Filtros ───── */
 function fillSelect(id, values, label, labelFn) {
   const el = document.getElementById(id);
   el.innerHTML = '';
   const all = document.createElement('option');
   all.value = 'ALL';
-  all.textContent = 'Todos (' + label + ')';
+  all.textContent = 'Todas (' + label + ')';
   el.appendChild(all);
   (values || []).forEach(v => {
     const o = document.createElement('option');
@@ -1071,20 +1625,23 @@ function setupFilters() {
   fillSelect('f_turno', FILTERS.turno, 'turno');
   fillSelect('f_prop', FILTERS.propulsion, 'propulsión');
   fillSelect('f_version', FILTERS.version, 'versión');
-  fillSelect('f_area', FILTERS.area, 'área');
-  fillSelect('f_yard', FILTERS.zona_patio, 'zona patio', yardZoneLabel);
-  fillSelect('f_charge', FILTERS.zona_carga, 'zona carga');
+  fillSelect('f_area', FILTERS.area, 'área', areaLabel);
+  fillSelect('f_yard', FILTERS.zona_patio, 'zona patio', zoneLabel);
+  fillSelect('f_charge', FILTERS.zona_carga, 'zona carga', zoneLabel);
   fillSelect('f_severity', FILTERS.severidad, 'severidad');
 
   const th = DATA.throughput;
   if (th.length) {
     const dates = th.map(r => dstr(r.fecha)).sort();
-    document.getElementById('f_date_from').value = dates[0];
-    document.getElementById('f_date_to').value = dates[dates.length - 1];
-    document.getElementById('f_date_from').min = dates[0];
-    document.getElementById('f_date_from').max = dates[dates.length - 1];
-    document.getElementById('f_date_to').min = dates[0];
-    document.getElementById('f_date_to').max = dates[dates.length - 1];
+    const first = dates[0];
+    const last = dates[dates.length - 1];
+    ['f_date_from', 'f_date_to'].forEach((id, i) => {
+      const el = document.getElementById(id);
+      el.value = i === 0 ? first : last;
+      el.min = first;
+      el.max = last;
+    });
+    state.fullRange = { from: first, to: last };
   }
 
   const scen = document.getElementById('scenario_select');
@@ -1099,8 +1656,9 @@ function setupFilters() {
   scen.value = state.scenario;
 }
 
-function describeFilter(value, fallbackLabel) {
-  return value && value !== 'ALL' ? value : fallbackLabel;
+function describeFilter(value, fallbackLabel, labelFn) {
+  if (!value || value === 'ALL') return fallbackLabel;
+  return labelFn ? labelFn(value) : value;
 }
 
 function getFilterState() {
@@ -1132,7 +1690,7 @@ function updateFilterSummary() {
     f.from && f.to ? (f.from + ' → ' + f.to) : 'Periodo completo',
     describeFilter(f.turno, 'Todos los turnos'),
     describeFilter(f.prop, 'Todas las propulsiones'),
-    describeFilter(f.area, 'Todas las áreas'),
+    describeFilter(f.area, 'Todas las áreas', areaLabel),
   ];
   document.getElementById('filter_summary_text').textContent = parts.join(' · ');
   document.getElementById('scenario_summary_text').textContent =
@@ -1169,70 +1727,7 @@ function filterRows(rows, map) {
   });
 }
 
-function groupMean(rows, key, value) {
-  const m = new Map();
-  rows.forEach(r => {
-    const k = String(r[key]);
-    const v = n(r[value]);
-    if (!m.has(k)) m.set(k, []);
-    m.get(k).push(v);
-  });
-  const labels = Array.from(m.keys()).sort();
-  const vals = labels.map(l => m.get(l).reduce((a,b) => a+b, 0) / m.get(l).length);
-  return { labels, vals };
-}
-
-function aggregateBy(rows, key, specs) {
-  const m = new Map();
-  rows.forEach(r => {
-    const k = String(r[key] ?? 'Sin dato');
-    if (!m.has(k)) {
-      const seed = {};
-      specs.forEach(s => { seed[s.name] = { sum: 0, count: 0 }; });
-      m.set(k, seed);
-    }
-    const bucket = m.get(k);
-    specs.forEach(s => {
-      bucket[s.name].sum += n(r[s.src]);
-      bucket[s.name].count += 1;
-    });
-  });
-  return Array.from(m.entries()).map(([k, v]) => {
-    const out = { [key]: k };
-    specs.forEach(s => {
-      out[s.name] = s.mode === 'sum'
-        ? v[s.name].sum
-        : (v[s.name].count ? v[s.name].sum / v[s.name].count : 0);
-    });
-    return out;
-  });
-}
-
-function downsample(labels, seriesList, maxPoints = 50) {
-  if (labels.length <= maxPoints) return { labels, seriesList };
-  const step = Math.ceil(labels.length / maxPoints);
-  const idx = [];
-  for (let i=0;i<labels.length;i+=step) idx.push(i);
-  return {
-    labels: idx.map(i => labels[i]),
-    seriesList: seriesList.map(s => idx.map(i => s[i]))
-  };
-}
-
-function truncLabels(arr, n=20) {
-  return arr.map(x => x.length > n ? x.slice(0, n-1) + '…' : x);
-}
-
-function classifyKpi(key, value) {
-  if (key === 'throughput_gap') return value < 0 ? 'kpi-critical' : 'kpi-good';
-  if (key === 'utilizacion_media_cargadores') return value > 0.82 ? 'kpi-critical' : (value > 0.68 ? 'kpi-warning' : 'kpi-good');
-  if (key === 'ratio_salida_retrasada') return value > 0.12 ? 'kpi-critical' : (value > 0.05 ? 'kpi-warning' : 'kpi-good');
-  if (key === 'ocupacion_pico_patio') return value > 0.85 ? 'kpi-critical' : (value > 0.70 ? 'kpi-warning' : 'kpi-good');
-  if (key === 'vehiculos_no_ready') return value > 0 ? 'kpi-critical' : 'kpi-good';
-  if (key === 'score_readiness_global') return value >= 70 ? 'kpi-good' : (value >= 50 ? 'kpi-warning' : 'kpi-critical');
-  return 'kpi-warning';
-}
-
+/* ───── KPI ───── */
 function calculateVisibleKpis(ctx) {
   const official = META.kpi_official || {};
   const throughputPlan = ctx.fThrough.reduce((a, r) => a + n(r.throughput_plan), 0);
@@ -1247,13 +1742,13 @@ function calculateVisibleKpis(ctx) {
     : n(official.score_readiness_global) / 100;
   const chargeWait = mean(ctx.fCharge, 'wait');
   const chargeUtil = mean(ctx.fCharge, 'utilization');
-  const yardOccPeak = ctx.fYard.length ? Math.max(...ctx.fYard.map(r => n(r.occupancy))) : n(official.ocupacion_pico_patio);
+  const yardOccPeak = ctx.fYard.length ? Math.max.apply(null, ctx.fYard.map(r => n(r.occupancy))) : n(official.ocupacion_pico_patio);
   const yardDwellP95 = mean(ctx.fYard, 'dwell_p95');
   const yardDwell = mean(ctx.fYard, 'dwell');
   const evRows = ctx.fFlowProp.filter(r => String(r.tipo_propulsion) === 'EV');
-  const allFlow = ctx.fFlowProp;
-  const shareEv = allFlow.reduce((a, r) => a + n(r.throughput), 0)
-    ? evRows.reduce((a, r) => a + n(r.throughput), 0) / allFlow.reduce((a, r) => a + n(r.throughput), 0)
+  const totalFlow = ctx.fFlowProp.reduce((a, r) => a + n(r.throughput), 0);
+  const shareEv = totalFlow
+    ? evRows.reduce((a, r) => a + n(r.throughput), 0) / totalFlow
     : n(official.share_ev);
   const noReady = dispatchVehicles ? Math.round(dispatchVehicles * Math.max(0, 1 - readinessRate)) : n(official.vehiculos_no_ready);
   return {
@@ -1272,92 +1767,66 @@ function calculateVisibleKpis(ctx) {
   };
 }
 
-function compactNumber(num) {
-  const v = n(num);
-  const abs = Math.abs(v);
-  if (abs >= 1e6) return (v / 1e6).toFixed(abs >= 1e7 ? 0 : 1).replace('.0','') + 'M';
-  if (abs >= 1e4) return (v / 1e3).toFixed(0) + 'k';
-  if (abs >= 1e3) return (v / 1e3).toFixed(1).replace('.0','') + 'k';
-  return Math.round(v).toString();
-}
-function signedCompact(num) {
-  const v = n(num);
-  if (v === 0) return '0';
-  return (v > 0 ? '+' : '−') + compactNumber(Math.abs(v));
-}
-function pctCompact(num) {
-  return Math.round(n(num) * 100) + '%';
-}
-function tone(key, value) {
-  if (key === 'throughput_gap') return n(value) < 0 ? 'bad' : 'good';
-  if (key === 'ratio_salida_retrasada') return n(value) > 0.12 ? 'bad' : (n(value) > 0.05 ? 'warn' : 'good');
-  if (key === 'utilizacion_media_cargadores') return n(value) > 0.82 ? 'bad' : (n(value) > 0.68 ? 'warn' : 'good');
-  if (key === 'ocupacion_pico_patio') return n(value) > 0.85 ? 'bad' : (n(value) > 0.70 ? 'warn' : 'good');
-  if (key === 'vehiculos_no_ready') return n(value) > 0 ? 'warn' : 'good';
-  if (key === 'score_readiness_global') return n(value) >= 70 ? 'good' : (n(value) >= 50 ? 'warn' : 'bad');
-  return '';
+function kpiSeries(ctx) {
+  const evByDate = groupAgg(ctx.fFlowProp.filter(r => String(r.tipo_propulsion) === 'EV'), 'fecha', 'throughput', 'sum');
+  const allByDate = groupAgg(ctx.fFlowProp, 'fecha', 'throughput', 'sum');
+  const shareEv = allByDate.labels.map((label, i) => {
+    const total = allByDate.vals[i];
+    const j = evByDate.labels.indexOf(label);
+    const ev = j === -1 ? 0 : evByDate.vals[j];
+    return total ? ev / total : 0;
+  });
+  const plan = groupAgg(ctx.fThrough, 'fecha', 'throughput_plan', 'sum');
+  const real = groupAgg(ctx.fThrough, 'fecha', 'throughput_real', 'sum');
+  return {
+    throughput_real: real.vals,
+    throughput_gap: real.vals.map((v, i) => v - n(plan.vals[i])),
+    ratio_salida_retrasada: ratioByDate(ctx.fDispatchBase, 'delayed_vehicles', 'departed_vehicles'),
+    vehiculos_no_ready: groupAgg(ctx.fDispatchBase, 'fecha', 'vehicles', 'sum').vals.map((v, i, arr) => {
+      const ready = ratioByDate(ctx.fDispatchBase, 'departed_vehicles', 'vehicles');
+      return v * (1 - n(ready[i]));
+    }),
+    tiempo_medio_espera_carga_min: groupAgg(ctx.fCharge, 'fecha', 'wait', 'avg').vals,
+    ocupacion_pico_patio: groupAgg(ctx.fYard, 'fecha', 'occupancy', 'max').vals,
+    share_ev: shareEv,
+  };
 }
 
-function renderOfficialKpis(k = META.kpi_official || {}) {
-  // 7 KPI de primer vistazo, seleccionados para decisión ejecutiva.
+function renderOfficialKpis(k, scopeLabel, series) {
+  const values = k || META.kpi_official || {};
+  const s = series || {};
   const cells = [
-    {
-      key:'throughput_real',
-      label:'Caudal real',
-      value:compactNumber(k.throughput_real || 0),
-      foot:'unidades · período completo',
-    },
-    {
-      key:'throughput_gap',
-      label:'Brecha vs plan',
-      value:signedCompact(k.throughput_gap || 0),
-      foot:n(k.throughput_gap || 0) < 0 ? 'déficit operativo' : 'sin déficit neto',
-    },
-    {
-      key:'ratio_salida_retrasada',
-      label:'Salidas retrasadas',
-      value:pctCompact(k.ratio_salida_retrasada || 0),
-      foot:'sobre vehículos despachados',
-    },
-    {
-      key:'vehiculos_no_ready',
-      label:'No preparados a expedición',
-      value:compactNumber(k.vehiculos_no_ready || 0),
-      foot:'atraso accionable',
-    },
-    {
-      key:'tiempo_medio_espera_carga_min',
-      label:'Espera media carga',
-      value:n(k.tiempo_medio_espera_carga_min || 0).toFixed(1),
-      unit:'min',
-      foot:'cola antes de energía disponible',
-    },
-    {
-      key:'ocupacion_pico_patio',
-      label:'Ocupación pico patio',
-      value:pctCompact(k.ocupacion_pico_patio || 0),
-      foot:'pico físico del período',
-    },
-    {
-      key:'share_ev',
-      label:'Cuota EV',
-      value:pctCompact(k.share_ev || 0),
-      foot:'cuota actual del flujo',
-    },
+    { key:'throughput_real', label:'Caudal real', value:compactNumber(values.throughput_real), note:'unidades' },
+    { key:'throughput_gap', label:'Brecha frente al plan', value:signedCompact(values.throughput_gap), note:n(values.throughput_gap) < 0 ? 'déficit' : 'plan cubierto' },
+    { key:'ratio_salida_retrasada', label:'Salidas retrasadas', value:pctCompact(values.ratio_salida_retrasada), note:'de despachados' },
+    { key:'vehiculos_no_ready', label:'No preparados', value:compactNumber(values.vehiculos_no_ready), note:'a expedición' },
+    { key:'tiempo_medio_espera_carga_min', label:'Espera de carga', value:num(values.tiempo_medio_espera_carga_min, 1), unit:'min', note:'de cola' },
+    { key:'ocupacion_pico_patio', label:'Ocupación pico de patio', value:pctCompact(values.ocupacion_pico_patio), note:'en el pico' },
+    { key:'share_ev', label:'Cuota EV', value:pctCompact(values.share_ev), note:'del flujo' },
   ];
   document.getElementById('kpi_cards').innerHTML = cells.map(c => {
-    const t = tone(c.key, k[c.key]);
-    const valueHtml = c.unit
-      ? escapeHtml(c.value) + '<span style="font-family:var(--font-sans);font-size:14px;color:var(--muted);font-weight:400;margin-left:4px;">' + escapeHtml(c.unit) + '</span>'
-      : escapeHtml(c.value);
+    const t = tone(c.key, values[c.key]);
+    const word = STATE_WORD[t];
+    const valueHtml = escapeHtml(c.value) + (c.unit ? '<span class="unit">' + escapeHtml(c.unit) + '</span>' : '');
+    const spark = sparkline(downsample(s[c.key] || [], [s[c.key] || []], 40).seriesList[0]);
+    // Sin umbral publicado no se inventa un estado: sólo se describe la cifra.
+    const foot = word
+      ? '<span class="state">' + escapeHtml(word) + '</span><span class="sep">·</span>'
+        + '<span class="note">' + escapeHtml(c.note) + '</span>'
+      : '<span class="note">' + escapeHtml(c.note) + '</span>';
     return '<div class="kpi-cell">'
       + '<span class="kpi-label">' + escapeHtml(c.label) + '</span>'
       + '<span class="kpi-value">' + valueHtml + '</span>'
-      + '<span class="kpi-foot"><span class="kpi-dot ' + t + '"></span>' + escapeHtml(c.foot) + '</span>'
+      + '<span class="kpi-spark" data-tone="' + t + '">' + spark + '</span>'
+      + '<span class="kpi-foot">'
+      +   '<span class="kpi-dot" data-tone="' + t + '"></span>' + foot
+      + '</span>'
       + '</div>';
   }).join('');
+  document.getElementById('kpi_scope_note').textContent = scopeLabel || '';
 }
 
+/* ───── Tema ───── */
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
@@ -1369,9 +1838,9 @@ function applyTheme(theme) {
 function initTheme() {
   let stored = null;
   try { stored = localStorage.getItem(THEME_KEY); } catch (e) { stored = null; }
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = stored || (prefersDark ? 'dark' : 'light');
-  applyTheme(theme);
+  // El tema oscuro es el predeterminado en la primera visita; la elección
+  // guardada del usuario, si existe, siempre manda sobre él.
+  applyTheme(stored === 'light' || stored === 'dark' ? stored : 'dark');
   const btn = document.getElementById('theme_toggle');
   if (btn) {
     btn.addEventListener('click', () => {
@@ -1382,7 +1851,9 @@ function initTheme() {
   }
 }
 
-function makeChart(id, type, extra={}) {
+/* ───── Gráficos ───── */
+/* Retícula de referencia sólo en el eje de valores, a un paso del fondo. */
+function makeChart(id, type, extra) {
   const c = themeColors();
   charts[id] = new Chart(document.getElementById(id), {
     type,
@@ -1392,54 +1863,62 @@ function makeChart(id, type, extra={}) {
       maintainAspectRatio: false,
       animation: false,
       interaction: { mode: 'index', intersect: false },
-      layout: { padding: { top: 4, right: 8, bottom: 2, left: 4 } },
+      layout: { padding: { top: 6, right: 10, bottom: 0, left: 0 } },
       plugins: {
         legend: {
+          display: false,
           position: 'bottom',
-          maxHeight: 48,
+          align: 'start',
           labels: {
-            boxWidth: 10,
-            usePointStyle: true,
-            pointStyle: 'rectRounded',
-            padding: 12,
+            boxWidth: 8, boxHeight: 8,
+            usePointStyle: true, pointStyle: 'circle',
+            padding: 14,
             font: { size: 11 },
-            color: c.ink,
+            color: c.ink2,
           },
         },
         tooltip: {
-          titleFont: { size: 12 },
+          padding: 9,
+          cornerRadius: 4,
+          displayColors: true,
+          boxWidth: 7, boxHeight: 7,
+          usePointStyle: true,
+          titleFont: { size: 11, weight: '600' },
           bodyFont: { size: 11 },
           backgroundColor: c.tooltipBg,
-          titleColor: c.tooltipText,
-          bodyColor: c.tooltipText,
+          titleColor: c.tooltipInk,
+          bodyColor: c.tooltipInk,
         }
       },
       scales: {
         x: {
-          ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0, font: { size: 10 }, color: c.muted },
-          grid: { color: c.gridX, drawBorder: false }
+          ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0, font: { family: 'IBM Plex Mono', size: 9 }, color: c.muted },
+          grid: { display: false },
+          border: { color: c.axis }
         },
         y: {
-          ticks: { font: { size: 10 }, color: c.muted },
-          grid: { color: c.gridY, drawBorder: false }
+          ticks: { font: { family: 'IBM Plex Mono', size: 9 }, color: c.muted, maxTicksLimit: 6 },
+          grid: { color: c.grid, drawTicks: false },
+          border: { display: false }
         }
       }
-    }, extra)
+    }, extra || {})
   });
 }
 
 function applyChartTheme() {
   const c = themeColors();
-  Chart.defaults.color = c.ink;
-  Object.values(charts).forEach(chart => {
-    if (!chart?.options) return;
-    if (chart.options.plugins?.legend?.labels) {
-      chart.options.plugins.legend.labels.color = c.ink;
+  Chart.defaults.color = c.ink2;
+  Object.keys(charts).forEach(id => {
+    const chart = charts[id];
+    if (!chart || !chart.options) return;
+    if (chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+      chart.options.plugins.legend.labels.color = c.ink2;
     }
-    if (chart.options.plugins?.tooltip) {
+    if (chart.options.plugins && chart.options.plugins.tooltip) {
       chart.options.plugins.tooltip.backgroundColor = c.tooltipBg;
-      chart.options.plugins.tooltip.titleColor = c.tooltipText;
-      chart.options.plugins.tooltip.bodyColor = c.tooltipText;
+      chart.options.plugins.tooltip.titleColor = c.tooltipInk;
+      chart.options.plugins.tooltip.bodyColor = c.tooltipInk;
     }
     if (chart.options.scales) {
       Object.keys(chart.options.scales).forEach(axis => {
@@ -1448,13 +1927,115 @@ function applyChartTheme() {
         if (!cfg.ticks) cfg.ticks = {};
         cfg.ticks.color = c.muted;
         if (!cfg.grid) cfg.grid = {};
-        if (cfg.grid.drawOnChartArea !== false) {
-          cfg.grid.color = axis === 'x' ? c.gridX : c.gridY;
-        }
+        if (cfg.grid.display !== false) cfg.grid.color = c.grid;
+        if (!cfg.border) cfg.border = {};
+        if (cfg.border.display !== false && axis === 'x') cfg.border.color = c.axis;
       });
     }
     chart.update('none');
   });
+}
+
+/* Retícula vertical bajo el cursor: sitúa la lectura en el eje temporal
+   sin exigir que se persiga el punto exacto. */
+const crosshair = {
+  id: 'crosshair',
+  afterDatasetsDraw(chart) {
+    if (!chart.options.plugins.crosshair || !chart.options.plugins.crosshair.enabled) return;
+    const active = chart.tooltip && chart.tooltip.getActiveElements ? chart.tooltip.getActiveElements() : [];
+    if (!active.length) return;
+    const x = active[0].element.x;
+    const area = chart.chartArea;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, area.top);
+    ctx.lineTo(x, area.bottom);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = cssVar('--line-strong');
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+/* Valor en la punta de la barra, sólo en los rankings de una serie y sólo si
+   cabe: si no cabe dentro, sale fuera; si tampoco, se calla y lo dice el eje.
+   El formateador vive fuera de las opciones de Chart.js a propósito: cualquier
+   función declarada ahí se interpreta como opción "scriptable" y se invoca con
+   un contexto, no con el valor. */
+const TIP_FORMATTERS = {};
+const barTipValue = {
+  id: 'barTipValue',
+  afterDatasetsDraw(chart) {
+    const format = TIP_FORMATTERS[chart.canvas.id];
+    if (!format) return;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.font = '500 10px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.textBaseline = 'middle';
+    const base = chart.scales.x.getPixelForValue(0);
+    chart.data.datasets.forEach((dataset, di) => {
+      const meta = chart.getDatasetMeta(di);
+      if (!meta || meta.hidden || !meta.data) return;
+      meta.data.forEach((bar, i) => {
+        const raw = dataset.data[i];
+        if (raw === null || raw === undefined) return;
+        const text = format(n(raw));
+        const width = ctx.measureText(text).width;
+        if (Math.abs(bar.x - base) > width + 16) {
+          ctx.fillStyle = cssVar('--surface');
+          ctx.textAlign = 'right';
+          ctx.fillText(text, bar.x - 7, bar.y);
+        } else if (bar.x + width + 8 < chart.chartArea.right) {
+          ctx.fillStyle = cssVar('--muted');
+          ctx.textAlign = 'left';
+          ctx.fillText(text, bar.x + 6, bar.y);
+        }
+      });
+    });
+    ctx.restore();
+  }
+};
+
+/* Seis áreas caben rotuladas: la matriz debe leerse sin perseguir la burbuja
+   con el ratón. Se rotula fuera de la burbuja, y del lado que tenga sitio. */
+const bubbleLabels = {
+  id: 'bubbleLabels',
+  afterDatasetsDraw(chart) {
+    if (chart.config.type !== 'bubble') return;
+    const ctx = chart.ctx;
+    const meta = chart.getDatasetMeta(0);
+    if (!meta || !meta.data) return;
+    ctx.save();
+    ctx.font = '500 10px Archivo, Helvetica Neue, Arial, sans-serif';
+    ctx.fillStyle = cssVar('--ink-2');
+    ctx.textBaseline = 'middle';
+    meta.data.forEach((point, i) => {
+      const raw = chart.data.datasets[0].data[i] || {};
+      const text = String(raw.area || '');
+      if (!text) return;
+      const width = ctx.measureText(text).width;
+      const radius = point.options ? point.options.radius : 6;
+      const right = point.x + radius + 6;
+      if (right + width < chart.chartArea.right) {
+        ctx.textAlign = 'left';
+        ctx.fillText(text, right, point.y);
+      } else {
+        ctx.textAlign = 'right';
+        ctx.fillText(text, point.x - radius - 6, point.y);
+      }
+    });
+    ctx.restore();
+  }
+};
+
+const LINE_BASE = { borderWidth: 2, tension: .22, pointRadius: 0, pointHoverRadius: 4, pointHoverBorderWidth: 2 };
+function lineSeries(extra) { return Object.assign({}, LINE_BASE, extra); }
+const BAR_BASE = { maxBarThickness: 22, borderRadius: 3, borderSkipped: 'start' };
+function barSeries(extra) { return Object.assign({}, BAR_BASE, extra); }
+
+function showLegend(id, on) {
+  charts[id].options.plugins.legend.display = !!on;
 }
 
 function updateCharts() {
@@ -1470,272 +2051,394 @@ function updateCharts() {
   const fBDetail = filterRows(DATA.b_detail, { date:'fecha', turno:'turno', area:'area', severity:'severidad' });
   const fFlowProp = filterRows(DATA.flow_prop_daily, { date:'fecha', turno:'turno' });
   const fPrio = filterRows(DATA.priorities, { area:'area' });
+  const ctx = { fThrough, fDispatchBase, fCharge, fYard, fFlowProp };
+
+  // Sobre el corte completo mandan los KPI gobernados de kpi_operativos.csv:
+  // recalcularlos aquí sobre datos ya agregados daría cifras distintas a las
+  // publicadas. En cuanto el contexto se acota, la única lectura posible es la
+  // recalculada, y se dice explícitamente.
   const filterState = getFilterState();
-  const hasActiveContext = Object.entries(filterState).some(([key, value]) => {
+  const hasActiveContext = Object.keys(filterState).some(key => {
     if (key === 'from' || key === 'to') return false;
+    const value = filterState[key];
     return value && value !== 'ALL';
   });
+  const fullRange = filterState.from === state.fullRange.from && filterState.to === state.fullRange.to;
+  const officialScope = !hasActiveContext && fullRange;
+  const activeKpis = officialScope ? (META.kpi_official || {}) : calculateVisibleKpis(ctx);
   renderOfficialKpis(
-    calculateVisibleKpis({ fThrough, fDispatchBase, fCharge, fYard, fFlowProp }),
-    hasActiveContext ? 'contexto filtrado' : 'periodo completo'
+    activeKpis,
+    officialScope
+      ? 'Indicadores oficiales gobernados · período completo'
+      : 'Indicadores recalculados sobre el contexto filtrado',
+    kpiSeries(ctx)
   );
-  const fRisk = fPrio.map(r => ({
-    area: r.area,
-    throughput_loss_score: r.throughput_loss_score,
-    dispatch_risk_score: r.dispatch_risk_score,
-    operational_priority_index: r.operational_priority_index,
-  }));
+  renderSpine(ctx, activeKpis);
+  renderYardParadoxNote(activeKpis, fYard);
 
-  // Caudal
-  const tPlan = groupMean(fThrough, 'fecha', 'throughput_plan');
-  const tReal = groupMean(fThrough, 'fecha', 'throughput_real');
+  // Caudal: el plan es la referencia (discontinuo); el real es la tinta.
+  const tPlan = groupAgg(fThrough, 'fecha', 'throughput_plan', 'avg');
+  const tReal = groupAgg(fThrough, 'fecha', 'throughput_real', 'avg');
   const dsT = downsample(tPlan.labels, [tPlan.vals, tReal.vals], 50);
   charts.ch_throughput.data.labels = dsT.labels;
   charts.ch_throughput.data.datasets = [
-    { label:'Plan', data:dsT.seriesList[0], borderColor:c.plan, borderDash:[6,4], tension:.25, pointRadius:0 },
-    { label:'Real', data:dsT.seriesList[1], borderColor:c.real, backgroundColor:hexToRgba(c.real, .14), fill:true, tension:.25, pointRadius:0 }
+    lineSeries({ label:'Plan', data:dsT.seriesList[0], borderColor:c.plan, borderDash:[5,4] }),
+    lineSeries({ label:'Real', data:dsT.seriesList[1], borderColor:c.real, backgroundColor:hexToRgba(c.real, .10), fill:true, pointHoverBorderColor:c.surface })
   ];
+  showLegend('ch_throughput', true);
   charts.ch_throughput.update();
 
-  // Cuota EV semanal
   charts.ch_ev_share.data.labels = DATA.ev_share_week.map(r => dstr(r.week));
   charts.ch_ev_share.data.datasets = [
-    { label:'Cuota EV', data:DATA.ev_share_week.map(r => n(r.share_ev)*100), borderColor:c.ev, backgroundColor:hexToRgba(c.ev, .15), fill:true, tension:.25, pointRadius:0 }
+    lineSeries({ label:'Cuota EV', data:DATA.ev_share_week.map(r => n(r.share_ev)*100), borderColor:c.ev, backgroundColor:hexToRgba(c.ev, .10), fill:true, pointHoverBorderColor:c.surface })
   ];
+  showLegend('ch_ev_share', false);
   charts.ch_ev_share.update();
 
-  // Brecha de secuencia
-  const sg = groupMean(fSeq, 'fecha', 'sequence_gap');
+  const sg = groupAgg(fSeq, 'fecha', 'sequence_gap', 'avg');
   const dsSG = downsample(sg.labels, [sg.vals], 50);
   charts.ch_seq_gap.data.labels = dsSG.labels;
   charts.ch_seq_gap.data.datasets = [
-    { label:'Brecha secuencia', data:dsSG.seriesList[0], borderColor:c.gap, tension:.25, pointRadius:0 },
-    { label:'Objetivo', data:dsSG.seriesList[0].map(() => 0), borderColor:c.aux, borderDash:[4,4], pointRadius:0 }
+    lineSeries({ label:'Brecha real', data:dsSG.seriesList[0], borderColor:c.risk, pointHoverBorderColor:c.surface }),
+    lineSeries({ label:'Secuencia objetivo', data:dsSG.seriesList[0].map(() => 0), borderColor:c.plan, borderDash:[5,4], pointHoverRadius:0 })
   ];
+  showLegend('ch_seq_gap', true);
   charts.ch_seq_gap.update();
 
-  // Tiempo interno por versión
-  const leadTop = [...fLead].sort((a,b) => n(b.lead_time)-n(a.lead_time)).slice(0,12);
-  charts.ch_lead_version.data.labels = truncLabels(leadTop.map(r => r.version_id), 20);
+  // Partido por propulsión: es lo que revela si la cola de versiones lentas es
+  // un problema de producto o de la transición eléctrica en sí.
+  const leadTop = fLead.slice().sort((a,b) => n(b.lead_time)-n(a.lead_time)).slice(0,12);
+  charts.ch_lead_version.data.labels = truncLabels(leadTop.map(r => String(r.version_id)), 20);
   charts.ch_lead_version.data.datasets = [
-    { label:'Tiempo interno (min)', data:leadTop.map(r => n(r.lead_time)), backgroundColor:c.priority }
+    barSeries({
+      label:'EV',
+      data:leadTop.map(r => String(r.tipo_propulsion) === 'EV' ? n(r.lead_time) : null),
+      backgroundColor:c.ev
+    }),
+    barSeries({
+      label:'ICE',
+      data:leadTop.map(r => String(r.tipo_propulsion) === 'ICE' ? n(r.lead_time) : null),
+      backgroundColor:c.plan
+    })
   ];
+  showLegend('ch_lead_version', true);
   charts.ch_lead_version.update();
 
-  // Ocupación de patio
-  const yOcc = groupMean(fYard, 'fecha', 'occupancy');
-  const yP95 = groupMean(fYard, 'fecha', 'dwell_p95');
-  const dsY = downsample(yOcc.labels, [yOcc.vals.map(v => v*100), yP95.vals], 50);
-  charts.ch_yard_occ.options.scales = {
-    x: {
-      ticks: { autoSkip:true, maxTicksLimit:10, font:{size:10}, color:c.muted },
-      grid: { color:c.gridX }
-    },
-    y: {
-      beginAtZero:true,
-      title:{display:true,text:'Ocupación %', color:c.muted},
-      ticks: { color:c.muted },
-      grid: { color:c.gridY }
-    },
-    y1: {
-      beginAtZero:true,
-      position:'right',
-      title:{display:true,text:'Permanencia p95 (min)', color:c.muted},
-      ticks: { color:c.muted },
-      grid:{drawOnChartArea:false}
-    }
-  };
-  charts.ch_yard_occ.data.labels = dsY.labels;
+  const yOcc = groupAgg(fYard, 'fecha', 'occupancy', 'avg');
+  const dsOcc = downsample(yOcc.labels, [yOcc.vals.map(v => v*100)], 50);
+  charts.ch_yard_occ.data.labels = dsOcc.labels;
   charts.ch_yard_occ.data.datasets = [
-    { label:'Ocupación %', data:dsY.seriesList[0], borderColor:c.yard, tension:.2, yAxisID:'y', pointRadius:0 },
-    { label:'Permanencia p95', data:dsY.seriesList[1], borderColor:c.priority, tension:.2, yAxisID:'y1', pointRadius:0 }
+    lineSeries({ label:'Ocupación media (%)', data:dsOcc.seriesList[0], borderColor:c.risk, backgroundColor:hexToRgba(c.risk, .10), fill:true, pointHoverBorderColor:c.surface })
   ];
+  showLegend('ch_yard_occ', false);
   charts.ch_yard_occ.update();
 
+  const yP95 = groupAgg(fYard, 'fecha', 'dwell_p95', 'avg');
+  const dsP95 = downsample(yP95.labels, [yP95.vals], 50);
+  charts.ch_yard_dwell.data.labels = dsP95.labels;
+  charts.ch_yard_dwell.data.datasets = [
+    lineSeries({ label:'Permanencia p95 (min)', data:dsP95.seriesList[0], borderColor:c.risk, pointHoverBorderColor:c.surface })
+  ];
+  showLegend('ch_yard_dwell', false);
+  charts.ch_yard_dwell.update();
+
+  // Minutos y porcentajes no comparten escala: cada medida, su panel.
   const yardZone = aggregateBy(fYard, 'zona_patio', [
     { name:'dwell', src:'dwell', mode:'avg' },
     { name:'blocking', src:'blocking', mode:'avg' },
   ]).sort((a,b) => n(b.dwell) - n(a.dwell));
-  charts.ch_yard_zone.data.labels = truncLabels(yardZone.map(r => yardZoneLabel(r.zona_patio)), 20);
+  charts.ch_yard_zone.data.labels = truncLabels(yardZone.map(r => zoneLabel(r.zona_patio)), 18);
   charts.ch_yard_zone.data.datasets = [
-    { label:'Permanencia media', data:yardZone.map(r => n(r.dwell)), backgroundColor:c.priority },
-    { label:'Bloqueo %', data:yardZone.map(r => n(r.blocking)*100), backgroundColor:c.gap }
+    barSeries({ label:'Permanencia media (min)', data:yardZone.map(r => n(r.dwell)), backgroundColor:c.real })
   ];
+  showLegend('ch_yard_zone', false);
   charts.ch_yard_zone.update();
+
+  const yardBlock = yardZone.slice().sort((a,b) => n(b.blocking) - n(a.blocking));
+  charts.ch_yard_block.data.labels = truncLabels(yardBlock.map(r => zoneLabel(r.zona_patio)), 18);
+  charts.ch_yard_block.data.datasets = [
+    barSeries({ label:'Bloqueo (%)', data:yardBlock.map(r => n(r.blocking)*100), backgroundColor:c.risk })
+  ];
+  showLegend('ch_yard_block', false);
+  charts.ch_yard_block.update();
 
   const chargeZone = aggregateBy(fCharge, 'zona_carga', [
     { name:'utilization', src:'utilization', mode:'avg' },
     { name:'target_miss', src:'target_miss', mode:'avg' },
     { name:'interruption', src:'interruption', mode:'avg' },
   ]).sort((a,b) => n(b.utilization) - n(a.utilization));
-  charts.ch_charge_util.data.labels = truncLabels(chargeZone.map(r => r.zona_carga), 18);
+  charts.ch_charge_util.data.labels = truncLabels(chargeZone.map(r => zoneLabel(r.zona_carga)), 18);
   charts.ch_charge_util.data.datasets = [
-    { label:'Utilización %', data:chargeZone.map(r => n(r.utilization)*100), backgroundColor:c.load },
-    { label:'Incumplimiento objetivo %', data:chargeZone.map(r => n(r.target_miss)*100), backgroundColor:c.warn }
+    barSeries({ label:'Utilización (%)', data:chargeZone.map(r => n(r.utilization)*100), backgroundColor:c.energy }),
+    barSeries({ label:'Incumplimiento de SOC (%)', data:chargeZone.map(r => n(r.target_miss)*100), backgroundColor:c.risk })
   ];
+  showLegend('ch_charge_util', true);
   charts.ch_charge_util.update();
 
-  const cw = groupMean(fCharge, 'fecha', 'wait');
+  const cw = groupAgg(fCharge, 'fecha', 'wait', 'avg');
   const dsCW = downsample(cw.labels, [cw.vals], 50);
   charts.ch_charge_wait.data.labels = dsCW.labels;
-  charts.ch_charge_wait.data.datasets = [{ label:'Espera carga (min)', data:dsCW.seriesList[0], borderColor:c.yard, tension:.2, pointRadius:0 }];
+  charts.ch_charge_wait.data.datasets = [
+    lineSeries({ label:'Espera de carga (min)', data:dsCW.seriesList[0], borderColor:c.energy, backgroundColor:hexToRgba(c.energy, .10), fill:true, pointHoverBorderColor:c.surface })
+  ];
+  showLegend('ch_charge_wait', false);
   charts.ch_charge_wait.update();
 
-  const soc = groupMean(fDispatchBase, 'fecha', 'soc_real');
-  const tar = groupMean(fDispatchBase, 'fecha', 'soc_target');
+  const soc = groupAgg(fDispatchBase, 'fecha', 'soc_real', 'avg');
+  const tar = groupAgg(fDispatchBase, 'fecha', 'soc_target', 'avg');
   const dsSOC = downsample(soc.labels, [soc.vals, tar.vals], 50);
   charts.ch_soc.data.labels = dsSOC.labels;
   charts.ch_soc.data.datasets = [
-    { label:'SOC real', data:dsSOC.seriesList[0], borderColor:c.ev, tension:.2, pointRadius:0 },
-    { label:'SOC objetivo', data:dsSOC.seriesList[1], borderColor:c.aux, borderDash:[5,4], tension:.2, pointRadius:0 }
+    lineSeries({ label:'SOC real', data:dsSOC.seriesList[0], borderColor:c.ev, pointHoverBorderColor:c.surface }),
+    lineSeries({ label:'SOC objetivo', data:dsSOC.seriesList[1], borderColor:c.plan, borderDash:[5,4], pointHoverRadius:0 })
   ];
+  showLegend('ch_soc', true);
   charts.ch_soc.update();
 
-  charts.ch_interrupt.data.labels = truncLabels(chargeZone.map(r => r.zona_carga), 18);
-  charts.ch_interrupt.data.datasets = [{ label:'Interrupción %', data:chargeZone.map(r => n(r.interruption)*100), backgroundColor:c.dispatch }];
+  charts.ch_interrupt.data.labels = truncLabels(chargeZone.map(r => zoneLabel(r.zona_carga)), 18);
+  charts.ch_interrupt.data.datasets = [
+    barSeries({ label:'Interrupción (%)', data:chargeZone.map(r => n(r.interruption)*100), backgroundColor:c.energy })
+  ];
+  showLegend('ch_interrupt', false);
   charts.ch_interrupt.update();
 
-  const causeTop = [...fDispatchCause].reduce((acc, r) => {
-    const k = r.causa_retraso || 'SIN_DATO';
-    if (!acc[k]) acc[k] = { delay:0, w:0 };
+  const causeAcc = fDispatchCause.reduce((acc, r) => {
+    const key = r.causa_retraso || 'SIN_DATO';
+    if (!acc[key]) acc[key] = { delay:0, w:0 };
     const w = Math.max(1, n(r.vehicles));
-    acc[k].delay += n(r.delay_min)*w;
-    acc[k].w += w;
+    acc[key].delay += n(r.delay_min) * w;
+    acc[key].w += w;
     return acc;
   }, {});
-  const causeArr = Object.keys(causeTop).map(k => ({ cause:k, delay:causeTop[k].w ? causeTop[k].delay/causeTop[k].w : 0 })).sort((a,b)=>b.delay-a.delay).slice(0,10);
-  charts.ch_delay_cause.data.labels = truncLabels(causeArr.map(x => x.cause), 24);
-  charts.ch_delay_cause.data.datasets = [{ label:'Retraso medio (min)', data:causeArr.map(x => x.delay), backgroundColor:c.dispatch }];
+  const causeArr = Object.keys(causeAcc)
+    .map(key => ({ cause:key, delay:causeAcc[key].w ? causeAcc[key].delay/causeAcc[key].w : 0 }))
+    .sort((a,b) => b.delay - a.delay)
+    .slice(0,10);
+  charts.ch_delay_cause.data.labels = truncLabels(causeArr.map(x => causeLabel(x.cause)), 28);
+  charts.ch_delay_cause.data.datasets = [
+    barSeries({ label:'Retraso medio (min)', data:causeArr.map(x => x.delay), backgroundColor:c.real })
+  ];
+  showLegend('ch_delay_cause', false);
   charts.ch_delay_cause.update();
 
-  charts.ch_shift_readiness.data.labels = fDispatchBase.length ? [...new Set(fDispatchBase.map(r => r.turno))] : [...new Set(DATA.dispatch_base.map(r => r.turno))];
-  const shiftRows = charts.ch_shift_readiness.data.labels.map(t => {
+  const shiftLabels = (fDispatchBase.length ? fDispatchBase : DATA.dispatch_base)
+    .map(r => String(r.turno))
+    .filter((v, i, arr) => arr.indexOf(v) === i)
+    .sort();
+  charts.ch_shift_readiness.data.labels = shiftLabels;
+  const shiftRows = shiftLabels.map(t => {
     const rows = fDispatchBase.filter(r => String(r.turno) === String(t));
     if (!rows.length) return { d:0, r:0 };
-    const w = rows.reduce((a,r)=>a+Math.max(1,n(r.vehicles)),0);
-    const departed = rows.reduce((a,r)=>a+n(r.departed_vehicles),0);
+    const w = rows.reduce((a,r) => a + Math.max(1, n(r.vehicles)), 0);
+    const departed = rows.reduce((a,r) => a + n(r.departed_vehicles), 0);
     return {
-      d: departed ? rows.reduce((a,r)=>a+n(r.delay_rate)*n(r.departed_vehicles),0) / departed : 0,
-      r: rows.reduce((a,r)=>a+n(r.readiness_rate)*Math.max(1,n(r.vehicles)),0) / w,
+      d: departed ? rows.reduce((a,r) => a + n(r.delay_rate)*n(r.departed_vehicles), 0) / departed : 0,
+      r: rows.reduce((a,r) => a + n(r.readiness_rate)*Math.max(1, n(r.vehicles)), 0) / w,
     };
   });
   charts.ch_shift_readiness.data.datasets = [
-    { label:'Tasa de retraso %', data:shiftRows.map(x => x.d*100), backgroundColor:c.gap },
-    { label:'Tasa de preparación %', data:shiftRows.map(x => x.r*100), backgroundColor:c.ev }
+    barSeries({ label:'Retraso (%)', data:shiftRows.map(x => x.d*100), backgroundColor:c.risk }),
+    barSeries({ label:'Preparación (%)', data:shiftRows.map(x => x.r*100), backgroundColor:c.ev })
   ];
+  showLegend('ch_shift_readiness', true);
   charts.ch_shift_readiness.update();
 
   const bArea = aggregateBy(fBDetail, 'area', [
     { name:'throughput_impact', src:'throughput_impact', mode:'sum' },
     { name:'output_impact', src:'output_impact', mode:'sum' },
   ]).sort((a,b) => n(b.throughput_impact) - n(a.throughput_impact));
-  charts.ch_bneck_area.data.labels = truncLabels(bArea.map(r => r.area), 18);
+  charts.ch_bneck_area.data.labels = bArea.map(r => areaLabel(r.area));
   charts.ch_bneck_area.data.datasets = [
-    { label:'Impacto en caudal', data:bArea.map(r => n(r.throughput_impact)), backgroundColor:c.priority },
-    { label:'Impacto salida', data:bArea.map(r => n(r.output_impact)), backgroundColor:c.yard }
+    barSeries({ label:'Impacto en caudal', data:bArea.map(r => n(r.throughput_impact)), backgroundColor:c.real }),
+    barSeries({ label:'Impacto en salida', data:bArea.map(r => n(r.output_impact)), backgroundColor:c.risk })
   ];
+  showLegend('ch_bneck_area', true);
   charts.ch_bneck_area.update();
 
   charts.ch_risk_matrix.data.datasets = [{
     label:'Áreas',
-    data:fRisk.map(r => ({ x:n(r.throughput_loss_score), y:n(r.dispatch_risk_score), r:6+n(r.operational_priority_index)/12, area:r.area })),
-    backgroundColor:hexToRgba(c.gap, .42),
-    borderColor:c.gap
+    data:fPrio.map(r => ({
+      x:n(r.throughput_loss_score),
+      y:n(r.dispatch_risk_score),
+      r:6 + n(r.operational_priority_index)/14,
+      area:areaLabel(r.area)
+    })),
+    backgroundColor:hexToRgba(c.risk, .34),
+    borderColor:c.risk,
+    borderWidth:1.5,
+    hoverBorderWidth:2,
   }];
-  charts.ch_risk_matrix.options.plugins.tooltip = { callbacks: { label: (ctx) => { const p = ctx.raw || {}; return (p.area || 'Área') + ' · pérdida ' + n(p.x).toFixed(1) + ' · riesgo ' + n(p.y).toFixed(1); } } };
   charts.ch_risk_matrix.update();
 
   const act = aggregateBy(fPrio, 'recommended_action', [
     { name:'priority_index', src:'operational_priority_index', mode:'avg' },
-  ]).sort((a,b)=>n(b.priority_index)-n(a.priority_index)).slice(0,10);
-  charts.ch_actions.data.labels = truncLabels(act.map(r => r.recommended_action), 28);
-  charts.ch_actions.data.datasets = [{ label:'OPI medio', data:act.map(r => n(r.priority_index)), backgroundColor:c.priority }];
+  ]).sort((a,b) => n(b.priority_index) - n(a.priority_index)).slice(0,10);
+  charts.ch_actions.data.labels = truncLabels(act.map(r => String(r.recommended_action)), 30);
+  charts.ch_actions.data.datasets = [
+    barSeries({ label:'OPI medio', data:act.map(r => n(r.priority_index)), backgroundColor:c.real })
+  ];
+  showLegend('ch_actions', false);
   charts.ch_actions.update();
 
-  charts.ch_ev_vs_ice.data.labels = ['Tiempo interno','Espera patio','Espera carga','Retraso'];
+  charts.ch_ev_vs_ice.data.labels = ['Tiempo interno','Espera de patio','Espera de carga','Retraso'];
   const evIce = aggregateBy(fFlowProp, 'tipo_propulsion', [
     { name:'lead_time', src:'lead_time', mode:'avg' },
     { name:'yard_wait', src:'yard_wait', mode:'avg' },
     { name:'charge_wait', src:'charge_wait', mode:'avg' },
     { name:'delay', src:'delay', mode:'avg' },
   ]);
-  const rowsEV = evIce.find(r => String(r.tipo_propulsion) === 'EV') || {};
-  const rowsICE = evIce.find(r => String(r.tipo_propulsion) === 'ICE') || {};
+  const rowsEV = evIce.filter(r => String(r.tipo_propulsion) === 'EV')[0] || {};
+  const rowsICE = evIce.filter(r => String(r.tipo_propulsion) === 'ICE')[0] || {};
   charts.ch_ev_vs_ice.data.datasets = [
-    { label:'EV', data:[n(rowsEV.lead_time), n(rowsEV.yard_wait), n(rowsEV.charge_wait), n(rowsEV.delay)], backgroundColor:c.real },
-    { label:'ICE', data:[n(rowsICE.lead_time), n(rowsICE.yard_wait), n(rowsICE.charge_wait), n(rowsICE.delay)], backgroundColor:c.dispatch }
+    barSeries({ label:'EV', data:[n(rowsEV.lead_time), n(rowsEV.yard_wait), n(rowsEV.charge_wait), n(rowsEV.delay)], backgroundColor:c.ev }),
+    barSeries({ label:'ICE', data:[n(rowsICE.lead_time), n(rowsICE.yard_wait), n(rowsICE.charge_wait), n(rowsICE.delay)], backgroundColor:c.plan })
   ];
+  showLegend('ch_ev_vs_ice', true);
   charts.ch_ev_vs_ice.update();
 
+  // El escenario elegido se destaca; el resto queda en sordina, sin cambiar de
+  // color: la identidad de la serie sigue siendo la misma, sólo baja el énfasis.
   const scenarioRows = DATA.scenarios;
   const selectedScenario = state.scenario;
-  charts.ch_scenarios.data.labels = truncLabels(scenarioRows.map(r => scenarioLabel(r.escenario)), 22);
+  const emphasise = (base) => scenarioRows.map(r => r.escenario === selectedScenario ? base : hexToRgba(base, .22));
+  charts.ch_scenarios.data.labels = truncLabels(scenarioRows.map(r => scenarioLabel(r.escenario)), 26);
   charts.ch_scenarios.data.datasets = [
-    {
-      label:'Puntuación de decisión',
-      data:scenarioRows.map(r => n(r.decision_score)),
-      backgroundColor:scenarioRows.map(r => r.escenario === selectedScenario ? c.priority : hexToRgba(c.priority, .22))
-    },
-    {
-      label:'Estabilidad',
-      data:scenarioRows.map(r => n(r.estabilidad_operativa)),
-      backgroundColor:scenarioRows.map(r => r.escenario === selectedScenario ? c.ev : hexToRgba(c.ev, .22))
-    }
+    barSeries({ label:'Puntuación de decisión', data:scenarioRows.map(r => n(r.decision_score)), backgroundColor:emphasise(c.real) }),
+    barSeries({ label:'Estabilidad operativa', data:scenarioRows.map(r => n(r.estabilidad_operativa)), backgroundColor:emphasise(c.ev) })
   ];
+  // La leyenda toma el primer color del array, que es el atenuado: se fuerza al
+  // color pleno de la serie para que no mienta sobre su identidad.
+  charts.ch_scenarios.options.plugins.legend.labels.generateLabels = () => [
+    { text:'Puntuación de decisión', fillStyle:c.real, strokeStyle:c.real, pointStyle:'circle', datasetIndex:0 },
+    { text:'Estabilidad operativa', fillStyle:c.ev, strokeStyle:c.ev, pointStyle:'circle', datasetIndex:1 }
+  ];
+  showLegend('ch_scenarios', true);
   charts.ch_scenarios.update();
 
   renderPriorityTable(fPrio);
 }
 
+/* La nota sólo aparece cuando los dos gráficos de arriba se contradicen:
+   capacidad libre y cola larga al mismo tiempo. */
+function renderYardParadoxNote(k, yardRows) {
+  const note = document.getElementById('yard_paradox_note');
+  const peak = n(k.ocupacion_pico_patio);
+  const p95 = n(k.dwell_p95_min);
+  const dwell = n(k.tiempo_medio_patio_min);
+  if (!(peak < 0.7 && p95 > dwell * 2)) {
+    note.style.display = 'none';
+    note.textContent = '';
+    return;
+  }
+  note.style.display = '';
+  let text = 'El patio no llega al <strong>' + escapeHtml(pctCompact(peak))
+    + '</strong> de ocupación en su pico y aun así el percentil 95 permanece <strong>'
+    + escapeHtml(hours(p95)) + '</strong>, frente a las ' + escapeHtml(hours(dwell))
+    + ' de la unidad media. No falta espacio: hay unidades que se quedan atrapadas detrás de otras.';
+  // Si una zona concentra el bloqueo, decir cuál: es la diferencia entre
+  // constatar el síntoma y saber dónde intervenir.
+  const zones = aggregateBy(yardRows || [], 'zona_patio', [{ name:'blocking', src:'blocking', mode:'avg' }])
+    .sort((a, b) => n(b.blocking) - n(a.blocking));
+  if (zones.length > 1 && n(zones[0].blocking) > n(zones[1].blocking) * 2) {
+    text += ' El bloqueo se concentra en <strong>' + escapeHtml(zoneLabel(zones[0].zona_patio))
+      + '</strong>, con ' + escapeHtml(pct(zones[0].blocking)) + ' de movimientos bloqueados frente al '
+      + escapeHtml(pct(zones[1].blocking)) + ' de la siguiente zona.';
+  }
+  note.innerHTML = text;
+}
+
 function renderPriorityTable(rows) {
-  let data = [...rows];
+  let data = rows.slice();
   const q = document.getElementById('table_search').value.toLowerCase().trim();
   if (q) data = data.filter(r => JSON.stringify(r).toLowerCase().includes(q));
   data.sort((a,b) => n(b.operational_priority_index) - n(a.operational_priority_index));
   tableRows = data;
 
   const body = document.querySelector('#priority_table tbody');
-  const tierClass = (tier) => {
-    const t = String(tier || '').toLowerCase();
-    if (t.includes('intervenir')) return 't0';
-    if (t.includes('estabilizar') || t.includes('monitorizar')) return 't1';
-    return 't2';
-  };
-  body.innerHTML = data.map((r, idx) =>
-    '<tr>' +
-    '<td class="rank">' + (idx + 1) + '</td>' +
-    '<td>' + escapeHtml(r.area || 'Sin dato') + '</td>' +
-    '<td class="num"><span class="opi">' + n(r.operational_priority_index).toFixed(1) + '</span></td>' +
-    '<td><span class="tier ' + tierClass(r.area_priority_tier) + '">' + escapeHtml(r.area_priority_tier || 'Sin dato') + '</span></td>' +
-    '<td>' + escapeHtml(riskDriverLabel(r.main_risk_driver || 'Sin dato')) + '</td>' +
-    '<td class="action-cell"><strong>' + escapeHtml(r.recommended_action || 'Sin dato') + '</strong><span>Riesgo: ' + escapeHtml(riskDriverLabel(r.main_risk_driver || 'Sin dato')) + '</span></td>' +
-    '<td>' + escapeHtml(riskDriverLabel(r.main_bottleneck_driver || 'Sin dato')) + '</td>' +
-    '</tr>'
-  ).join('');
+  body.innerHTML = data.map((r, idx) => {
+    const opi = n(r.operational_priority_index);
+    return '<tr>'
+      + '<td class="rank">' + (idx + 1) + '</td>'
+      + '<td>' + escapeHtml(areaLabel(r.area)) + '</td>'
+      + '<td class="num">' + num(opi, 1) + '</td>'
+      + '<td><span class="tier" data-tone="' + tone('operational_priority_index', opi) + '"><span class="pip"></span>'
+      +   escapeHtml(tierLabel(r.area_priority_tier)) + '</span></td>'
+      + '<td>' + escapeHtml(riskDriverLabel(r.main_risk_driver)) + '</td>'
+      + '<td><span class="action-main">' + escapeHtml(r.recommended_action || 'Sin dato') + '</span></td>'
+      + '<td>' + escapeHtml(riskDriverLabel(r.main_bottleneck_driver)) + '</td>'
+      + '</tr>';
+  }).join('');
 
-  document.getElementById('table_status').textContent = 'Filas visibles: ' + data.length.toLocaleString('es-ES');
+  document.getElementById('table_status').textContent = data.length
+    ? 'Filas visibles: ' + num(data.length)
+    : 'Ninguna área cumple los filtros actuales.';
 
   const top = data[0];
   if (top) {
-    document.getElementById('decision_area').textContent = top.area || 'Sin dato';
+    document.getElementById('decision_area').textContent = areaLabel(top.area);
     document.getElementById('decision_action').textContent = top.recommended_action || 'Sin dato';
-    document.getElementById('decision_driver').textContent = riskDriverLabel(top.main_risk_driver || 'Sin dato');
-    document.getElementById('decision_opi').textContent = n(top.operational_priority_index).toFixed(1);
+    document.getElementById('decision_driver').textContent = riskDriverLabel(top.main_risk_driver);
+    document.getElementById('decision_opi').textContent = num(n(top.operational_priority_index), 1);
     document.getElementById('decision_scenario').textContent =
-      'Mejor escenario modelado: ' + scenarioLabel(META.executive_snapshot.top_scenario || 'Sin dato');
+      'Mejor escenario modelado: ' + scenarioLabel((META.executive_snapshot || {}).top_scenario || 'Sin dato');
     document.getElementById('decision_text').textContent =
-      'La intervención inicial debe concentrarse en ' + top.area + '. '
-      + 'La palanca con mejor retorno operativo inmediato es ' + (top.recommended_action || 'Sin dato')
-      + ', porque ataca el factor dominante (' + riskDriverLabel(top.main_risk_driver || 'Sin dato') + ') '
-      + 'sin exigir una expansión indiscriminada de capacidad.';
+      'Empezar por ' + areaLabel(top.area) + '. La palanca con mejor retorno inmediato es '
+      + (top.recommended_action || 'Sin dato').toLowerCase()
+      + ', porque ataca el factor dominante (' + riskDriverLabel(top.main_risk_driver).toLowerCase()
+      + ') sin exigir una expansión indiscriminada de capacidad.';
   } else {
-    document.getElementById('decision_area').textContent = 'Sin dato';
-    document.getElementById('decision_action').textContent = 'Sin dato';
-    document.getElementById('decision_driver').textContent = 'Sin dato';
-    document.getElementById('decision_opi').textContent = 'Sin dato';
-    document.getElementById('decision_scenario').textContent = 'Escenario recomendado: Sin dato';
+    ['decision_area','decision_action','decision_driver','decision_opi'].forEach(id => {
+      document.getElementById(id).textContent = 'Sin dato';
+    });
+    document.getElementById('decision_scenario').textContent = 'Mejor escenario modelado: Sin dato';
     document.getElementById('decision_text').textContent = 'No hay filas con los filtros actuales.';
   }
+}
+
+/* ───── Vista de datos equivalente a cada gráfico ───── */
+function openDataView(chartId) {
+  const chart = charts[chartId];
+  if (!chart) return;
+  const card = document.querySelector('[data-chart="' + chartId + '"]').closest('.card');
+  const title = card.querySelector('h3').textContent;
+  const grain = card.querySelector('.grain');
+  const dialog = document.getElementById('data_dialog');
+  const table = document.getElementById('dialog_table');
+  const thead = table.querySelector('thead');
+  const tbody = table.querySelector('tbody');
+  document.getElementById('dialog_title').textContent = title;
+  document.getElementById('dialog_note').textContent = grain
+    ? 'Serie representada · ' + grain.textContent.toLowerCase()
+    : 'Serie representada';
+
+  const isBubble = chart.config.type === 'bubble';
+  const headers = isBubble
+    ? ['Área', 'Pérdida de caudal', 'Riesgo de expedición', 'OPI']
+    : ['Categoría'].concat(chart.data.datasets.map(d => d.label || 'Serie'));
+
+  thead.innerHTML = '';
+  const headRow = document.createElement('tr');
+  headers.forEach((h, i) => {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.textContent = h;
+    if (i > 0) th.className = 'num';
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+
+  const rows = isBubble
+    ? chart.data.datasets[0].data.map(p => [p.area, num(p.x, 1), num(p.y, 1), num((p.r - 6) * 14, 1)])
+    : chart.data.labels.map((label, i) =>
+        [label].concat(chart.data.datasets.map(d => num(d.data[i], 2))));
+
+  tbody.innerHTML = rows.map(cells =>
+    '<tr>' + cells.map((cell, i) =>
+      '<td' + (i > 0 ? ' class="num"' : '') + '>' + escapeHtml(cell) + '</td>'
+    ).join('') + '</tr>'
+  ).join('');
+
+  dialog.showModal();
 }
 
 function exportCsv() {
@@ -1743,7 +2446,7 @@ function exportCsv() {
   const cols = ['area','operational_priority_index','area_priority_tier','main_risk_driver','recommended_action','main_bottleneck_driver'];
   const lines = [cols.join(',')];
   tableRows.forEach(r => {
-    lines.push(cols.map(c => '"' + String(r[c] ?? '').replace(/"/g, '""') + '"').join(','));
+    lines.push(cols.map(col => '"' + String(r[col] ?? '').replace(/"/g, '""') + '"').join(','));
   });
   const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -1757,7 +2460,7 @@ function exportCsv() {
 function bind() {
   document.getElementById('btn_apply').addEventListener('click', updateCharts);
   document.getElementById('btn_reset').addEventListener('click', () => {
-    state.scenario = META.executive_snapshot.top_scenario || (DATA.scenarios[0] ? DATA.scenarios[0].escenario : '');
+    state.scenario = (META.executive_snapshot || {}).top_scenario || (DATA.scenarios[0] ? DATA.scenarios[0].escenario : '');
     setupFilters();
     document.getElementById('table_search').value = '';
     updateCharts();
@@ -1770,40 +2473,113 @@ function bind() {
   document.getElementById('btn_export').addEventListener('click', exportCsv);
   document.getElementById('scenario_select').addEventListener('change', (e) => { state.scenario = e.target.value; updateCharts(); });
   document.getElementById('btn_print').addEventListener('click', () => window.print());
+  Array.prototype.forEach.call(document.querySelectorAll('.btn-data'), el => {
+    el.addEventListener('click', () => openDataView(el.dataset.chart));
+  });
+  document.getElementById('dialog_close').addEventListener('click', () => document.getElementById('data_dialog').close());
 }
 
 function initCharts() {
   const c = themeColors();
-  Chart.defaults.font.family = 'Geist, Söhne, Helvetica Neue, Arial, sans-serif';
+  Chart.register(crosshair, barTipValue, bubbleLabels);
+  Chart.defaults.font.family = 'Archivo, Helvetica Neue, Arial, sans-serif';
   Chart.defaults.font.size = 11;
-  Chart.defaults.color = c.ink;
-  makeChart('ch_throughput', 'line', { elements: { line: { borderWidth: 2 }, point: { radius: 0, hoverRadius: 3 } } });
-  makeChart('ch_ev_share', 'line', { elements: { line: { borderWidth: 2 }, point: { radius: 0, hoverRadius: 3 } } });
-  makeChart('ch_seq_gap', 'line', { elements: { line: { borderWidth: 2 }, point: { radius: 0, hoverRadius: 3 } } });
-  makeChart('ch_lead_version', 'bar', { indexAxis:'y', scales: { x: { beginAtZero:true }, y: { ticks: { font: { size: 10 } } } } });
-  makeChart('ch_yard_occ', 'line');
-  makeChart('ch_yard_zone', 'bar', { indexAxis:'y' });
-  makeChart('ch_charge_util', 'bar', { indexAxis:'y' });
-  makeChart('ch_charge_wait', 'line');
-  makeChart('ch_soc', 'line');
-  makeChart('ch_interrupt', 'bar', { indexAxis:'y' });
-  makeChart('ch_delay_cause', 'bar', { indexAxis:'y' });
-  makeChart('ch_shift_readiness', 'bar');
-  makeChart('ch_bneck_area', 'bar', { indexAxis:'y' });
-  makeChart('ch_risk_matrix', 'bubble', { plugins: { legend: { display: false } } });
-  makeChart('ch_actions', 'bar', { indexAxis:'y' });
-  makeChart('ch_ev_vs_ice', 'bar');
-  makeChart('ch_scenarios', 'bar', { indexAxis:'y' });
+  Chart.defaults.color = c.ink2;
+
+  // Cada gráfico recibe su propia copia de opciones: Chart.js muta el objeto
+  // que recibe, así que compartir uno entre instancias las acopla.
+  const timeline = (maxTicks) => ({
+    plugins: { crosshair: { enabled: true } },
+    scales: {
+      x: {
+        ticks: {
+          autoSkip: true, maxRotation: 0, minRotation: 0,
+          maxTicksLimit: maxTicks || 8,
+          font: { family: 'IBM Plex Mono', size: 9 },
+          callback: function (value) { return shortDate(this.getLabelForValue(value)); }
+        },
+        grid: { display: false }
+      }
+    }
+  });
+  const rankBars = () => ({
+    indexAxis: 'y',
+    interaction: { mode: 'nearest', intersect: true },
+    scales: { x: { beginAtZero: true }, y: { grid: { display: false } } }
+  });
+  const groupBars = () => ({
+    interaction: { mode: 'index', intersect: false },
+    scales: { x: { grid: { display: false } } }
+  });
+  const groupBarsY = () => ({
+    indexAxis: 'y',
+    interaction: { mode: 'index', intersect: false },
+    scales: { x: { beginAtZero: true }, y: { grid: { display: false } } }
+  });
+  const makeRankChart = (id, format, extra) => {
+    TIP_FORMATTERS[id] = format;
+    makeChart(id, 'bar', Object.assign(rankBars(), extra || {}));
+  };
+  // Una barra por versión, coloreada por propulsión: las series se apilan sobre
+  // la misma categoría y sólo una de las dos tiene valor en cada fila.
+  const splitByPropulsion = {
+    indexAxis: 'y',
+    interaction: { mode: 'nearest', intersect: true },
+    scales: {
+      x: { beginAtZero: true, stacked: true },
+      y: { stacked: true, grid: { display: false } }
+    }
+  };
+
+  makeChart('ch_throughput', 'line', timeline(8));
+  makeChart('ch_ev_share', 'line', timeline(4));
+  makeChart('ch_seq_gap', 'line', timeline(6));
+  makeRankChart('ch_lead_version', v => num(v, 0), splitByPropulsion);
+  makeChart('ch_yard_occ', 'line', timeline(6));
+  makeChart('ch_yard_dwell', 'line', timeline(6));
+  makeRankChart('ch_yard_zone', v => num(v, 0));
+  makeRankChart('ch_yard_block', v => num(v, 1) + '%');
+  makeChart('ch_charge_util', 'bar', groupBarsY());
+  makeChart('ch_charge_wait', 'line', timeline(4));
+  makeChart('ch_soc', 'line', timeline(4));
+  makeRankChart('ch_interrupt', v => num(v, 1) + '%');
+  makeRankChart('ch_delay_cause', v => num(v, 0));
+  makeChart('ch_shift_readiness', 'bar', groupBars());
+  makeChart('ch_bneck_area', 'bar', groupBarsY());
+  makeChart('ch_risk_matrix', 'bubble', {
+    interaction: { mode: 'nearest', intersect: true },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        padding: 9,
+        cornerRadius: 4,
+        displayColors: false,
+        titleFont: { size: 11, weight: '600' },
+        bodyFont: { size: 11 },
+        callbacks: { label: (item) => {
+          const p = item.raw || {};
+          return (p.area || 'Área') + ' · pérdida ' + num(p.x, 1) + ' · riesgo ' + num(p.y, 1);
+        } }
+      }
+    },
+    scales: {
+      x: { beginAtZero: true, title: { display: true, text: 'Pérdida de caudal' } },
+      y: { beginAtZero: true, title: { display: true, text: 'Riesgo de expedición' } }
+    }
+  });
+  makeRankChart('ch_actions', v => num(v, 1));
+  makeChart('ch_ev_vs_ice', 'bar', groupBars());
+  makeChart('ch_scenarios', 'bar', groupBarsY());
   applyChartTheme();
 }
 
 function init() {
   initTheme();
   setMeta();
-  state.scenario = META.executive_snapshot.top_scenario || '';
+  buildVerdict();
+  state.scenario = (META.executive_snapshot || {}).top_scenario || '';
   setupFilters();
   setFilterPanelCollapsed(false);
-  renderOfficialKpis();
   initCharts();
   bind();
   updateCharts();

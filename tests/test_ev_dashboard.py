@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -55,13 +56,15 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
     assert "__FILTERS__" not in html
     assert "__CHARTJS__" not in html
 
-    # Layout safety contracts — executive redesign (Geist typography, KPI strip,
-    # restrained palette, neutral surfaces, no gradients/glassmorphism).
-    assert '"Geist"' in html, "Display typeface must be Geist"
-    assert '"Geist Mono"' in html, "Tabular numerals must use Geist Mono"
+    # Layout safety contracts — "instrumento" design system: Archivo for text and
+    # figures, IBM Plex Mono reserved for tabular contexts, KPI strip, flow spine,
+    # neutral surfaces, no gradients/glassmorphism.
+    assert '"Archivo"' in html, "Display and figure typeface must be Archivo"
+    assert '"IBM Plex Mono"' in html, "Tabular contexts must use IBM Plex Mono"
     assert "--font-sans:" in html and "--font-mono:" in html
     assert "kpi-strip" in html, "Above-the-fold KPI strip must be present"
-    assert "min-height:340px" in html or "card tall" in html, "Chart cards must reserve adequate vertical room"
+    assert 'id="spine_track"' in html, "Flow spine is the primary diagnosis surface"
+    assert "card tall" in html, "Chart cards must reserve adequate vertical room"
     assert "maxTicksLimit: 8" in html
     assert "html[data-theme='dark']" in html
     assert 'id="theme_toggle"' in html
@@ -69,11 +72,29 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
     assert 'id="filters_shell"' in html
     assert "setFilterPanelCollapsed(false);" in html, "Filters are inline; start visible"
     assert "const THEME_KEY = 'ev_dashboard_theme';" in html
+    # El tema oscuro es el predeterminado en la primera visita, pero la elección
+    # guardada del usuario siempre manda sobre él.
+    assert (
+        "applyTheme(stored === 'light' || stored === 'dark' ? stored : 'dark');" in html
+    ), "Dark is the first-load default; a stored choice still wins"
+    assert "prefers-color-scheme: dark" not in html, "First-load theme must not depend on OS preference"
     # Design guardrails: no decorative gradients, glassmorphism, or excessive eyebrow chips.
     assert "linear-gradient(135deg" not in html, "No decorative hero gradients"
     assert 'class="eyebrow"' not in html or html.count('class="eyebrow"') <= 2, "Eyebrow chips must be minimal"
     assert "Iowan Old Style" not in html, "Legacy serif must be removed"
     assert "IBM Plex Sans" not in html, "Legacy sans must be removed"
+    assert "Geist" not in html, "Superseded typeface must be removed"
+
+    # Data-visualisation contracts. A second y-scale on one plot invents a
+    # correlation the data does not carry: yard occupancy and p95 dwell are
+    # separate panels, and every mark colour is bound to a semantic role.
+    assert "yAxisID" not in html, "No dual-axis charts"
+    assert 'id="ch_yard_occ"' in html and 'id="ch_yard_dwell"' in html
+    for role in ["--mark-real:", "--mark-plan:", "--mark-ev:", "--mark-energy:", "--mark-risk:"]:
+        assert role in html, f"Semantic mark role {role} must be declared"
+    assert "showLegend(" in html, "Legends are opt-in per series count, not global"
+    assert 'id="data_dialog"' in html, "Every chart needs a table-view twin"
+    assert html.count('class="btn-data"') == 19, "Each chart exposes its underlying series"
 
     # Filter wiring contracts
     for fid in [
@@ -111,9 +132,13 @@ def test_ev_dashboard_html_structure_filters_and_visual_safety_contracts() -> No
     assert "Dashboard Version" not in html
     assert "Actualizado" not in html
 
-    # Chart contracts: expected number of canvases and chart initializers
-    assert html.count("<canvas id=") == 17
-    assert html.count("makeChart('ch_") == 17
+    # Chart contracts: every declared canvas must be initialised, and nothing
+    # may be initialised that has no canvas to draw on.
+    assert html.count("<canvas id=") == 19
+    canvas_ids = set(re.findall(r'<canvas id="(ch_[a-z_]+)"', html))
+    initialised = set(re.findall(r"make(?:Rank)?Chart\('(ch_[a-z_]+)'", html))
+    assert len(canvas_ids) == 19
+    assert canvas_ids == initialised
 
 
 def test_dashboard_records_serializes_dates_numbers_and_nulls_deterministically() -> None:

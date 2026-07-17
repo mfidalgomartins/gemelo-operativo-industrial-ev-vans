@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 OFFICIAL_DASHBOARD = Path("outputs/dashboard/industrial-ev-operating-command-center.html")
@@ -36,9 +37,11 @@ def test_github_pages_dashboard_contracts() -> None:
     ]:
         assert f'id="{fid}"' in html
 
-    # Gráficos esperados
-    assert html.count("<canvas id=") == 17
-    assert html.count("makeChart('ch_") == 17
+    # Gráficos esperados: cada lienzo declarado tiene que quedar inicializado.
+    assert html.count("<canvas id=") == 19
+    assert set(re.findall(r'<canvas id="(ch_[a-z_]+)"', html)) == set(
+        re.findall(r"make(?:Rank)?Chart\('(ch_[a-z_]+)'", html)
+    )
 
     # No debe contener rutas locales; las dependencias visuales de CDN son explícitas.
     assert "file:///" not in html
@@ -61,11 +64,17 @@ def test_github_pages_dashboard_contracts() -> None:
     assert "Escenario recomendado: ' + scenarioLabel(state.scenario" not in html
     assert "selectedScenario" in html
     assert '<details class="advanced-filters">' in html
-    assert html.count('role="img" aria-label=') == 17
+    assert html.count('role="img" aria-label=') == 19
     assert '<caption class="sr-only">' in html
     assert html.count('scope="col"') == 7
     assert "score-badge" not in html
     assert "tier-badge" not in html
+
+    # La espina de flujo es diagnóstico y navegación: cada etapa acota el panel
+    # a su área, así que debe existir y estar cableada al filtro de área.
+    assert 'id="spine_track"' in html
+    assert "const STAGE_ORDER = " in html
+    assert "select.value = (select.value === area) ? 'ALL' : area;" in html
 
 
 def test_github_pages_entry_is_in_sync_with_official_dashboard_size() -> None:
