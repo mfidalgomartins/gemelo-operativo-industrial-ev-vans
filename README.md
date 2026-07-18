@@ -1,4 +1,8 @@
+<div align="center">
+
 # Gemelo Operativo para la Transición a Vans Eléctricas
+
+**Gemelo operativo reproducible que localiza dónde se rompe el flujo durante una rampa de producción EV,<br>cuantifica el impacto y ordena las palancas que lo recuperan — de dato sintético a decisión.**
 
 [![CI](https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans/actions/workflows/ci.yml/badge.svg)](https://github.com/mfidalgomartins/gemelo-operativo-industrial-ev-vans/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](pyproject.toml)
@@ -6,7 +10,10 @@
 [![Release gate](https://img.shields.io/badge/release%20gate-PASS-brightgreen.svg)](outputs/reports/release_readiness.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Gemelo operativo reproducible que localiza dónde se rompe el flujo durante una rampa de producción EV, cuantifica el impacto y ordena las palancas que lo recuperan — de dato sintético a decisión, con puerta de publicación fail-closed en cada paso.**
+[![Abrir el Dashboard en Vivo](https://img.shields.io/badge/Abrir_el_Dashboard_en_Vivo-2f52c8?style=for-the-badge)](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/)
+[![Leer el Informe Analítico](https://img.shields.io/badge/Leer_el_Informe_Anal%C3%ADtico-171614?style=for-the-badge)](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/reports/ev_transition_operating_twin_report.pdf)
+
+</div>
 
 <table>
 <tr>
@@ -14,22 +21,32 @@
 
 ### 📊 Panel operativo — la experiencia analítica principal
 
-[**Abrir el panel interactivo →**](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/)
+[**Abrir el Dashboard en Vivo →**](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/)
 
 [![Vista del panel operativo EV](outputs/dashboard/dashboard_preview.png)](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/)
 
 </td>
 <td width="50%" valign="top">
 
-### 📄 Informe ejecutivo — el entregable de apoyo a decisión
+### 📄 Informe analítico — el entregable de apoyo a decisión
 
-[**Descargar el informe en PDF →**](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/reports/ev_transition_operating_twin_report.pdf)
+[**Leer el Informe Analítico →**](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/reports/ev_transition_operating_twin_report.pdf)
 
-[![Portada del informe de diagnóstico operativo](outputs/reports/report_cover_preview.png)](outputs/reports/ev_transition_operating_twin_report.pdf)
+[![Portada del informe de diagnóstico operativo](outputs/reports/report_cover_preview.png)](https://mfidalgomartins.github.io/gemelo-operativo-industrial-ev-vans/outputs/reports/ev_transition_operating_twin_report.pdf)
 
 </td>
 </tr>
 </table>
+
+## Resumen ejecutivo
+
+| | |
+|---|---|
+| **Alcance** | 58.697 vehículos · 14 tablas operativas · 12 meses de rampa, desde el 1 de enero de 2025 |
+| **Hallazgo principal** | La producción cierra el período clavada en el plan; el **58,7 %** de las salidas queda fuera de ventana — el cuello de botella está en preparación y expedición, no en la línea |
+| **Prioridad operativa** | `LOGISTICA` y `PATIO` lideran el ranking OPI, estable en el **77,33 %** de las simulaciones Monte Carlo |
+| **Recomendación** | Paquete correctivo de secuenciación, carga y gestión de patio — impacto y compensaciones cuantificados en el motor de escenarios |
+| **Estado de publicación** | **Aprobado** (`PASS`), sin incidencias materiales, alcance explícito de **apoyo a decisión** |
 
 ## Por qué existe este proyecto
 
@@ -41,11 +58,11 @@ No es un cuadro de mando descriptivo. Es un sistema de decisión con tres compro
 - **Todo declara sus límites.** Los datos son sintéticos, las elasticidades de escenario son supuestos paramétricos salvo que exista calibración aprobada, y el sistema nunca se presenta como algo distinto de apoyo a decisión.
 - **Nada se publica sin pasar la puerta.** `ev-twin release-check` bloquea la publicación ante cualquier fallo crítico, discrepancia de KPI o artefacto que no coincida con su manifiesto — fail-closed, sin excepción manual.
 
-## Los dos entregables flagship
+## Los dos entregables estrella
 
 ### El panel: la experiencia interactiva principal
 
-`outputs/dashboard/industrial-ev-operating-command-center.html` es un artefacto HTML estático — sin backend, sin build step para el lector — pensado para lectura ejecutiva en menos de un minuto y para exploración analítica en profundidad cuando hace falta.
+`outputs/dashboard/industrial-ev-operating-command-center.html` es un artefacto HTML estático — sin backend, sin paso de construcción para quien lo abre — pensado para lectura ejecutiva en menos de un minuto y para exploración analítica en profundidad cuando hace falta.
 
 - **Lectura ejecutiva en el primer scroll**: veredicto en una frase, cifra que lo sostiene y cobertura del corte, antes de cualquier gráfico.
 - **Espina de flujo física**: producción → patio → carga → logística → expedición, cada etapa con su métrica característica y su Índice de Prioridad Operativa; seleccionarla acota todo el panel a esa área.
@@ -66,9 +83,9 @@ Guía completa de uso y lectura recomendada: [docs/dashboard_usage.md](docs/dash
 - Ranking de palancas de intervención con sensibilidad de pesos y prueba de estabilidad Monte Carlo.
 - Apéndice de trazabilidad: fórmulas, grano y límites de uso de cada métrica citada.
 
-## Alcance analítico
+## Qué pregunta responde cada salida
 
-El corte publicado cubre **58.697 vehículos**, **14 tablas operativas** y un horizonte de planificación de **12 meses** desde el **1 de enero de 2025**. Los datos sintéticos modelan tres fases de transición, desde pre-serie hasta estabilización, y conectan cada orden con su recorrido por producción, patio, carga, preparación y salida.
+Los datos sintéticos modelan tres fases de transición, desde pre-serie hasta estabilización, y conectan cada orden con su recorrido por producción, patio, carga, preparación y salida.
 
 | Pregunta de decisión | Salida principal |
 |---|---|
@@ -77,13 +94,6 @@ El corte publicado cubre **58.697 vehículos**, **14 tablas operativas** y un ho
 | ¿Qué intervención priorizar? | Índice de Prioridad Operativa (OPI), sensibilidad y Monte Carlo |
 | ¿Qué capacidad o regla cambiar? | Comparador paramétrico de escenarios |
 | ¿Se puede publicar el resultado? | Puerta de publicación con contratos de datos, KPI y panel |
-
-## Resultados publicados
-
-- El caudal productivo se mantiene cerca del plan, pero la preparación y la expedición concentran el riesgo operativo: **58,7 %** de las salidas quedan fuera de ventana.
-- `LOGISTICA` y `PATIO` lideran la priorización OPI; el ranking top-1 es estable en **77,33 %** de las simulaciones Monte Carlo.
-- El paquete correctivo combina secuenciación, carga y gestión de patio para mejorar caudal productivo, estabilidad y tiempo interno.
-- La publicación actual está **aprobada** (`PASS`), sin incidencias materiales, y limitada explícitamente a **apoyo a decisión**.
 
 ## Cómo funciona
 
@@ -118,7 +128,7 @@ ev-twin artifacts
 ev-twin release-check
 ```
 
-Los CSV de origen, marts, base DuckDB y estado operacional son reconstruibles y no se versionan. Los comandos anteriores recrean el corte canónico de forma determinista. El panel, los 19 gráficos y el informe PDF sí permanecen publicados para revisión inmediata del portfolio.
+Los CSV de origen, marts, base DuckDB y estado operacional son reconstruibles y no se versionan. Los comandos anteriores recrean el corte canónico de forma determinista. El panel, los 19 gráficos y el informe PDF sí permanecen publicados para revisión inmediata del portafolio.
 
 Para una guía operativa con orden real de la canalización, comandos parciales, salidas esperadas y resolución de problemas: [docs/operator_quickstart.md](docs/operator_quickstart.md).
 
@@ -172,7 +182,7 @@ outputs/reports/               informe PDF, manifiesto de release y preparación
 ## Hoja de ruta
 
 - **Calibración conectada por defecto**: pasar de elasticidades paramétricas a coeficientes calibrados como camino recomendado en despliegues con histórico real, no solo como extra opcional.
-- **Panel con fuente de datos conectable**: mantener el HTML estático como artefacto de portfolio y añadir una variante que lea directamente de la API de lectura para operación en vivo.
+- **Panel con fuente de datos conectable**: mantener el HTML estático como artefacto de portafolio y añadir una variante que lea directamente de la API de lectura para operación en vivo.
 - **Ampliación del catálogo de conectores**: sumar orígenes MES/WMS adicionales sobre los mismos contratos de ingesta ya certificados.
 
 ## Salidas principales
