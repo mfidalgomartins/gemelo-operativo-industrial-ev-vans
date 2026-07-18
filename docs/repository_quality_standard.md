@@ -17,7 +17,7 @@ Mantener un gemelo operativo reproducible, auditable y defendible en una entrevi
 - El wheel contiene SQL y plantilla del panel, se instala en un entorno aislado y expone CLI estables.
 - La API opcional aplica autenticación fail-closed, RBAC, contratos de respuesta y límites de exposición.
 - La calibración solo se activa con cobertura completa, soporte identificador y coeficientes aprobados.
-- Datos y bases reconstruibles quedan fuera de Git; el portfolio conserva solo artefactos finales de revisión.
+- Datos y bases reconstruibles quedan fuera de Git; el portafolio conserva solo artefactos finales de revisión.
 - La documentación es breve, específica y coherente con el comportamiento ejecutable.
 
 ## Límite de uso

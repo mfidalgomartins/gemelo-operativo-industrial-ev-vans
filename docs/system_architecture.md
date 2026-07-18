@@ -31,13 +31,13 @@ flowchart LR
 | `ev_release_gate.py` | Decisión fail-closed de publicación | aprobación o bloqueo trazable |
 | `api/` | Salud, estado, KPI, prioridades, linaje y comprobación de release | respuestas tipadas y protegidas por rol |
 | `observability.py` | Duración por etapa, error tipado y evaluación de SLA | manifiesto JSON por ejecución |
-| `reporting/` y `dashboard/` | Entregables de portfolio | HTML, PNG y PDF deterministas |
+| `reporting/` y `dashboard/` | Entregables de portafolio | HTML, PNG y PDF deterministas |
 
 ## Límites y estado
 
 - `data/raw/` y `data/processed/` son estado reconstruible y no se versionan.
 - `.ev_twin/` guarda locks, checkpoints, linaje y observabilidad; tampoco se versiona.
-- `outputs/dashboard/`, `outputs/graphs/` y el informe PDF son artefactos publicados del portfolio.
+- `outputs/dashboard/`, `outputs/graphs/` y el informe PDF son artefactos publicados del portafolio.
 - `EV_TWIN_HOME` permite ejecutar el paquete instalado fuera del checkout y fija la raíz de datos y outputs.
 - La plantilla del panel y los once scripts SQL forman parte del wheel mediante recursos de paquete.
 
@@ -51,4 +51,4 @@ flowchart LR
 
 ## Escalado previsto
 
-DuckDB y CSV son adecuados para este portfolio y para lotes de escala moderada. Si el volumen o la concurrencia exigen un salto de arquitectura, se mantienen los mismos contratos y se sustituyen tres fronteras: almacenamiento de origen por objetos versionados, marts por un almacén SQL y estado local por un servicio transaccional. La API no contiene lógica analítica, por lo que puede escalar independientemente como capa de lectura.
+DuckDB y CSV son adecuados para este portafolio y para lotes de escala moderada. Si el volumen o la concurrencia exigen un salto de arquitectura, se mantienen los mismos contratos y se sustituyen tres fronteras: almacenamiento de origen por objetos versionados, marts por un almacén SQL y estado local por un servicio transaccional. La API no contiene lógica analítica, por lo que puede escalar independientemente como capa de lectura.
